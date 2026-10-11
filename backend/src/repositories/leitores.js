@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroHttp, erroNaoEncontrado, erroConflito } from '../errors/index.js';
 import { calcularIdade } from '../../../js/datas.mjs';
 
 const consulta = `SELECT l.id, l.nome, l.tipo, l.matricula_codigo AS "matriculaCodigo",
@@ -28,12 +28,12 @@ export function criarRepositorioLeitores(banco) {
                     WHERE id=$10 RETURNING id`, [...valores, id]);
         } catch (erro) {
             if (erro.code === '23505' && erro.constraint === 'leitores_matricula_centro_unica') {
-                throw erroHttp(409, 'Esta matrícula/código já está cadastrada neste Centro.');
+                throw erroConflito('Esta matrícula/código já está cadastrada neste Centro.');
             }
             if (erro.code === '23503') throw erroHttp(400, 'Centro não encontrado.');
             throw erro;
         }
-        if (!resultado.rowCount) throw erroHttp(404, 'Leitor não encontrado.');
+        if (!resultado.rowCount) throw erroNaoEncontrado('Leitor não encontrado.');
         return buscar(resultado.rows[0].id);
     }
     return {

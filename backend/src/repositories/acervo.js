@@ -1,4 +1,4 @@
-import { erroHttp } from "../validation.js";
+import { erroHttp, erroNaoEncontrado, erroConflito } from "../errors/index.js";
 
 // O banco usa snake_case; a resposta mantém os nomes usados no frontend atual.
 export function criarRepositorioAcervo(banco) {
@@ -50,10 +50,10 @@ export function criarRepositorioAcervo(banco) {
                 // O bloqueio impede duas baixas simultâneas de sobrescreverem o motivo.
                 const resultado = await conexao.query('SELECT livro_id, status FROM exemplares WHERE id=$1 FOR UPDATE', [id]);
                 const exemplar = resultado.rows[0];
-                if (!exemplar) throw erroHttp(404, 'Exemplar não encontrado.');
-                if (exemplar.status === 'Baixado') throw erroHttp(409, 'Este exemplar já recebeu baixa.');
+                if (!exemplar) throw erroNaoEncontrado('Exemplar não encontrado.');
+                if (exemplar.status === 'Baixado') throw erroConflito('Este exemplar já recebeu baixa.');
                 if (['Emprestado', 'Reservado'].includes(exemplar.status)) {
-                    throw erroHttp(409, 'Encerre o empréstimo ou a reserva antes de dar baixa neste exemplar.');
+                    throw erroConflito('Encerre o empréstimo ou a reserva antes de dar baixa neste exemplar.');
                 }
                 await conexao.query(`UPDATE exemplares SET status='Baixado', baixa_motivo=$2,
                     baixa_observacao=$3, baixa_em=now() WHERE id=$1`, [id, dados.motivo, dados.observacao]);
@@ -76,14 +76,14 @@ export function criarRepositorioAcervo(banco) {
                     titulo=$1, autor=$2, isbn=$3, editora=$4, ano=$5, categoria=$6,
                     faixa_etaria=$7, capa_url=$8, sinopse=$9 WHERE id=$10 RETURNING id`,
                     [...valoresObra(dados), id]);
-                if (!resultado.rowCount) throw erroHttp(404, "Livro não encontrado.");
+                if (!resultado.rowCount) throw erroNaoEncontrado("Livro não encontrado.");
                 return criarRepositorioAcervo(conexao).buscarLivro(id);
             });
         },
         async adicionarExemplares(id, dados) {
             return transacao(async conexao => {
                 const livro = await conexao.query("SELECT id FROM livros WHERE id=$1 FOR UPDATE", [id]);
-                if (!livro.rowCount) throw erroHttp(404, "Livro não encontrado.");
+                if (!livro.rowCount) throw erroNaoEncontrado("Livro não encontrado.");
                 await inserirExemplares(conexao, id, dados);
                 return criarRepositorioAcervo(conexao).buscarLivro(id);
             });

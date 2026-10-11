@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calcularIdade, dataCivilValida, hojeCivil } from '../../js/datas.mjs';
-import { validarLeitor } from '../src/validation.js';
+import { validarLeitor } from '../src/services/validation/index.js';
 
 test('idade respeita aniversário, virada de ano e nascimento em 29/02', () => {
     assert.equal(calcularIdade('2016-10-07', '2026-10-06'), 9);

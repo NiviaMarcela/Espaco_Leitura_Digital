@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroNaoEncontrado, erroConflito } from '../errors/index.js';
 import { hojeCivil, somarDias } from '../../../js/datas.mjs';
 
 export const PRAZO_DIAS = 15;
@@ -39,7 +39,7 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
         } catch (erro) {
             await c.query('ROLLBACK').catch(() => {});
             if (erro.code === '23505' && erro.constraint === 'emprestimos_exemplar_aberto_unico') {
-                throw erroHttp(409, 'Este exemplar já possui um empréstimo em aberto.');
+                throw erroConflito('Este exemplar já possui um empréstimo em aberto.');
             }
             throw erro;
         } finally { c.release(); }
@@ -51,15 +51,15 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
                 // Mesma ordem de bloqueios da renovação: empréstimo, leitor e exemplar.
                 const p = (await c.query(`SELECT leitor_id, exemplar_id, data_devolucao, versao,
                     to_char(data_emprestimo, 'YYYY-MM-DD') AS retirada FROM emprestimos WHERE id=$1 FOR UPDATE`, [id])).rows[0];
-                if (!p) throw erroHttp(404, 'Empréstimo não encontrado.');
-                if (p.data_devolucao) throw erroHttp(409, 'A devolução deste empréstimo já foi registrada.');
-                if (p.versao !== dados.versao) throw erroHttp(409, 'Este empréstimo foi alterado. Atualize os dados antes de devolver.');
+                if (!p) throw erroNaoEncontrado('Empréstimo não encontrado.');
+                if (p.data_devolucao) throw erroConflito('A devolução deste empréstimo já foi registrada.');
+                if (p.versao !== dados.versao) throw erroConflito('Este empréstimo foi alterado. Atualize os dados antes de devolver.');
                 // Leitor inativo também pode devolver. O bloqueio coordena a liberação da vaga.
                 await c.query('SELECT id FROM leitores WHERE id=$1 FOR UPDATE', [p.leitor_id]);
                 const e = (await c.query('SELECT status FROM exemplares WHERE id=$1 FOR UPDATE', [p.exemplar_id])).rows[0];
-                if (e.status !== 'Emprestado') throw erroHttp(409, 'A situação do exemplar não corresponde a um empréstimo em aberto.');
+                if (e.status !== 'Emprestado') throw erroConflito('A situação do exemplar não corresponde a um empréstimo em aberto.');
                 const dataHoje = hoje();
-                if (dataHoje < p.retirada) throw erroHttp(409, 'A devolução não pode ser anterior à retirada. Verifique a data do servidor.');
+                if (dataHoje < p.retirada) throw erroConflito('A devolução não pode ser anterior à retirada. Verifique a data do servidor.');
                 await c.query(`INSERT INTO devolucoes(emprestimo_id, condicao, observacao, dias_atraso)
                     SELECT id, $2, $3, greatest(0, $4::date - data_prevista_devolucao) FROM emprestimos WHERE id=$1`,
                     [id, dados.condicao, dados.observacao, dataHoje]);
@@ -88,13 +88,13 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
             return transacao(async c => {
                 // Serializa retiradas do mesmo leitor, inclusive de cópias diferentes.
                 const leitor = (await c.query('SELECT status FROM leitores WHERE id=$1 FOR UPDATE', [dados.leitorId])).rows[0];
-                if (!leitor) throw erroHttp(404, 'Leitor não encontrado.');
-                if (leitor.status !== 'Ativo') throw erroHttp(409, 'Somente leitores ativos podem realizar empréstimos.');
+                if (!leitor) throw erroNaoEncontrado('Leitor não encontrado.');
+                if (leitor.status !== 'Ativo') throw erroConflito('Somente leitores ativos podem realizar empréstimos.');
                 const { rows } = await c.query('SELECT count(*)::integer AS total FROM emprestimos WHERE leitor_id=$1 AND data_devolucao IS NULL', [dados.leitorId]);
-                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, 'Este leitor já tem 5 exemplares emprestados.');
+                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroConflito('Este leitor já tem 5 exemplares emprestados.');
                 const exemplar = (await c.query('SELECT status FROM exemplares WHERE id=$1 FOR UPDATE', [dados.exemplarId])).rows[0];
-                if (!exemplar) throw erroHttp(404, 'Exemplar não encontrado.');
-                if (exemplar.status !== 'Disponível') throw erroHttp(409, 'Este exemplar não está disponível para empréstimo.');
+                if (!exemplar) throw erroNaoEncontrado('Exemplar não encontrado.');
+                if (exemplar.status !== 'Disponível') throw erroConflito('Este exemplar não está disponível para empréstimo.');
                 const dataHoje = hoje();
                 const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao)
                     VALUES ($1,$2,$3,$4,$5) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao]);
@@ -106,16 +106,16 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
             return transacao(async c => {
                 const emprestimo = (await c.query(`SELECT leitor_id, exemplar_id, data_devolucao,
                     to_char(data_prevista_devolucao, 'YYYY-MM-DD') AS prazo, versao FROM emprestimos WHERE id=$1 FOR UPDATE`, [id])).rows[0];
-                if (!emprestimo) throw erroHttp(404, 'Empréstimo não encontrado.');
-                if (emprestimo.data_devolucao) throw erroHttp(409, 'Este empréstimo já foi encerrado.');
-                if (emprestimo.versao !== dados.versao) throw erroHttp(409, 'Este empréstimo foi alterado. Atualize a lista antes de renovar.');
+                if (!emprestimo) throw erroNaoEncontrado('Empréstimo não encontrado.');
+                if (emprestimo.data_devolucao) throw erroConflito('Este empréstimo já foi encerrado.');
+                if (emprestimo.versao !== dados.versao) throw erroConflito('Este empréstimo foi alterado. Atualize a lista antes de renovar.');
                 const leitor = (await c.query('SELECT status FROM leitores WHERE id=$1 FOR UPDATE', [emprestimo.leitor_id])).rows[0];
-                if (leitor.status !== 'Ativo') throw erroHttp(409, 'O leitor está inativo. Regularize o cadastro antes de renovar.');
+                if (leitor.status !== 'Ativo') throw erroConflito('O leitor está inativo. Regularize o cadastro antes de renovar.');
                 const exemplar = (await c.query('SELECT status FROM exemplares WHERE id=$1 FOR UPDATE', [emprestimo.exemplar_id])).rows[0];
-                if (exemplar.status !== 'Emprestado') throw erroHttp(409, 'A situação do exemplar não permite renovar este empréstimo.');
+                if (exemplar.status !== 'Emprestado') throw erroConflito('A situação do exemplar não permite renovar este empréstimo.');
                 const dataHoje = hoje();
                 const novaData = somarDias(dataHoje, PRAZO_DIAS);
-                if (novaData <= emprestimo.prazo) throw erroHttp(409, 'O prazo atual já cobre os próximos 15 dias. Ainda não é necessário renovar.');
+                if (novaData <= emprestimo.prazo) throw erroConflito('O prazo atual já cobre os próximos 15 dias. Ainda não é necessário renovar.');
                 await c.query('INSERT INTO renovacoes_emprestimo(emprestimo_id, data_anterior, nova_data) VALUES ($1,$2,$3)', [id, emprestimo.prazo, novaData]);
                 await c.query('UPDATE emprestimos SET data_prevista_devolucao=$2, versao=versao+1 WHERE id=$1', [id, novaData]);
                 return buscar(id, c, dataHoje);
