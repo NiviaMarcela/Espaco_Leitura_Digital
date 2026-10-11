@@ -30,8 +30,8 @@ momento do recebimento, mesmo se o exemplar sofrer alterações posteriormente.
 
 ## Como o código funciona
 
-`devolucoes.html` organiza filtros, tabela e o modal de conferência.
-`js/devolucoes.js` busca os empréstimos, filtra a lista e consulta o registro mais
+`../devolucoes.html` organiza filtros, tabela e o modal de conferência.
+`../js/devolucoes.js` busca os empréstimos, filtra a lista e consulta o registro mais
 recente antes de abrir a confirmação. Dados digitados são exibidos por textContent.
 
 Ao confirmar, o navegador envia:
@@ -41,7 +41,7 @@ Ao confirmar, o navegador envia:
 ```
 
 para `POST /api/emprestimos/:id/devolucao`. A API valida esses campos em
-`validarDevolucao`, no arquivo `src/validation.js`. O cliente não escolhe data,
+`validarDevolucao`, no arquivo `src/services/validation/emprestimos.js`. O cliente não escolhe data,
 dias de atraso, leitor nem exemplar: essas informações vêm do registro no banco.
 
 O método `devolver`, em `src/repositories/emprestimos.js`, abre uma transação:
@@ -56,7 +56,7 @@ Se houver falha, ROLLBACK desfaz as três gravações. O índice único de
 `devolucoes.emprestimo_id` protege contra registros duplicados. A versão impede que
 uma confirmação com prazo antigo sobrescreva uma renovação feita em outra sessão.
 
-A migração `database/005_devolucoes.sql` cria a tabela sem apagar dados anteriores.
+A migração `../database/005_devolucoes.sql` cria a tabela sem apagar dados anteriores.
 As listagens de empréstimos agora incluem o objeto `devolucao` com condição,
 observação, atraso e horário de registro. Os detalhes de empréstimos também exibem
 as informações do recebimento.

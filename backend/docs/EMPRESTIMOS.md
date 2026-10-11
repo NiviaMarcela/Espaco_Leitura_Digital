@@ -1,7 +1,7 @@
 # Empréstimos e renovações — guia didático
 
 Abra http://127.0.0.1:3001/emprestimos.html com o backend ligado.
-A migração `004_emprestimos.sql` cria as tabelas desta etapa sem alterar livros ou leitores existentes.
+A migração `../database/004_emprestimos.sql` cria as tabelas desta etapa sem alterar livros ou leitores existentes.
 
 ## Regras implementadas
 
@@ -25,8 +25,8 @@ A migração `004_emprestimos.sql` cria as tabelas desta etapa sem alterar livro
 
 ### 1. Formulário e lista
 
-`../emprestimos.html` contém os campos e os dois modais: cadastro e detalhes/renovação.
-`../js/emprestimos.js` carrega a API, filtra a lista e preenche as opções do formulário.
+`../../emprestimos.html` contém os campos e os dois modais: cadastro e detalhes/renovação.
+`../../js/emprestimos.js` carrega a API, filtra a lista e preenche as opções do formulário.
 Ao abrir o cadastro, as opções são consultadas novamente para reduzir o uso de dados antigos.
 Os campos de busca ajudam a localizar nomes, matrículas, títulos e códigos de cópias.
 O backend sempre confere as regras novamente no envio, pois outra pessoa pode ter
@@ -34,7 +34,7 @@ retirado um exemplar depois que o formulário foi aberto.
 
 ### 2. Rotas e validação
 
-`src/app.js` define os endereços:
+`src/routes/emprestimos.js` define os endereços:
 
 | Método e rota | Função |
 | --- | --- |
@@ -44,7 +44,7 @@ retirado um exemplar depois que o formulário foi aberto.
 | POST /api/emprestimos | Registra a retirada |
 | POST /api/emprestimos/:id/renovacoes | Renova o prazo |
 
-`validarEmprestimo` em `src/validation.js` aceita IDs inteiros e observação de até
+`validarEmprestimo` em `src/services/validation/emprestimos.js` aceita IDs inteiros e observação de até
 2000 caracteres. Não aceita datas escolhidas pelo navegador. A renovação recebe
 a versão vista na tela para detectar uma alteração feita por outra sessão.
 
@@ -66,7 +66,7 @@ na mesma transação. Reenvios antigos não criam renovações duplicadas.
 
 ### 4. Datas e histórico
 
-`../js/datas.mjs` calcula a data civil de Fortaleza e soma dias corretamente ao atravessar
+`../../js/datas.mjs` calcula a data civil de Fortaleza e soma dias corretamente ao atravessar
 meses e anos. No banco, os prazos usam DATE, sem horário. As renovações têm timestamp
 gerado pelo PostgreSQL para registrar o momento da ação.
 

@@ -4,7 +4,7 @@
 
 A entidade LEITOR usa `data_nascimento DATE NOT NULL` no lugar de `faixa_etaria`.
 A imagem original do DER é uma referência histórica; esta descrição e a migração
-`database/002_leitores.sql` registram o modelo implementado.
+`../database/002_leitores.sql` registram o modelo implementado.
 
 ```mermaid
 erDiagram
@@ -32,17 +32,17 @@ Não há exclusão de leitores nesta etapa.
 
 ## Como os blocos se conectam
 
-1. `../leitores.html` define os campos, filtros e tabela. O campo de nascimento usa
+1. `../../leitores.html` define os campos, filtros e tabela. O campo de nascimento usa
    `type="date"`; seu valor enviado é `AAAA-MM-DD`, independente da aparência do navegador.
-2. `../js/leitores.js` lê o formulário, envia JSON por `fetch`, aguarda a resposta e
+2. `../../js/leitores.js` lê o formulário, envia JSON por `fetch`, aguarda a resposta e
    só então atualiza a lista. O botão fica desabilitado durante o envio.
-3. `src/app.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
+3. `src/routes/leitores.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
    `/api/leitores/:id`. POST cadastra; PUT edita; GET consulta.
-4. `validarLeitor`, em `src/validation.js`, verifica os campos no servidor. A validação
+4. `validarLeitor`, em `src/services/validation/leitores.js`, verifica os campos no servidor. A validação
    do navegador ajuda no preenchimento, mas não substitui a validação da API.
 5. `src/repositories/leitores.js` usa parâmetros `$1`, `$2` etc. para passar os valores
    ao PostgreSQL. Nascimento é devolvido como texto de data, sem conversão de fuso.
-6. `../js/datas.mjs` é compartilhado pelo navegador e backend. `calcularIdade` subtrai
+6. `../../js/datas.mjs` é compartilhado pelo navegador e backend. `calcularIdade` subtrai
    os anos e desconta um ano se o aniversário ainda não chegou. Usa a data civil
    de Fortaleza. Para nascidos em 29/02, em anos não bissextos a idade muda em 01/03.
 
