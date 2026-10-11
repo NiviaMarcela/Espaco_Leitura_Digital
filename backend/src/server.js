@@ -1,5 +1,5 @@
 import { criarApp } from "./app.js";
-import { criarBanco } from "./database.js";
+import { criarBanco } from "./settings/database.js";
 
 const porta = Number(process.env.PORT || 3001);
 if (!Number.isInteger(porta) || porta < 1 || porta > 65535) {
