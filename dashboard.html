@@ -13,14 +13,14 @@
 
     <!-- Bootstrap -->
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        href="assets/vendor/bootstrap/bootstrap.min.css"
         rel="stylesheet"
     >
 
     <!-- Bootstrap Icons -->
     <link
         rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css"
     >
 
     <!-- CSS do projeto -->
@@ -304,6 +304,25 @@
 
 
 
+        <div class="mb-3">
+
+            <p id="avisoDashboard" role="status">
+                Carregando o resumo…
+            </p>
+
+            <button
+                id="recarregarDashboard"
+                type="button"
+                class="btn btn-secondary-custom"
+                hidden
+            >
+                Tentar novamente
+            </button>
+
+        </div>
+
+
+
         <!-- =========================
              CARDS
         ========================== -->
@@ -325,15 +344,15 @@
                     <div class="stat-content">
 
                         <span class="stat-label">
-                            Total de livros
+                            Livros no acervo
                         </span>
 
-                        <strong class="stat-number">
-                            486
+                        <strong class="stat-number" id="totalObrasDashboard">
+                            —
                         </strong>
 
                         <small>
-                            cadastrados no acervo
+                            títulos cadastrados
                         </small>
 
                     </div>
@@ -358,15 +377,15 @@
                     <div class="stat-content">
 
                         <span class="stat-label">
-                            Disponíveis
+                            Exemplares disponíveis
                         </span>
 
-                        <strong class="stat-number color-green">
-                            418
+                        <strong class="stat-number color-green" id="disponiveisDashboard">
+                            —
                         </strong>
 
                         <small>
-                            disponíveis para empréstimo
+                            cópias livres para empréstimo
                         </small>
 
                     </div>
@@ -391,15 +410,15 @@
                     <div class="stat-content">
 
                         <span class="stat-label">
-                            Emprestados
+                            Empréstimos em curso
                         </span>
 
-                        <strong class="stat-number color-purple">
-                            68
+                        <strong class="stat-number color-purple" id="emCursoDashboard">
+                            —
                         </strong>
 
                         <small>
-                            livros em circulação
+                            cópias fora do acervo
                         </small>
 
                     </div>
@@ -427,8 +446,8 @@
                             Em atraso
                         </span>
 
-                        <strong class="stat-number color-pink">
-                            7
+                        <strong class="stat-number color-pink" id="atrasadosDashboard">
+                            —
                         </strong>
 
                         <small>
@@ -506,138 +525,12 @@
                             </thead>
 
 
-                            <tbody>
+                            <tbody id="tabelaRecentes">
 
                                 <tr>
 
-                                    <td>
-
-                                        <div class="reader">
-
-                                            <div class="reader-avatar">
-                                                AS
-                                            </div>
-
-                                            <span>
-                                                Ana Souza
-                                            </span>
-
-                                        </div>
-
-                                    </td>
-
-
-                                    <td>
-                                        O Pequeno Príncipe
-                                    </td>
-
-
-                                    <td>
-                                        19/09/2026
-                                    </td>
-
-
-                                    <td>
-                                        03/10/2026
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="badge-status badge-purple">
-                                            Emprestado
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td>
-
-                                        <div class="reader">
-
-                                            <div class="reader-avatar">
-                                                JP
-                                            </div>
-
-                                            <span>
-                                                João Pedro
-                                            </span>
-
-                                        </div>
-
-                                    </td>
-
-
-                                    <td>
-                                        Extraordinário
-                                    </td>
-
-
-                                    <td>
-                                        10/09/2026
-                                    </td>
-
-
-                                    <td>
-                                        24/09/2026
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="badge-status badge-purple">
-                                            Emprestado
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td>
-
-                                        <div class="reader">
-
-                                            <div class="reader-avatar">
-                                                MC
-                                            </div>
-
-                                            <span>
-                                                Maria Clara
-                                            </span>
-
-                                        </div>
-
-                                    </td>
-
-
-                                    <td>
-                                        Coraline
-                                    </td>
-
-
-                                    <td>
-                                        01/09/2026
-                                    </td>
-
-
-                                    <td>
-                                        15/09/2026
-                                    </td>
-
-
-                                    <td>
-
-                                        <span class="badge-status badge-pink">
-                                            Em atraso
-                                        </span>
-
+                                    <td colspan="5">
+                                        Carregando empréstimos…
                                     </td>
 
                                 </tr>
@@ -823,10 +716,10 @@
     <!-- Bootstrap -->
 
     <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        src="assets/vendor/bootstrap/bootstrap.bundle.min.js"
     ></script>
 
-    <script src="js/app.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 
 </body>
 
