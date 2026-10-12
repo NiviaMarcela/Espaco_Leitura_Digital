@@ -22,7 +22,7 @@ export function criarApp(banco, registrarErro = console.error) {
     // Servimos apenas os arquivos públicos. Nunca expor a raiz ou backend/.env.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
     app.get("/", (req, res) => res.redirect("/acervo.html"));
-    for (const pagina of ["acervo", "dashboard", "leitores", "emprestimos", "devolucoes"]) {
+    for (const pagina of ["index", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, (req, res) => res.sendFile(path.join(raiz, `${pagina}.html`)));
     }
     for (const pasta of ["css", "js", "assets"]) {
@@ -37,7 +37,13 @@ export function criarApp(banco, registrarErro = console.error) {
         if (erro.code === "23503") return res.status(400).json({ erro: "Livro ou Centro não encontrado." });
         // Não envia senha, URL de conexão ou detalhes do SQL para o navegador.
         registrarErro("Falha ao consultar o banco:", erro.code || "SEM_CODIGO");
-        const indisponivel = ["BANCO_NAO_CONFIGURADO", "ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "57P03"].includes(erro.code)
+        // Falta de configuração é diferente de banco fora do ar: a mensagem precisa dizer o que fazer.
+        if (erro.code === "BANCO_NAO_CONFIGURADO") {
+            return res.status(503).json({
+                erro: "Banco de dados não configurado. Copie backend/.env.example para backend/.env e informe as credenciais."
+            });
+        }
+        const indisponivel = ["ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "57P03"].includes(erro.code)
             || erro.code?.startsWith("08")
             // O pg também pode sinalizar timeout de conexão sem um código.
             || ["Connection terminated due to connection timeout", "timeout exceeded when trying to connect"].includes(erro.message);

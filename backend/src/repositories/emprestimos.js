@@ -1,5 +1,5 @@
 import { erroNaoEncontrado, erroConflito } from '../errors/index.js';
-import { hojeCivil, somarDias } from '../../../js/datas.mjs';
+import { hojeCivil, somarDias } from '../utils/datas.js';
 
 export const PRAZO_DIAS = 15;
 export const LIMITE_EXEMPLARES = 5;

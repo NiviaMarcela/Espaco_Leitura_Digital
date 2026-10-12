@@ -21,7 +21,7 @@ async function api(caminho, dados) {
     }
     let resultado;
     try { resultado = await resposta.json(); } catch { throw new Error('Resposta inesperada. Abra http://127.0.0.1:3001/devolucoes.html.'); }
-    if (!resposta.ok) throw new Error(resposta.status === 503 ? 'O banco de dados está indisponível.' : resultado.erro || 'Não foi possível concluir a operação.');
+    if (!resposta.ok) throw new Error(resultado.erro || (resposta.status === 503 ? 'O banco de dados está indisponível.' : 'Não foi possível concluir a operação.'));
     return resultado;
 }
 

@@ -10,7 +10,10 @@ async function iniciar(t, query) {
         servidor.close(resolve);
         servidor.closeAllConnections();
     }));
-    return caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`);
+    // A função devolvida busca um caminho; .base evita repetir o endereço nos testes.
+    const buscar = caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`);
+    buscar.base = `http://127.0.0.1:${servidor.address().port}`;
+    return buscar;
 }
 
 test("saúde da API não depende de uma conexão com o banco", async t => {
@@ -85,4 +88,26 @@ test("erro inesperado de SQL retorna 500 com mensagem genérica", async t => {
     const resposta = await get("/api/livros");
     assert.equal(resposta.status, 500);
     assert.deepEqual(await resposta.json(), { erro: "Não foi possível concluir a consulta." });
+});
+
+test("banco sem configuração informa o que falta, sem confundir com banco fora do ar", async t => {
+    const get = await iniciar(t, () => {
+        throw Object.assign(new Error("Configure DATABASE_URL ou os campos PG no arquivo backend/.env."),
+            { code: "BANCO_NAO_CONFIGURADO" });
+    });
+    const resposta = await get("/api/livros");
+    assert.equal(resposta.status, 503);
+    assert.match((await resposta.json()).erro, /\.env/);
+});
+
+test("a raiz redireciona e todas as páginas públicas são servidas", async t => {
+    const get = await iniciar(t, () => { throw new Error("Não deveria consultar"); });
+    const raiz = await fetch(`${get.base}/`, { redirect: "manual" });
+    assert.equal(raiz.status, 302);
+    assert.equal(raiz.headers.get("location"), "/acervo.html");
+    for (const pagina of ["index", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes"]) {
+        const resposta = await get(`/${pagina}.html`);
+        assert.equal(resposta.status, 200, `/${pagina}.html`);
+        assert.match(resposta.headers.get("content-type"), /text\/html/);
+    }
 });

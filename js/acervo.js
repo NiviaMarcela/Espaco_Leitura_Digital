@@ -689,7 +689,8 @@ async function requisitarApi(caminho, metodo = "GET", dados) {
     try { resultado = await resposta.json(); }
     catch { throw new Error("Resposta inesperada. Abra o acervo em http://127.0.0.1:3001/acervo.html."); }
     if (!resposta.ok) {
-        if (resposta.status === 503) {
+        // O corpo já traz o motivo (banco fora do ar ou sem configuração).
+        if (resposta.status === 503 && !resultado.erro) {
             throw new Error("O banco de dados não está respondendo. Verifique o serviço PostgreSQL e tente novamente.");
         }
         throw new Error(resultado.erro || "Não foi possível concluir a operação.");

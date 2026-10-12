@@ -1,4 +1,4 @@
-import { dataCivilValida, hojeCivil } from '../../../../js/datas.mjs';
+import { dataCivilValida, hojeCivil } from '../../utils/datas.js';
 import { erroValidacao } from "../../errors/index.js";
 import { idValido, texto } from "./comum.js";
 

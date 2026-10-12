@@ -1,5 +1,5 @@
 import { erroHttp, erroNaoEncontrado, erroConflito } from '../errors/index.js';
-import { calcularIdade } from '../../../js/datas.mjs';
+import { calcularIdade } from '../utils/datas.js';
 
 const consulta = `SELECT l.id, l.nome, l.tipo, l.matricula_codigo AS "matriculaCodigo",
     l.turma, to_char(l.data_nascimento, 'YYYY-MM-DD') AS "dataNascimento",

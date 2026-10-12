@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calcularIdade, dataCivilValida, hojeCivil } from '../../js/datas.mjs';
+import { calcularIdade, dataCivilValida, hojeCivil } from '../src/utils/datas.js';
 import { validarLeitor } from '../src/services/validation/index.js';
 
 test('idade respeita aniversário, virada de ano e nascimento em 29/02', () => {

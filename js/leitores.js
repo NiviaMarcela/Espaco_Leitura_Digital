@@ -24,9 +24,9 @@ async function api(caminho, metodo = 'GET', dados) {
     let resultado;
     try { resultado = await resposta.json(); }
     catch { throw new Error('Resposta inesperada. Abra http://127.0.0.1:3001/leitores.html.'); }
-    if (!resposta.ok) throw new Error(resposta.status === 503
+    if (!resposta.ok) throw new Error(resultado.erro || (resposta.status === 503
         ? 'O PostgreSQL não está respondendo. Verifique o serviço e tente novamente.'
-        : resultado.erro || 'Não foi possível concluir a operação.');
+        : 'Não foi possível concluir a operação.'));
     return resultado;
 }
 

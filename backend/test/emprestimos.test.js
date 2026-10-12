@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { somarDias, hojeCivil } from '../../js/datas.mjs';
+import { somarDias, hojeCivil } from '../src/utils/datas.js';
 import { validarEmprestimo, validarRenovacao, validarDevolucao } from '../src/services/validation/index.js';
 import { criarRepositorioEmprestimos } from '../src/repositories/emprestimos.js';
 import { criarApp } from '../src/app.js';

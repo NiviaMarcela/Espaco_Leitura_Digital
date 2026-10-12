@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <!--
+        O servidor redireciona "/" para o acervo. Este arquivo cobre o acesso
+        direto ao index.html (duplo clique ou outro servidor estático).
+        As páginas conversam com /api e precisam ser abertas pelo endereço do
+        backend: http://127.0.0.1:3001/acervo.html
+    -->
+
+    <meta
+        http-equiv="refresh"
+        content="0; url=acervo.html"
+    >
+
+    <title>Espaço de Leitura Digital</title>
+</head>
+
+
+<body>
+
+    <p>
+        Abrindo o <a href="acervo.html">Acervo</a>…
+    </p>
+
+</body>
+
+</html>
