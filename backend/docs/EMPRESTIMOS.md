@@ -43,6 +43,7 @@ retirado um exemplar depois que o formulário foi aberto.
 | GET /api/emprestimos/:id | Consulta os dados atuais de um empréstimo |
 | POST /api/emprestimos | Registra a retirada |
 | POST /api/emprestimos/:id/renovacoes | Renova o prazo |
+| POST /api/emprestimos/:id/devolucao | Encerra o empréstimo e registra o recebimento (veja `DEVOLUCOES.md`) |
 
 `validarEmprestimo` em `src/services/validation/emprestimos.js` aceita IDs inteiros e observação de até
 2000 caracteres. Não aceita datas escolhidas pelo navegador. A renovação recebe
@@ -66,9 +67,7 @@ na mesma transação. Reenvios antigos não criam renovações duplicadas.
 
 ### 4. Datas e histórico
 
-`../../js/datas.mjs` calcula a data civil de Fortaleza e soma dias corretamente ao atravessar
-meses e anos. No banco, os prazos usam DATE, sem horário. As renovações têm timestamp
-gerado pelo PostgreSQL para registrar o momento da ação.
+`src/utils/datas.js` (servidor) e `js/datas.mjs` (navegador) calculam a data civil de Fortaleza e somam dias corretamente ao atravessar meses e anos; `test/datas.test.js` garante que as duas cópias concordem. No banco, os prazos usam DATE, sem horário. As renovações têm timestamp gerado pelo PostgreSQL para registrar o momento da ação.
 
 ```mermaid
 erDiagram
@@ -84,8 +83,7 @@ Verificam limite concorrente, disputa pela mesma cópia, prazo, atraso, renovaç
 histórico, leitores inativos, cópias indisponíveis e reversão em caso de erro.
 
 ```powershell
-$env:RUN_POSTGRES_TESTS='1'
-node --env-file=.env --test
+pnpm test:integracao
 ```
 
 A página de devoluções está disponível em `/devolucoes.html`. Ela encerra o empréstimo

@@ -42,7 +42,8 @@ Não há exclusão de leitores nesta etapa.
    do navegador ajuda no preenchimento, mas não substitui a validação da API.
 5. `src/repositories/leitores.js` usa parâmetros `$1`, `$2` etc. para passar os valores
    ao PostgreSQL. Nascimento é devolvido como texto de data, sem conversão de fuso.
-6. `../../js/datas.mjs` é compartilhado pelo navegador e backend. `calcularIdade` subtrai
+6. `src/utils/datas.js` (backend) e `../../js/datas.mjs` (navegador) têm o mesmo cálculo de idade;
+   `backend/test/datas.test.js` compara as duas cópias e falha se divergirem. `calcularIdade` subtrai
    os anos e desconta um ano se o aniversário ainda não chegou. Usa a data civil
    de Fortaleza. Para nascidos em 29/02, em anos não bissextos a idade muda em 01/03.
 
@@ -65,12 +66,11 @@ edite e experimente os filtros. Para testar sem alterar cadastros reais, execute
 no diretório backend:
 
 ```powershell
-$env:RUN_POSTGRES_TESTS='1'
-node --env-file=.env --test
+pnpm test:integracao
 ```
 
 Os testes de integração criam um schema temporário separado e o removem ao final.
 Há verificações de persistência, matrícula duplicada, edição, status, Centro inválido,
 datas futuras/inexistentes, aniversário e ano bissexto. A migração incremental pode
-ser reaplicada com `node --env-file=.env scripts/migrate.js`; arquivos já registrados
+ser reaplicada com `pnpm db:migrate`; arquivos já registrados
 em `schema_migrations` são ignorados. A etapa de autenticação permanece futura.

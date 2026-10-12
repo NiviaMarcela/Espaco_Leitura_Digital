@@ -68,8 +68,7 @@ com renovação, liberação do limite de cinco, persistência do atraso e rever
 gravações quando a atualização do exemplar falha. Usam schemas temporários.
 
 ```powershell
-$env:RUN_POSTGRES_TESTS='1'
-node --env-file=.env --test
+pnpm test:integracao
 ```
 
 Autenticação e identificação do funcionário que recebeu o exemplar serão acrescentadas

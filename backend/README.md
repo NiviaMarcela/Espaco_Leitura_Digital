@@ -2,6 +2,10 @@
 
 O acervo está integrado à API Express e ao PostgreSQL para consultar, cadastrar e editar obras e adicionar exemplares. Abra http://127.0.0.1:3001/acervo.html com o backend em execução. Não use arquivo local ou Live Server para essa página: as chamadas /api usam o mesmo endereço da página. Os antigos livros de demonstração não são importados automaticamente. A migração para Next.js será uma etapa posterior.
 
+O dashboard (`/dashboard.html`) também vem da API: os totais de obras, exemplares disponíveis, empréstimos em curso e atrasados, além da lista de empréstimos recentes, são calculados a partir de `/api/livros` e `/api/emprestimos` por `js/dashboard.js`. As páginas usam Bootstrap e Bootstrap Icons copiados para `assets/vendor/`, sem depender de CDN.
+
+As telas de leitores, empréstimos e devoluções têm guias próprios em `docs/`.
+
 ## Modelo do acervo
 
 ```mermaid
@@ -39,6 +43,7 @@ O código em `src/` fica separado em camadas:
 - `src/services/validation/`: valida e normaliza os dados recebidos antes de chegarem ao banco (`acervo.js`, `leitores.js`, `emprestimos.js` e os helpers de `comum.js`).
 - `src/repositories/`: reúne as consultas SQL e as transações (`acervo.js`, `leitores.js`, `emprestimos.js`). Não depende de rotas nem de services.
 - `src/settings/database.js`: mantém um conjunto reutilizável de conexões, chamado pool.
+- `src/utils/datas.js`: datas civis usadas pelo servidor. O navegador mantém a cópia em `js/datas.mjs`, porque não é possível importar de uma pasta para a outra sem publicar o backend; `test/datas.test.js` compara as duas e falha se elas divergirem.
 - `src/errors/`: erros de domínio que carregam o status HTTP (`erroHttp` mais os atalhos de validação, não encontrado e conflito), usados por services, repositories e pelo tratador de erros.
 - `database/`: as migrações numeradas. `scripts/migrate.js` aplica todos os `.sql` da pasta em ordem de nome e registra cada um em `schema_migrations`, dentro de uma transação.
 - `test/`: testes HTTP com um banco substituto (`api.test.js`) e testes que precisam de PostgreSQL (`*.test.js` com a variável de `test/integracao.env`).
@@ -54,6 +59,7 @@ Use Node.js 22.9 ou superior e pnpm. Os comandos abaixo são executados dentro d
 
 ```powershell
 pnpm install
+pnpm db:migrate   # aplica as migrações numeradas (o banco precisa estar no ar)
 pnpm test
 pnpm dev
 ```
@@ -66,17 +72,20 @@ Também é possível iniciar sem o atalho do gerenciador, depois da instalação
 node --env-file-if-exists=.env src/server.js
 ```
 
-Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas que a API está rodando. A API fica restrita ao próprio computador nesta etapa e ainda não tem autenticação.
+Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas que a API está rodando. A raiz (`/`) redireciona para `/acervo.html`; o `index.html` faz o mesmo. A API fica restrita ao próprio computador nesta etapa e ainda não tem autenticação.
 
-## Configurar PostgreSQL quando estiver instalado
+## Configurar o banco de dados
 
-1. Instale o PostgreSQL e crie um banco dedicado chamado `espaco_leitura` e um usuário do projeto com permissão para criar tabelas nesse banco. O PostgreSQL 18 já foi instalado neste computador, e o banco `espaco_leitura` foi criado pelo usuário; a conexão já foi autenticada e a migração inicial foi aplicada.
-2. Copie `.env.example` para `.env` dentro de `backend`.
-3. Preencha `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` e `PGPASSWORD` no `.env`. Os campos separados permitem usar a senha sem codificação de URL. Mantenha a senha entre aspas para preservar caracteres como `#`; se ela contiver aspas duplas, use aspas simples externas (ou vice-versa). Não envie credenciais pelo chat. O arquivo local foi preparado com `postgres` para esta configuração inicial; para uso da aplicação, prepare depois um usuário dedicado com permissões limitadas. Alternativamente, use `DATABASE_URL`, que tem prioridade sobre os campos separados. Em serviços hospedados, use a conexão e os certificados indicados pelo provedor, sem desativar a verificação TLS.
-4. Execute `pnpm db:migrate`.
-5. Inicie ou reinicie a API e abra `/api/health/db`.
+O projeto não exige Docker nem serviço específico: precisa de um PostgreSQL no ar, local ou hospedado.
 
-O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes de configurar os acessos necessários. A migração inicial insere apenas CE Maranhão, CE Piauí e CE Bahia; a consulta de livros retornará `[]` até haver obras no banco.
+1. Crie um banco dedicado `espaco_leitura` e um usuário com permissão para criar tabelas nesse banco.
+2. Copie `.env.example` para `.env` dentro de `backend` e preencha `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` e `PGPASSWORD`. Os campos separados permitem usar a senha sem codificação de URL. Mantenha a senha entre aspas para preservar caracteres como `#`; se ela contiver aspas duplas, use aspas simples externas (ou vice-versa). Não envie credenciais pelo chat.
+3. Rode `pnpm db:migrate`.
+4. Inicie ou reinicie a API e abra `/api/health/db`.
+
+O banco precisa existir antes de `db:migrate`. Para bancos hospedados, use `DATABASE_URL` (tem prioridade sobre os campos separados) e os certificados indicados pelo provedor, sem desativar a verificação TLS.
+
+O arquivo `.env` está ignorado no Git. A migração inicial insere apenas CE Maranhão, CE Piauí e CE Bahia; a consulta de livros retornará `[]` até haver obras no banco. Convém manter o fuso do banco em `America/Fortaleza`: as regras de data usam a data civil de Fortaleza e o banco também valida `data_nascimento <= CURRENT_DATE`.
 
 ## Endereços desta etapa
 
@@ -87,8 +96,17 @@ O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes 
 | `GET /api/centros` | Lista Centros |
 | `GET /api/livros` | Lista obras e seus exemplares |
 | `GET /api/livros/1` | Consulta uma obra por ID |
+| `POST /api/livros/1/exemplares` | Adiciona cópias a uma obra existente |
+| `POST /api/exemplares/1/baixa` | Registra a baixa de uma cópia |
+| `GET /api/leitores` · `GET /api/leitores/1` | Lista e consulta leitores |
+| `POST /api/leitores` · `PUT /api/leitores/1` | Cadastra e edita leitor |
+| `GET /api/emprestimos` · `GET /api/emprestimos/1` | Lista e consulta empréstimos com histórico |
+| `GET /api/emprestimos/opcoes` | Leitores ativos e cópias disponíveis para a retirada |
+| `POST /api/emprestimos` | Registra a retirada |
+| `POST /api/emprestimos/1/renovacoes` | Renova o prazo |
+| `POST /api/emprestimos/1/devolucao` | Registra a devolução |
 
-ID inválido retorna 400; obra ou rota inexistente, 404; banco não configurado ou conexão recusada, 503; outros erros de consulta, 500. As respostas não incluem credenciais nem SQL interno.
+ID inválido retorna 400; obra, leitor, empréstimo ou rota inexistente, 404; conflito de regra (limite de cinco, cópia já emprestada, registro já encerrado), 409; banco não configurado ou conexão recusada, 503; outros erros de consulta, 500. Banco sem configuração responde com a orientação de criar o `.env`, e não com a mensagem de serviço fora do ar. As respostas não incluem credenciais nem SQL interno.
 
 ### Gravações
 
@@ -104,7 +122,7 @@ Express serve apenas as páginas públicas e as pastas css, js e assets. A raiz 
 
 Os testes HTTP usam respostas controladas no lugar do PostgreSQL. Eles verificam rotas, parâmetros, erros e formato da resposta; não validam a execução do SQL. A suíte automatizada não substitui testes de integração com PostgreSQL real.
 
-Os testes de integração criam e removem somente um schema aleatório com prefixo `teste_acervo_`; o usuário do banco precisa ter permissão para criar e apagar schema. Eles ficam desligados em `pnpm test` e ligados em `pnpm test:integracao`. O registro do que já foi verificado em cada etapa está em `docs/ETAPAS.md`.
+Os testes de integração criam e removem somente um schema aleatório com prefixo `teste_acervo_`; o usuário do banco precisa ter permissão para criar e apagar schema. Eles ficam desligados em `pnpm test` e ligados em `pnpm test:integracao`, rodando contra o PostgreSQL indicado no `.env`. `test/datas.test.js` não precisa de banco: compara o módulo de datas do servidor com o do navegador. O registro do que já foi verificado em cada etapa está em `docs/ETAPAS.md`.
 
 ## Referências
 

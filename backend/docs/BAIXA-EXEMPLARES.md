@@ -23,8 +23,9 @@ A data/hora é gerada pelo banco e exibida no horário de Fortaleza.
 
 Não há exclusão nem reativação nesta etapa. Uma segunda baixa retorna conflito (409).
 Emprestados e reservados também retornam 409, mesmo se alguém tentar enviar pela API.
-O módulo futuro de empréstimos deve encerrar a pendência explicitamente, inclusive
-em caso de perda; não se deve registrar uma devolução fictícia para liberar a baixa.
+Encerrar por perda um exemplar emprestado ainda não tem ação própria: a baixa continua
+bloqueada enquanto o empréstimo estiver aberto, e registrar uma devolução fictícia só para
+liberar a baixa segue sendo incorreto — o fluxo de perda será uma etapa própria.
 O responsável pela baixa poderá ser registrado quando a autenticação for implementada.
 
 Os testes de integração verificam persistência, motivos, limites, bloqueios, exemplar
