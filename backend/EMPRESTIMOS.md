@@ -6,20 +6,20 @@ A migração `004_emprestimos.sql` cria as tabelas desta etapa sem alterar livro
 ## Regras implementadas
 
 - Retirada na data atual, considerando o horário de Fortaleza. O servidor calcula a data.
-- Prazo de 15 dias corridos: retirada em 09/10/2026, devolução até 24/10/2026.
-- No máximo 5 exemplares em aberto por leitor. Atrasados também contam nesse limite.
+- Prazo de 30 dias corridos: retirada em 09/10/2026, devolução até 08/11/2026.
+- No máximo 10 exemplares em aberto por leitor em cada centro. Atrasados também contam nesse limite.
 - Somente leitor ativo e exemplar Disponível. Baixados, reservados, danificados,
   perdidos ou já emprestados são rejeitados pelo backend.
-- Renovação gera novo prazo de 15 dias contados do dia da renovação, preservando a retirada original.
+- Renovação gera novo prazo de 30 dias contados do dia da renovação, preservando a retirada original.
   Cada renovação registra data/hora, prazo anterior e novo prazo.
 - Não há limite de quantidade de renovações nesta etapa. A renovação não ocupa outra vaga.
-- Não se renova quando o prazo atual já cobre os próximos 15 dias. Isso evita renovações
+- Não se renova quando o prazo atual já cobre os próximos 30 dias. Isso evita renovações
   sem efeito no mesmo dia e impede encurtar um prazo existente.
 - Empréstimos atrasados podem ser renovados. Inativos e registros encerrados não podem.
 - Atrasado é uma situação calculada: previsão anterior a hoje e empréstimo ainda aberto.
   No próprio dia previsto o empréstimo ainda está no prazo.
 - Não há restrição entre Centros nem bloqueio de novas retiradas por atraso nesta etapa;
-  o limite de cinco continua valendo. Essas regras adicionais não foram solicitadas.
+  o limite de dez por centro continua valendo. Essas regras adicionais não foram solicitadas.
 
 ## Os blocos do código
 
@@ -53,13 +53,13 @@ a versão vista na tela para detectar uma alteração feita por outra sessão.
 `src/repositories/emprestimos.js` concentra o SQL e as regras. A retirada usa uma transação:
 
 1. Bloqueia a linha do leitor e confere se ele está ativo.
-2. Conta empréstimos abertos e rejeita o sexto.
-3. Bloqueia a linha do exemplar e confere sua disponibilidade.
+2. Bloqueia a linha do exemplar e confere sua disponibilidade e centro.
+3. Conta os empréstimos abertos do leitor nesse centro e rejeita o décimo primeiro.
 4. Insere o empréstimo e muda a cópia para Emprestado.
 5. Confirma tudo com COMMIT. Se qualquer etapa falhar, ROLLBACK desfaz a operação.
 
 O bloqueio do leitor faz uma segunda retirada aguardar a primeira, mesmo sendo de
-livros diferentes. Assim, dois envios simultâneos não ultrapassam o limite de cinco.
+livros diferentes. Assim, dois envios simultâneos não ultrapassam o limite de dez por centro.
 Um índice único no PostgreSQL também impede dois empréstimos abertos da mesma cópia.
 A renovação bloqueia o empréstimo, verifica sua versão e grava histórico e prazo
 na mesma transação. Reenvios antigos não criam renovações duplicadas.
@@ -93,3 +93,9 @@ e atualiza o exemplar na mesma transação; veja `DEVOLUCOES.md`. Não altere st
 datas diretamente no banco para simular uma devolução real. Perdas durante empréstimos
 precisarão de um encerramento específico. Autenticação e identificação do funcionário
 responsável continuam em etapa futura.
+
+## Atualização das regras
+
+O centro considerado é o do exemplar, não o do cadastro do leitor. O formulário mostra o saldo desse centro após selecionar leitor e exemplar; a API confere o limite novamente dentro da transação. Devolver libera uma vaga somente nesse centro.
+
+O prazo de 30 dias se aplica às novas retiradas e renovações. Nenhuma data já registrada é alterada automaticamente, e esta mudança não exige migração do banco. A prévia de renovação recebe o prazo da API.

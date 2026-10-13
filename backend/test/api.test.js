@@ -64,11 +64,24 @@ test("falhas de conexão não expõem dados internos", async t => {
     const get = await iniciar(t, () => {
         throw Object.assign(new Error("senha-de-teste-e-SQL-interno"), { code: "ECONNREFUSED" });
     });
-    for (const caminho of ["/api/health/db", "/api/livros"]) {
+    for (const caminho of ["/api/health/db", "/api/livros", "/api/dashboard"]) {
         const resposta = await get(caminho);
         assert.equal(resposta.status, 503);
         assert.deepEqual(await resposta.json(), { erro: "Banco de dados indisponível." });
     }
+});
+
+test('Dashboard devolve os indicadores e impede cache de dados antigos', async t => {
+    const dados = { totalLivros: 2, exemplaresDisponiveis: 3, leitoresAtivos: 1,
+        emprestimosAbertos: 1, emprestimosAtrasados: 0, recentes: [] };
+    const get = await iniciar(t, async (sql, parametros) => {
+        assert.match(parametros[0], /^\d{4}-\d{2}-\d{2}$/);
+        return { rows: [dados] };
+    });
+    const resposta = await get('/api/dashboard');
+    assert.equal(resposta.status, 200);
+    assert.equal(resposta.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await resposta.json(), dados);
 });
 
 test("timeout de conexão do pg sem código retorna indisponibilidade", async t => {

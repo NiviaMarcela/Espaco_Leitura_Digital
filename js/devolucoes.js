@@ -93,7 +93,7 @@ async function abrir(id) {
     if (ocupado) return;
     ocupado = true; selecionado = null;
     el('formDevolucao').reset(); el('erroDevolucao').textContent = '';
-    el('efeitoDevolucao').textContent = 'A devolução libera uma vaga no limite de 5 exemplares do leitor.';
+    el('efeitoDevolucao').textContent = 'A devolução libera uma vaga no limite de 10 exemplares do leitor neste centro.';
     el('identificacaoDevolucao').textContent = 'Carregando os dados atuais…';
     el('datasDevolucao').textContent = ''; el('situacaoDevolucao').textContent = '';
     el('historicoDevolucao').hidden = true; el('camposDevolucao').hidden = true;
