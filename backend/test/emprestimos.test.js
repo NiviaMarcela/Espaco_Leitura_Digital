@@ -9,11 +9,11 @@ import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import pg from 'pg';
 
-test('prazo de 15 dias corridos atravessa mês, ano e fevereiro bissexto', () => {
-    assert.equal(somarDias('2026-10-09', 15), '2026-10-24');
-    assert.equal(somarDias('2026-12-25', 15), '2027-01-09');
-    assert.equal(somarDias('2024-02-20', 15), '2024-03-06');
-    assert.equal(somarDias('2025-02-20', 15), '2025-03-07');
+test('prazo de 30 dias corridos atravessa mês, ano e fevereiro bissexto', () => {
+    assert.equal(somarDias('2026-10-09', 30), '2026-11-08');
+    assert.equal(somarDias('2026-12-25', 30), '2027-01-24');
+    assert.equal(somarDias('2024-02-20', 30), '2024-03-21');
+    assert.equal(somarDias('2025-02-20', 30), '2025-03-22');
 });
 
 test('empréstimo aceita apenas IDs inteiros e não aceita prazo imposto pelo cliente', () => {
@@ -59,7 +59,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
             const r = await enviar('/leitores', { nome, tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1 });
             assert.equal(r.status, 201); leitores.push(r.body.id);
         }
-        const obra = await enviar('/livros', { titulo: 'Livro de teste', autor: 'Autora', categoria: 'Literatura', quantidade: 15, centroId: 1 });
+        const obra = await enviar('/livros', { titulo: 'Livro de teste', autor: 'Autora', categoria: 'Literatura', quantidade: 20, centroId: 1 });
         const exemplares = obra.body.exemplares.map(e => e.id);
         const criar = (leitorId, exemplarId) => enviar('/emprestimos', { leitorId, exemplarId });
         assert.equal((await enviar('/emprestimos', { leitorId: '1', exemplarId: 1 })).status, 400);
@@ -67,28 +67,28 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal((await criar(leitores[0], 99999)).status, 404);
         await banco.query("UPDATE leitores SET status='Inativo' WHERE id=$1", [leitores[3]]);
         assert.equal((await criar(leitores[3], exemplares[0])).status, 409);
-        for (const [indice, status] of [[10, 'Reservado'], [11, 'Danificado'], [12, 'Perdido']]) {
+        for (const [indice, status] of [[15, 'Reservado'], [16, 'Danificado'], [17, 'Perdido']]) {
             await banco.query('UPDATE exemplares SET status=$2 WHERE id=$1', [exemplares[indice], status]);
             assert.equal((await criar(leitores[0], exemplares[indice])).status, 409);
         }
-        assert.equal((await enviar(`/exemplares/${exemplares[13]}/baixa`, { motivo: 'Perda' })).status, 200);
-        assert.equal((await criar(leitores[0], exemplares[13])).status, 409);
+        assert.equal((await enviar(`/exemplares/${exemplares[18]}/baixa`, { motivo: 'Perda' })).status, 200);
+        assert.equal((await criar(leitores[0], exemplares[18])).status, 409);
 
-        // Seis cliques em cópias diferentes não podem ultrapassar cinco retiradas.
-        const seis = await Promise.all(exemplares.slice(0, 6).map(id => criar(leitores[0], id)));
-        assert.equal(seis.filter(r => r.status === 201).length, 5);
-        assert.equal(seis.filter(r => r.status === 409).length, 1);
-        const primeiro = seis.find(r => r.status === 201).body;
+        // Onze cliques em cópias diferentes não podem ultrapassar dez retiradas no centro.
+        const onze = await Promise.all(exemplares.slice(0, 11).map(id => criar(leitores[0], id)));
+        assert.equal(onze.filter(r => r.status === 201).length, 10);
+        assert.equal(onze.filter(r => r.status === 409).length, 1);
+        const primeiro = onze.find(r => r.status === 201).body;
         assert.equal(primeiro.dataEmprestimo, hojeCivil());
-        assert.equal(primeiro.dataPrevistaDevolucao, somarDias(hojeCivil(), 15));
+        assert.equal(primeiro.dataPrevistaDevolucao, somarDias(hojeCivil(), 30));
         assert.equal((await enviar(`/exemplares/${primeiro.exemplarId}/baixa`, { motivo: 'Perda' })).status, 409);
-        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 5);
+        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 10);
         assert.equal((await enviar('/emprestimos/opcoes')).body.exemplares.some(e => e.id === primeiro.exemplarId), false);
         const disponiveis = (await enviar(`/livros/${obra.body.id}`)).body.exemplares.filter(e => e.status === 'Emprestado');
-        assert.equal(disponiveis.length, 5);
+        assert.equal(disponiveis.length, 10);
 
         // Dois leitores disputam a mesma cópia: só um registro pode ser criado.
-        const disputa = await Promise.all([criar(leitores[1], exemplares[6]), criar(leitores[2], exemplares[6])]);
+        const disputa = await Promise.all([criar(leitores[1], exemplares[11]), criar(leitores[2], exemplares[11])]);
         assert.deepEqual(disputa.map(r => r.status).sort(), [201, 409]);
         const mesmoDia = await enviar(`/emprestimos/${primeiro.id}/renovacoes`, { versao: 0 });
         assert.equal(mesmoDia.status, 409);
@@ -98,28 +98,28 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         // Relógio controlado para testar prazo exato, atraso e renovação sem mudar o Windows.
         let data = '2026-02-20';
         const repo = criarRepositorioEmprestimos(banco, () => data);
-        const historico = await repo.criar({ leitorId: leitores[1], exemplarId: exemplares[7], observacao: 'Teste de relógio' });
-        assert.equal(historico.dataPrevistaDevolucao, '2026-03-07');
-        data = '2026-03-07';
+        const historico = await repo.criar({ leitorId: leitores[1], exemplarId: exemplares[12], observacao: 'Teste de relógio' });
+        assert.equal(historico.dataPrevistaDevolucao, '2026-03-22');
+        data = '2026-03-22';
         assert.equal((await repo.buscar(historico.id)).status, 'Emprestado');
-        data = '2026-03-08';
+        data = '2026-03-23';
         assert.equal((await repo.buscar(historico.id)).status, 'Atrasado');
         const renovadas = await Promise.allSettled([repo.renovar(historico.id, { versao: 0 }), repo.renovar(historico.id, { versao: 0 })]);
         assert.equal(renovadas.filter(r => r.status === 'fulfilled').length, 1);
         assert.equal(renovadas.find(r => r.status === 'rejected').reason.status, 409);
         const renovado = await repo.buscar(historico.id);
-        assert.equal(renovado.dataPrevistaDevolucao, '2026-03-23');
+        assert.equal(renovado.dataPrevistaDevolucao, '2026-04-22');
         assert.equal(renovado.dataEmprestimo, '2026-02-20');
         assert.equal(renovado.status, 'Emprestado');
         assert.equal(renovado.renovacoes.length, 1);
-        assert.equal(renovado.renovacoes[0].dataAnterior, '2026-03-07');
-        assert.equal(renovado.renovacoes[0].novaData, '2026-03-23');
+        assert.equal(renovado.renovacoes[0].dataAnterior, '2026-03-22');
+        assert.equal(renovado.renovacoes[0].novaData, '2026-04-22');
         assert.equal(renovado.exemplarId, historico.exemplarId);
 
         // A rota HTTP também renova e devolve o novo histórico completo.
         const httpRenovado = await enviar(`/emprestimos/${historico.id}/renovacoes`, { versao: 1 });
         assert.equal(httpRenovado.status, 200);
-        assert.equal(httpRenovado.body.dataPrevistaDevolucao, somarDias(hojeCivil(), 15));
+        assert.equal(httpRenovado.body.dataPrevistaDevolucao, somarDias(hojeCivil(), 30));
         assert.equal(httpRenovado.body.renovacoes.length, 2);
         await banco.query("UPDATE leitores SET status='Inativo' WHERE id=$1", [leitores[1]]);
         data = '2027-01-01';
@@ -136,17 +136,33 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal(primeiraDevolucao.status, 200);
         assert.equal(primeiraDevolucao.body.dataDevolucao, hojeCivil());
         assert.equal(primeiraDevolucao.body.devolucao.diasAtraso, 0);
-        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 4);
+        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 9);
         assert.equal((await criar(leitores[0], primeiro.exemplarId)).status, 201);
-        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 5);
+        assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 10);
         assert.equal((await enviar(`/emprestimos/${primeiro.id}/devolucao`, { versao: 1, condicao: 'Disponível' })).status, 409);
+        // Limites independentes: dez no centro 1 não bloqueiam dez no centro 2.
+        const outraObra = await enviar('/livros', { titulo: 'Outro centro', autor: 'Autora', categoria: 'Literatura', quantidade: 11, centroId: 2 });
+        const outroCentro = await Promise.all(outraObra.body.exemplares.map(e => criar(leitores[0], e.id)));
+        assert.equal(outroCentro.filter(r => r.status === 201).length, 10);
+        assert.equal(outroCentro.filter(r => r.status === 409).length, 1);
+        let saldo = (await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]);
+        assert.equal(saldo.abertos, 20);
+        assert.deepEqual(saldo.abertosPorCentro, { '1': 10, '2': 10 });
+        const segundoCentro = outroCentro.find(r => r.status === 201).body;
+        assert.equal((await enviar('/emprestimos/' + segundoCentro.id + '/devolucao', { versao: 0, condicao: 'Disponível' })).status, 200);
+        saldo = (await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]);
+        assert.deepEqual(saldo.abertosPorCentro, { '1': 10, '2': 9 });
+        assert.equal((await criar(leitores[0], segundoCentro.exemplarId)).status, 201);
+        const sobra = (await enviar('/emprestimos/opcoes')).body.exemplares.find(e => e.centroId === 1);
+        assert.equal((await criar(leitores[0], sobra.id)).status, 409);
+
         // O reenvio do empréstimo antigo não pode liberar a cópia agora emprestada de novo.
         assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1', [primeiro.exemplarId])).rows[0].status, 'Emprestado');
         assert.equal((await enviar('/emprestimos/99999/devolucao', { versao: 0, condicao: 'Disponível' })).status, 404);
 
         data = '2026-10-01';
-        const atrasoTeste = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[9], observacao: null });
-        data = '2026-10-20';
+        const atrasoTeste = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[14], observacao: null });
+        data = '2026-11-04';
         await assert.rejects(repo.devolver(atrasoTeste.id, { versao: 99, condicao: 'Disponível' }), { status: 409 });
         await banco.query("UPDATE leitores SET status='Inativo' WHERE id=$1", [leitores[2]]);
         const devolucoesSimultaneas = await Promise.allSettled([repo.devolver(atrasoTeste.id, { versao: 0, condicao: 'Danificado', observacao: 'Páginas rasgadas' }), repo.devolver(atrasoTeste.id, { versao: 0, condicao: 'Disponível', observacao: null })]);
@@ -154,41 +170,41 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal(devolucoesSimultaneas.find(r => r.status === 'rejected').reason.status, 409);
         const resultadoDevolucao = await repo.buscar(atrasoTeste.id);
         assert.equal(resultadoDevolucao.devolucao.diasAtraso, 4);
-        assert.equal(resultadoDevolucao.dataDevolucao, '2026-10-20');
+        assert.equal(resultadoDevolucao.dataDevolucao, '2026-11-04');
         assert.equal((await banco.query('SELECT count(*)::int AS total FROM devolucoes WHERE emprestimo_id=$1', [atrasoTeste.id])).rows[0].total, 1);
-        data = '2026-11-01';
+        data = '2026-11-10';
         assert.equal((await repo.buscar(atrasoTeste.id)).devolucao.diasAtraso, 4);
         await banco.query("UPDATE leitores SET status='Ativo' WHERE id=$1", [leitores[2]]);
 
         // Renovação e devolução da mesma versão não podem ser confirmadas juntas.
         data = '2026-10-01';
-        const disputaOperacoes = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[14], observacao: null });
+        const disputaOperacoes = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[19], observacao: null });
         data = '2026-10-05';
         const corrida = await Promise.allSettled([repo.renovar(disputaOperacoes.id, { versao: 0 }), repo.devolver(disputaOperacoes.id, { versao: 0, condicao: 'Disponível', observacao: null })]);
         assert.equal(corrida.filter(r => r.status === 'fulfilled').length, 1);
         assert.equal(corrida.find(r => r.status === 'rejected').reason.status, 409);
         let atual = await repo.buscar(disputaOperacoes.id);
         if (atual.dataDevolucao) {
-            atual = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[14], observacao: null });
+            atual = await repo.criar({ leitorId: leitores[2], exemplarId: exemplares[19], observacao: null });
         }
-        await banco.query(`ALTER TABLE exemplares ADD CONSTRAINT falha_devolucao_teste CHECK (id <> ${exemplares[14]} OR status <> 'Danificado')`);
+        await banco.query(`ALTER TABLE exemplares ADD CONSTRAINT falha_devolucao_teste CHECK (id <> ${exemplares[19]} OR status <> 'Danificado')`);
         await assert.rejects(repo.devolver(atual.id, { versao: atual.versao, condicao: 'Danificado', observacao: 'Dano teste' }));
         assert.equal((await repo.buscar(atual.id)).dataDevolucao, null);
         assert.equal((await banco.query('SELECT count(*)::int AS total FROM devolucoes WHERE emprestimo_id=$1', [atual.id])).rows[0].total, 0);
-        assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1', [exemplares[14]])).rows[0].status, 'Emprestado');
+        assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1', [exemplares[19]])).rows[0].status, 'Emprestado');
         await banco.query('ALTER TABLE exemplares DROP CONSTRAINT falha_devolucao_teste');
         const danificado = await repo.devolver(atual.id, { versao: atual.versao, condicao: 'Danificado', observacao: 'Capa rasgada' });
         assert.equal(danificado.devolucao.condicao, 'Danificado');
         assert.equal(danificado.devolucao.observacao, 'Capa rasgada');
-        assert.equal((await enviar('/emprestimos/opcoes')).body.exemplares.some(e => e.id === exemplares[14]), false);
-        await assert.rejects(repo.criar({ leitorId: leitores[2], exemplarId: exemplares[14], observacao: null }), { status: 409 });
+        assert.equal((await enviar('/emprestimos/opcoes')).body.exemplares.some(e => e.id === exemplares[19]), false);
+        await assert.rejects(repo.criar({ leitorId: leitores[2], exemplarId: exemplares[19], observacao: null }), { status: 409 });
 
         // Falha depois do INSERT deve reverter também o empréstimo inteiro.
-        await banco.query("ALTER TABLE exemplares ADD CONSTRAINT falha_teste CHECK (id <> " + exemplares[8] + " OR status <> 'Emprestado')");
+        await banco.query("ALTER TABLE exemplares ADD CONSTRAINT falha_teste CHECK (id <> " + exemplares[13] + " OR status <> 'Emprestado')");
         const antes = (await banco.query('SELECT count(*)::integer AS total FROM emprestimos')).rows[0].total;
-        assert.equal((await criar(leitores[2], exemplares[8])).status, 500);
+        assert.equal((await criar(leitores[2], exemplares[13])).status, 500);
         assert.equal((await banco.query('SELECT count(*)::integer AS total FROM emprestimos')).rows[0].total, antes);
-        assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1', [exemplares[8]])).rows[0].status, 'Disponível');
+        assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1', [exemplares[13]])).rows[0].status, 'Disponível');
     } finally {
         if (servidor) await new Promise(resolve => { servidor.close(resolve); servidor.closeAllConnections(); });
         if (banco) await banco.end();
