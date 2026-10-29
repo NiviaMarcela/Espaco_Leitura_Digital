@@ -13,6 +13,20 @@ async function iniciar(t, query) {
     return caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`);
 }
 
+test("biblioteca é servida e está nos menus de todas as páginas", async t => {
+    const get = await iniciar(t, () => { throw new Error("Página não deve consultar o banco"); });
+    for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes"]) {
+        const resposta = await get(`/${pagina}.html`);
+        assert.equal(resposta.status, 200);
+        const html = await resposta.text();
+        assert.equal((html.match(/href="biblioteca.html"/g) || []).length, 2);
+        assert.match(html, /css\/style.css/);
+    }
+    const script = await get('/js/biblioteca.js');
+    assert.equal(script.status, 200);
+    assert.match(await script.text(), /\/api\/livros/);
+});
+
 test("saúde da API não depende de uma conexão com o banco", async t => {
     const get = await iniciar(t, () => { throw new Error("Não deveria consultar"); });
     const resposta = await get("/api/health");

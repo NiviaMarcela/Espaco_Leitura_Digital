@@ -1,8 +1,8 @@
 import { erroHttp } from '../validation.js';
 import { hojeCivil, somarDias } from '../../../js/datas.mjs';
 
-export const PRAZO_DIAS = 15;
-export const LIMITE_EXEMPLARES = 5;
+export const PRAZO_DIAS = 30;
+export const LIMITE_EXEMPLARES = 10;
 
 const consulta = `SELECT p.id, p.leitor_id AS "leitorId", l.nome AS leitor,
     l.status AS "statusLeitor", l.matricula_codigo AS "matriculaCodigo",
@@ -22,7 +22,7 @@ const consulta = `SELECT p.id, p.leitor_id AS "leitorId", l.nome AS leitor,
 
 // Receber um relógio permite testar viradas de mês e atrasos sem alterar a data do computador.
 export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
-    const comStatus = (item, dataHoje) => item ? { ...item,
+    const comStatus = (item, dataHoje) => item ? { ...item, prazoDias: PRAZO_DIAS,
         status: item.dataDevolucao ? 'Devolvido' : item.dataPrevistaDevolucao < dataHoje ? 'Atrasado' : 'Emprestado'
     } : null;
     async function buscar(id, conexao = banco, dataHoje = hoje()) {
@@ -74,9 +74,14 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
         },
         async opcoes() {
             const leitores = (await banco.query(`SELECT l.id, l.nome, l.matricula_codigo AS "matriculaCodigo", c.nome AS centro,
-                (SELECT count(*)::integer FROM emprestimos p WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL) AS abertos
+                (SELECT count(*)::integer FROM emprestimos p WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL) AS abertos,
+                COALESCE((SELECT jsonb_object_agg(contagem.centro_id, contagem.total) FROM (
+                    SELECT e.centro_id, count(*)::integer AS total FROM emprestimos p
+                    JOIN exemplares e ON e.id=p.exemplar_id
+                    WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL GROUP BY e.centro_id
+                ) contagem), '{}'::jsonb) AS "abertosPorCentro"
                 FROM leitores l JOIN centros c ON c.id=l.centro_id WHERE l.status='Ativo' ORDER BY l.nome, l.id`)).rows;
-            const exemplares = (await banco.query(`SELECT e.id, e.codigo, b.titulo, c.nome AS centro FROM exemplares e
+            const exemplares = (await banco.query(`SELECT e.id, e.codigo, b.titulo, c.nome AS centro, e.centro_id AS "centroId" FROM exemplares e
                 JOIN livros b ON b.id=e.livro_id JOIN centros c ON c.id=e.centro_id
                 WHERE e.status='Disponível' AND NOT EXISTS (SELECT 1 FROM emprestimos p WHERE p.exemplar_id=e.id AND p.data_devolucao IS NULL)
                 ORDER BY b.titulo, e.id`)).rows;
@@ -90,11 +95,14 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
                 const leitor = (await c.query('SELECT status FROM leitores WHERE id=$1 FOR UPDATE', [dados.leitorId])).rows[0];
                 if (!leitor) throw erroHttp(404, 'Leitor não encontrado.');
                 if (leitor.status !== 'Ativo') throw erroHttp(409, 'Somente leitores ativos podem realizar empréstimos.');
-                const { rows } = await c.query('SELECT count(*)::integer AS total FROM emprestimos WHERE leitor_id=$1 AND data_devolucao IS NULL', [dados.leitorId]);
-                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, 'Este leitor já tem 5 exemplares emprestados.');
-                const exemplar = (await c.query('SELECT status FROM exemplares WHERE id=$1 FOR UPDATE', [dados.exemplarId])).rows[0];
+                const exemplar = (await c.query('SELECT status, centro_id FROM exemplares WHERE id=$1 FOR UPDATE', [dados.exemplarId])).rows[0];
                 if (!exemplar) throw erroHttp(404, 'Exemplar não encontrado.');
                 if (exemplar.status !== 'Disponível') throw erroHttp(409, 'Este exemplar não está disponível para empréstimo.');
+                // O centro é o da cópia retirada, independentemente do centro de cadastro do leitor.
+                const { rows } = await c.query(`SELECT count(*)::integer AS total FROM emprestimos p
+                    JOIN exemplares e ON e.id=p.exemplar_id
+                    WHERE p.leitor_id=$1 AND p.data_devolucao IS NULL AND e.centro_id=$2`, [dados.leitorId, exemplar.centro_id]);
+                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, `Este leitor já tem ${LIMITE_EXEMPLARES} exemplares emprestados neste centro.`);
                 const dataHoje = hoje();
                 const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao)
                     VALUES ($1,$2,$3,$4,$5) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao]);
@@ -115,7 +123,7 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
                 if (exemplar.status !== 'Emprestado') throw erroHttp(409, 'A situação do exemplar não permite renovar este empréstimo.');
                 const dataHoje = hoje();
                 const novaData = somarDias(dataHoje, PRAZO_DIAS);
-                if (novaData <= emprestimo.prazo) throw erroHttp(409, 'O prazo atual já cobre os próximos 15 dias. Ainda não é necessário renovar.');
+                if (novaData <= emprestimo.prazo) throw erroHttp(409, `O prazo atual já cobre os próximos ${PRAZO_DIAS} dias. Ainda não é necessário renovar.`);
                 await c.query('INSERT INTO renovacoes_emprestimo(emprestimo_id, data_anterior, nova_data) VALUES ($1,$2,$3)', [id, emprestimo.prazo, novaData]);
                 await c.query('UPDATE emprestimos SET data_prevista_devolucao=$2, versao=versao+1 WHERE id=$1', [id, novaData]);
                 return buscar(id, c, dataHoje);

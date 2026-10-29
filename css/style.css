@@ -871,36 +871,7 @@ body {
 
 .custom-table {
 
-    width: 100%;
-
     margin: 0;
-
-}
-
-@media (max-width: 575.98px) {
-
-    .custom-table {
-        table-layout: fixed;
-    }
-
-    .custom-table th:first-child,
-    .custom-table td:first-child {
-        width: 75%;
-    }
-
-    .custom-table th:last-child,
-    .custom-table td:last-child {
-        width: 25%;
-    }
-
-    .custom-table .book-info > div:last-child {
-        min-width: 0;
-    }
-
-    .custom-table .book-info strong,
-    .custom-table .book-info span {
-        overflow-wrap: anywhere;
-    }
 
 }
 

@@ -93,7 +93,7 @@ async function carregar() {
 function preencherOpcoes() {
     if (!opcoes) return;
     for (const [id, lista, busca, rotulo] of [
-        ['leitorEmprestimo', opcoes.leitores, el('buscaLeitorEmprestimo').value, l => `${l.nome} · ${l.matriculaCodigo || 'Sem matrícula'} · ${l.centro} · ${l.abertos}/${opcoes.limite} em aberto`],
+        ['leitorEmprestimo', opcoes.leitores, el('buscaLeitorEmprestimo').value, l => `${l.nome} · ${l.matriculaCodigo || 'Sem matrícula'} · ${l.centro} · ${l.abertos} em aberto no total`],
         ['exemplarEmprestimo', opcoes.exemplares, el('buscaExemplarEmprestimo').value, e => `${e.titulo} · ${e.codigo} · ${e.centro}`]
     ]) {
         const select = el(id);
@@ -101,7 +101,6 @@ function preencherOpcoes() {
         select.replaceChildren(new Option('Selecione', ''));
         lista.filter(item => normalizar(rotulo(item)).includes(normalizar(busca.trim()))).forEach(item => {
             const option = new Option(rotulo(item), String(item.id));
-            if (id === 'leitorEmprestimo' && item.abertos >= opcoes.limite) option.disabled = true;
             select.add(option);
         });
         if ([...select.options].some(o => o.value === anterior && !o.disabled)) select.value = anterior;
@@ -110,7 +109,12 @@ function preencherOpcoes() {
 }
 function mostrarSaldo() {
     const leitor = opcoes?.leitores.find(l => l.id === Number(el('leitorEmprestimo').value));
-    el('saldoLeitor').textContent = leitor ? `${leitor.abertos} em aberto; pode retirar mais ${Math.max(0, opcoes.limite - leitor.abertos)} exemplar(es).` : 'Até 5 empréstimos em aberto por leitor, incluindo atrasados.';
+    const exemplar = opcoes?.exemplares.find(e => e.id === Number(el('exemplarEmprestimo').value));
+    const abertos = leitor && exemplar ? (leitor.abertosPorCentro[exemplar.centroId] || 0) : 0;
+    el('saldoLeitor').textContent = leitor && exemplar
+        ? `${exemplar.centro}: ${abertos}/${opcoes.limite} em aberto; pode retirar mais ${Math.max(0, opcoes.limite - abertos)} exemplar(es) neste centro.`
+        : 'Selecione leitor e exemplar para consultar o saldo por centro. Até 10 em aberto por leitor em cada centro, incluindo atrasados.';
+    el('salvarEmprestimo').disabled = ocupado || !leitor || !exemplar || abertos >= opcoes.limite;
 }
 
 function bloquearModal(id, bloqueado) {
@@ -139,13 +143,13 @@ async function abrirNovo() {
     finally {
         ocupado = false;
         bloquearModal('modalEmprestimo', false);
-        el('salvarEmprestimo').disabled = !opcoes?.leitores.some(l => l.abertos < opcoes.limite) || !opcoes?.exemplares.length;
+        mostrarSaldo();
     }
 }
 
 el('formEmprestimo').addEventListener('submit', async evento => {
     evento.preventDefault();
-    if (ocupado || !el('formEmprestimo').reportValidity()) return;
+    if (ocupado || el('salvarEmprestimo').disabled || !el('formEmprestimo').reportValidity()) return;
     const dados = { leitorId: Number(el('leitorEmprestimo').value), exemplarId: Number(el('exemplarEmprestimo').value), observacao: el('observacaoEmprestimo').value.trim() };
     ocupado = true;
     bloquearModal('modalEmprestimo', true);
@@ -162,6 +166,7 @@ el('formEmprestimo').addEventListener('submit', async evento => {
         ocupado = false;
         bloquearModal('modalEmprestimo', false);
         el('salvarEmprestimo').textContent = 'Registrar empréstimo';
+        mostrarSaldo();
         renderizar();
     }
     if (salvo) bootstrap.Modal.getOrCreateInstance(el('modalEmprestimo')).hide();
@@ -182,7 +187,7 @@ async function abrirRenovacao(id) {
         const p = await api(`/emprestimos/${id}`);
         selecionado = p;
         atualizarRegistro(p);
-        const novaData = somarDias(hojeCivil(), 15);
+        const novaData = somarDias(hojeCivil(), p.prazoDias);
         permitido = !p.dataDevolucao && p.statusLeitor === 'Ativo' && novaData > p.dataPrevistaDevolucao;
         el('identificacaoRenovacao').textContent = `${p.leitor} · ${p.livro} · ${p.codigo}`;
         el('observacaoRenovacao').textContent = p.observacao || 'Sem observação.';
@@ -192,7 +197,7 @@ async function abrirRenovacao(id) {
         el('avisoRenovacao').textContent = p.dataDevolucao ? `Devolvido em ${formatarData(p.dataDevolucao)}.`
             : p.statusLeitor !== 'Ativo' ? 'O leitor está inativo. Regularize o cadastro antes de renovar.'
             : permitido ? 'A renovação mantém este exemplar com o leitor e não ocupa uma nova vaga.'
-            : 'O prazo atual já cobre os próximos 15 dias. Ainda não é necessário renovar.';
+            : `O prazo atual já cobre os próximos ${p.prazoDias} dias. Ainda não é necessário renovar.`;
         const historico = p.renovacoes.length ? p.renovacoes.map(r => `${new Intl.DateTimeFormat('pt-BR', {dateStyle:'short', timeStyle:'short', timeZone:'America/Fortaleza'}).format(new Date(r.renovadoEm))}: de ${formatarData(r.dataAnterior)} para ${formatarData(r.novaData)}`) : ['Nenhuma renovação registrada.'];
         historico.forEach(texto => { const li = document.createElement('li'); li.textContent = texto; el('historicoRenovacoes').append(li); });
     } catch (erro) { el('erroRenovacao').textContent = erro.message; }
@@ -234,5 +239,6 @@ el('buscaEmprestimo').addEventListener('input', renderizar);
 el('statusEmprestimo').addEventListener('change', renderizar);
 ['buscaLeitorEmprestimo', 'buscaExemplarEmprestimo'].forEach(id => el(id).addEventListener('input', preencherOpcoes));
 el('leitorEmprestimo').addEventListener('change', mostrarSaldo);
+el('exemplarEmprestimo').addEventListener('change', mostrarSaldo);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderizar(); });
 carregar();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca Virtual | Instituto Janela para o Mundo</title>
+    <title>Biblioteca | Espaço de Leitura Digital</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -17,19 +17,20 @@
                 alt="Instituto Janela para o Mundo"
             >
             <div class="system-name">
-                <strong>Biblioteca Virtual</strong>
-                <span>Instituto Janela para o Mundo</span>
+                <strong>Espaço de Leitura Digital</strong>
+                <span>Gestão de acervo e empréstimos</span>
             </div>
         </div>
 
         <nav class="menu" aria-label="Menu principal">
 
             <a class="menu-item" href="dashboard.html">
-                <i class="bi bi-grid-1x2" aria-hidden="true"></i>Dashboard
+                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard
             </a>
-            <a class="menu-item active" href="#catalogo" aria-current="page">
-                <i class="bi bi-book" aria-hidden="true"></i>Biblioteca
+            <a class="menu-item active" href="biblioteca.html" aria-current="page">
+                <i class="bi bi-collection" aria-hidden="true"></i>Biblioteca
             </a>
+                <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
             <a class="menu-item" href="leitores.html">
                 <i class="bi bi-people" aria-hidden="true"></i>Leitores
             </a>
@@ -49,13 +50,14 @@
 
     <div class="offcanvas offcanvas-start sidebar-mobile" tabindex="-1" id="menuMobile" aria-labelledby="menuMobileTitulo">
         <div class="offcanvas-header">
-            <h2 class="offcanvas-title fs-6" id="menuMobileTitulo">Biblioteca Virtual</h2>
+            <h2 class="offcanvas-title fs-6" id="menuMobileTitulo">Espaço de Leitura Digital</h2>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
         </div>
         <div class="offcanvas-body">
             <nav class="menu" aria-label="Menu principal">
-                <a class="menu-item" href="dashboard.html"><i class="bi bi-grid-1x2" aria-hidden="true"></i>Início</a>
-                <a class="menu-item active" href="#catalogo" aria-current="page"><i class="bi bi-book" aria-hidden="true"></i>Biblioteca</a>
+                <a class="menu-item" href="dashboard.html"><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard</a>
+                <a class="menu-item active" href="biblioteca.html" aria-current="page"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+                <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
                 <a class="menu-item" href="leitores.html"><i class="bi bi-people" aria-hidden="true"></i>Leitores</a>
                 <a class="menu-item" href="emprestimos.html"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Empréstimos</a>
                 <a class="menu-item" href="devolucoes.html"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>Devoluções</a>
@@ -70,15 +72,15 @@
                     <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
                 <div>
-                    <h1>Biblioteca Virtual</h1>
-                    <p>Instituto Janela para o Mundo</p>
+                    <h1>Espaço de Leitura Digital</h1>
+                    <p>Acompanhe e gerencie as atividades do espaço de leitura.</p>
                 </div>
             </div>
             <div class="user-info">
-                <div class="user-avatar" aria-hidden="true">BV</div>
-                <div>
-                    <strong>Espaço de Leitura</strong>
-                    <span>Acervo digital</span>
+                <div class="user-avatar" aria-hidden="true">SC</div>
+                <div class="d-none d-md-block">
+                    <strong>Silvia</strong>
+                    <span>Administrador</span>
                 </div>
             </div>
         </header>
@@ -86,120 +88,52 @@
         <section class="page-header">
             <div>
                 <span class="page-eyebrow">Acervo</span>
-                <h2>Todos os livros</h2>
+                <h2>Biblioteca</h2>
                 <p>Encontre livros por categoria, faixa etária, título ou autor.</p>
             </div>
             <a class="btn btn-primary-custom" href="acervo.html">
-                <i class="bi bi-collection" aria-hidden="true"></i>Acervo completo
+                <i class="bi bi-collection" aria-hidden="true"></i>Gerenciar acervo
             </a>
         </section>
 
+        <!-- O JavaScript preenche os filtros e a tabela com os dados da API. -->
+        <div class="mb-3">
+            <p id="avisoBiblioteca" role="status">Carregando biblioteca…</p>
+            <button id="recarregarBiblioteca" type="button" class="btn btn-secondary-custom" hidden>Tentar novamente</button>
+        </div>
         <div class="row g-4">
             <aside class="col-lg-3" aria-label="Filtros do catálogo">
                 <section class="content-card">
-                    <div class="card-heading">
-                        <div><h3>Categorias</h3><p>124 livros</p></div>
+                    <div class="card-heading"><div><h3>Filtrar livros</h3><p id="totalBiblioteca">Consultando acervo…</p></div></div>
+                    <label class="form-label" for="categoriaBiblioteca">Categoria</label>
+                    <select id="categoriaBiblioteca" class="form-select mb-3" disabled><option value="">Todas as categorias</option></select>
+                    <label class="form-label" for="faixaBiblioteca">Faixa etária</label>
+                    <select id="faixaBiblioteca" class="form-select mb-3" disabled><option value="">Todas as faixas</option></select>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="disponiveisBiblioteca" disabled>
+                        <label class="form-check-label" for="disponiveisBiblioteca">Somente disponíveis</label>
                     </div>
-                    <div class="quick-actions">
-                        <a class="quick-action" href="#catalogo">
-                            <div class="quick-icon icon-blue"><i class="bi bi-collection" aria-hidden="true"></i></div>
-                            <div><strong>Todos os livros</strong><span>124 títulos</span></div>
-                            <span class="quick-arrow">›</span>
-                        </a>
-                        <a class="quick-action" href="#catalogo">
-                            <div class="quick-icon icon-pink"><i class="bi bi-stars" aria-hidden="true"></i></div>
-                            <div><strong>Infantil</strong><span>28 livros</span></div>
-                            <span class="quick-arrow">›</span>
-                        </a>
-                        <a class="quick-action" href="#catalogo">
-                            <div class="quick-icon icon-green"><i class="bi bi-lightning" aria-hidden="true"></i></div>
-                            <div><strong>Juvenil</strong><span>24 livros</span></div>
-                            <span class="quick-arrow">›</span>
-                        </a>
-                        <a class="quick-action" href="#catalogo">
-                            <div class="quick-icon icon-purple"><i class="bi bi-book-half" aria-hidden="true"></i></div>
-                            <div><strong>Literatura</strong><span>26 livros</span></div>
-                            <span class="quick-arrow">›</span>
-                        </a>
-                        <a class="quick-action" href="#catalogo">
-                            <div class="quick-icon icon-yellow"><i class="bi bi-lightbulb" aria-hidden="true"></i></div>
-                            <div><strong>Ciências</strong><span>12 livros</span></div>
-                            <span class="quick-arrow">›</span>
-                        </a>
-                    </div>
-
-                    <hr>
-
-                    <h3 class="mb-3">Faixa etária</h3>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="idade06">
-                        <label class="form-check-label" for="idade06">0 a 6 anos</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="idade712">
-                        <label class="form-check-label" for="idade712">7 a 12 anos</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="idade1317">
-                        <label class="form-check-label" for="idade1317">13 a 17 anos</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="idadeAdultos">
-                        <label class="form-check-label" for="idadeAdultos">Adultos</label>
-                    </div>
+                    <button id="limparBiblioteca" type="button" class="btn btn-secondary-custom" disabled>Limpar filtros</button>
                 </section>
             </aside>
-
             <section class="col-lg-9" id="catalogo" aria-label="Catálogo de livros">
                 <div class="content-card">
-                    <div class="card-heading">
-                        <div>
-                            <h3>Livros disponíveis</h3>
-                            <p>124 resultados no acervo</p>
-                        </div>
-                    </div>
-
+                    <div class="card-heading"><div><h3>Catálogo de livros</h3><p id="resultadosBiblioteca" role="status">Aguardando dados…</p></div></div>
                     <div class="filters-wrapper mb-4">
                         <label class="search-box">
                             <i class="bi bi-search" aria-hidden="true"></i>
-                            <input type="search" placeholder="Buscar por título, autor ou assunto" aria-label="Buscar livros">
+                            <input id="buscaBiblioteca" type="search" placeholder="Buscar título, autor ou assunto" aria-label="Buscar livros" disabled>
                         </label>
-                        <select class="form-select filter-select" aria-label="Ordenar livros">
-                            <option>Mais recentes</option>
-                            <option>Título: A a Z</option>
-                            <option>Autor: A a Z</option>
+                        <select id="ordemBiblioteca" class="form-select filter-select" aria-label="Ordenar livros" disabled>
+                            <option value="recentes">Últimos cadastrados</option>
+                            <option value="titulo">Título: A a Z</option>
+                            <option value="autor">Autor: A a Z</option>
                         </select>
                     </div>
-
-                    <div class="table-responsive">
+                    <div class="table-responsive" role="region" aria-label="Livros do catálogo" tabindex="0">
                         <table class="table custom-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Livro</th>
-                                    <th class="d-none d-sm-table-cell" scope="col">Categoria</th>
-                                    <th class="d-none d-sm-table-cell" scope="col">Faixa etária</th>
-                                    <th class="d-none d-sm-table-cell" scope="col">Disponibilidade</th>
-                                    <th scope="col"><span class="visually-hidden">Ações</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="book-info">
-                                            <div class="book-cover"><i class="bi bi-book-half" aria-hidden="true"></i></div>
-                                            <div><strong>O Pequeno Príncipe</strong><span>Antoine de Saint-Exupéry</span></div>
-                                        </div>
-                                    </td>
-                                    <td class="d-none d-sm-table-cell"><span class="category-badge">Literatura</span></td>
-                                    <td class="d-none d-sm-table-cell">7 a 12 anos</td>
-                                    <td class="d-none d-sm-table-cell"><span class="badge-status badge-green">Disponível</span></td>
-                                    <td class="text-end">
-                                        <a class="table-action" href="acervo.html" aria-label="Ver detalhes do livro">
-                                            <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th scope="col">Livro</th><th scope="col">Categoria</th><th scope="col">Faixa etária</th><th scope="col">Disponibilidade</th><th scope="col">Detalhes</th></tr></thead>
+                            <tbody id="tabelaBiblioteca"><tr><td colspan="5">Carregando livros…</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -210,6 +144,20 @@
             <p>Instituto Janela para o Mundo · Espaço de Leitura Digital</p>
         </footer>
     </main>
+
+    <!-- Um único modal mostra o livro escolhido, sem sair da biblioteca. -->
+    <div class="modal fade" id="modalBiblioteca" tabindex="-1" aria-labelledby="tituloLivroBiblioteca" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content custom-modal">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="tituloLivroBiblioteca">Detalhes do livro</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar detalhes"></button>
+                </div>
+                <div class="modal-body" id="detalhesBiblioteca"></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button></div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/biblioteca.js"></script>

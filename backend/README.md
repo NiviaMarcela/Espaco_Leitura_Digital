@@ -22,7 +22,7 @@ O banco gera os identificadores e códigos `EX-0001`, `EX-0002` etc. Não usamos
 
 Os status físicos previstos são Disponível, Emprestado, Reservado, Danificado, Perdido e Baixado. Indisponível é uma classificação geral calculada da obra. A presença de Reservado no modelo não implementa o fluxo de reservas.
 
-ISBN é opcional e não tem restrição de unicidade nesta etapa. Categorias e faixas etárias permanecem textuais por enquanto. Leitores e empréstimos já têm migrações próprias; usuários e permissões serão implementados depois. Empréstimos usam prazo de 15 dias corridos e limite de 5 exemplares simultâneos por leitor. Consulte `EMPRESTIMOS.md` para entender as renovações e o fluxo do código.
+ISBN é opcional e não tem restrição de unicidade nesta etapa. Categorias e faixas etárias permanecem textuais por enquanto. Leitores e empréstimos já têm migrações próprias; usuários e permissões serão implementados depois. Empréstimos usam prazo de 30 dias corridos e limite de 10 exemplares simultâneos por leitor em cada centro. Consulte `EMPRESTIMOS.md` para entender as renovações e o fluxo do código.
 
 ## Organização e fluxo
 

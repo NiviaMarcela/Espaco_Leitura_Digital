@@ -64,7 +64,7 @@ as informações do recebimento.
 ## Verificação
 
 Os testes cobrem devolução normal/danificada, leitor inativo, duplicação, corrida
-com renovação, liberação do limite de cinco, persistência do atraso e reversão de
+com renovação, liberação do limite de dez por centro, persistência do atraso e reversão de
 gravações quando a atualização do exemplar falha. Usam schemas temporários.
 
 ```powershell

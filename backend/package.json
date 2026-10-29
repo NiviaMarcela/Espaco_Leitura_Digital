@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22.9.0"
-  },
+  "engines": { "node": ">=22.9.0" },
   "scripts": {
     "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "start": "node --env-file-if-exists=.env src/server.js",
@@ -13,15 +11,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "express": "^5.3.0",
+    "express": "^5.1.0",
     "pg": "^8.16.0"
-  },
-  "description": "O acervo está integrado à API Express e ao PostgreSQL para consultar, cadastrar e editar obras e adicionar exemplares. Abra http://127.0.0.1:3001/acervo.html com o backend em execução. Não use arquivo local ou Live Server para essa página: as chamadas /api usam o mesmo endereço da página. Os antigos livros de demonstração não são importados automaticamente. A migração para Next.js será uma etapa posterior.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }
