@@ -57,21 +57,20 @@ export function criarRepositorioAutenticacao(banco) {
 
     return {
         async inicializarAdministrador(email, senha) {
-            const existente = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
-            if (existente.rowCount) return;
-            if (!email || !senha) {
-                throw new Error('Configure FIRST_ADMIN_EMAIL e FIRST_ADMIN_PASSWORD no backend/.env para criar o primeiro administrador.');
-            }
             const emailNormalizado = normalizarEmail(email);
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {
-                throw new Error('FIRST_ADMIN_EMAIL precisa ser um e-mail válido.');
+                throw erroHttp(400, 'Informe um e-mail válido para o administrador.');
             }
-            validarSenha(senha, 'FIRST_ADMIN_PASSWORD');
-            await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha)
-                VALUES ($1,$2,'admin',false) ON CONFLICT DO NOTHING`,
+            validarSenha(senha, 'Senha do administrador');
+            const existente = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
+            if (existente.rowCount) return false;
+            const criado = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha)
+                VALUES ($1,$2,'admin',false) ON CONFLICT DO NOTHING RETURNING id`,
             [emailNormalizado, await hashSenha(senha)]);
-            const confirmado = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
-            if (!confirmado.rowCount) throw new Error('Não foi possível criar o primeiro administrador. Verifique se o e-mail já pertence a outra conta.');
+            if (criado.rowCount) return true;
+            const administrador = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
+            if (administrador.rowCount) return false;
+            throw erroHttp(409, 'Este e-mail já pertence a outra conta.');
         },
 
         async entrar(email, senha) {

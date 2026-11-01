@@ -66,8 +66,8 @@ Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas
 2. Copie `.env.example` para `.env` dentro de `backend`.
 3. Preencha `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` e `PGPASSWORD` no `.env`. Os campos separados permitem usar a senha sem codificação de URL. Mantenha a senha entre aspas para preservar caracteres como `#`; se ela contiver aspas duplas, use aspas simples externas (ou vice-versa). Não envie credenciais pelo chat. O arquivo local foi preparado com `postgres` para esta configuração inicial; para uso da aplicação, prepare depois um usuário dedicado com permissões limitadas. Alternativamente, use `DATABASE_URL`, que tem prioridade sobre os campos separados. Em serviços hospedados, use a conexão e os certificados indicados pelo provedor, sem desativar a verificação TLS.
 4. Execute `pnpm db:migrate`.
-5. Configure `FIRST_ADMIN_EMAIL` e `FIRST_ADMIN_PASSWORD` no `backend/.env` para criar o primeiro administrador. Use uma senha forte com pelo menos 12 caracteres; não a envie pelo chat nem a inclua no Git.
-6. Inicie ou reinicie a API e abra `/api/health/db`.
+5. Execute `pnpm admin:criar` para cadastrar o primeiro administrador. Informe o e-mail e digite uma senha forte com pelo menos 12 caracteres; ela não aparece no terminal.
+6. Inicie a API com `pnpm dev` e abra `/api/health/db`.
 
 O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes de configurar os acessos necessários. A migração inicial insere apenas CE Maranhão, CE Piauí e CE Bahia; a consulta de livros retornará `[]` até haver obras no banco.
 
@@ -103,7 +103,7 @@ O backend serve o catálogo público e exige sessão de administrador para as te
 
 Para habilitar um leitor, cadastre o e-mail no perfil de Leitores e use **Criar acesso** para definir a senha temporária. Depois de trocar a senha no primeiro login, a pessoa pode entrar pela Biblioteca, escolher um exemplar disponível e confirmar **Reservar Livro**. A confirmação registra imediatamente um empréstimo normal de 30 dias; não é uma fila de espera. A tela **Meus Empréstimos** consulta somente o histórico da conta autenticada.
 
-Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `pnpm db:migrate` e defina `FIRST_ADMIN_EMAIL` e `FIRST_ADMIN_PASSWORD` antes de iniciar o servidor. A conta é criada uma única vez; depois disso, as variáveis não redefinem a senha. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
+Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `pnpm db:migrate` e depois `pnpm admin:criar`. O comando solicita o e-mail e a senha sem exibi-la e não permite criar outro administrador inicial. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
 
 Express serve apenas páginas autorizadas e as pastas css, js e assets. A raiz do projeto, o backend e o .env não são servidos. A interface usa a mesma origem da API; pedidos de gravação vindos de outra origem são rejeitados. O login de administrador protege também as rotas que alteram o acervo, leitores, empréstimos e devoluções.
 

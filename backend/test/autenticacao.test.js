@@ -4,8 +4,32 @@ import { randomBytes, scrypt as scryptCallback } from 'node:crypto';
 import { promisify } from 'node:util';
 import { once } from 'node:events';
 import { criarApp } from '../src/app.js';
+import { criarRepositorioAutenticacao } from '../src/repositories/autenticacao.js';
 
 const scrypt = promisify(scryptCallback);
+
+test('criação inicial do administrador valida credenciais e não sobrescreve conta existente', async () => {
+    const consultas = [];
+    const banco = {
+        async query(sql, valores = []) {
+            consultas.push({ sql, valores });
+            if (sql.includes("perfil='admin'")) return { rows: [], rowCount: 0 };
+            if (sql.includes('INSERT INTO usuarios')) return { rows: [{ id: 1 }], rowCount: 1 };
+            throw new Error(`Consulta inesperada no teste: ${sql}`);
+        }
+    };
+    const autenticacao = criarRepositorioAutenticacao(banco);
+    assert.equal(await autenticacao.inicializarAdministrador('  ADMIN@example.org ', 'senha-forte-para-admin'), true);
+    assert.match(consultas[1].sql, /ON CONFLICT DO NOTHING RETURNING id/);
+    assert.equal(consultas[1].valores[0], 'admin@example.org');
+    assert.equal(consultas[1].valores[1].startsWith('scrypt$16384$8$1$'), true);
+
+    const existente = criarRepositorioAutenticacao({
+        async query() { return { rows: [{ id: 1 }], rowCount: 1 }; }
+    });
+    assert.equal(await existente.inicializarAdministrador('admin@example.org', 'senha-forte-para-admin'), false);
+    await assert.rejects(autenticacao.inicializarAdministrador('email-invalido', 'senha-forte-para-admin'), { status: 400 });
+});
 
 async function hashSenha(senha) {
     const salt = randomBytes(16);
