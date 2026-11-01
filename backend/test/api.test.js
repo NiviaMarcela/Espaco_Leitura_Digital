@@ -10,21 +10,24 @@ async function iniciar(t, query) {
         servidor.close(resolve);
         servidor.closeAllConnections();
     }));
-    return caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`);
+    return (caminho, opcoes) => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`,
+        { redirect: 'manual', ...opcoes });
 }
 
-test("biblioteca é servida e está nos menus de todas as páginas", async t => {
+test("catálogo e login são públicos; páginas de gestão exigem sessão", async t => {
     const get = await iniciar(t, () => { throw new Error("Página não deve consultar o banco"); });
-    for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes"]) {
+    for (const pagina of ["biblioteca", "login"]) assert.equal((await get(`/${pagina}.html`)).status, 200);
+    for (const pagina of ["acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);
-        assert.equal(resposta.status, 200);
-        const html = await resposta.text();
-        assert.equal((html.match(/href="biblioteca.html"/g) || []).length, 2);
-        assert.match(html, /css\/style.css/);
+        assert.equal(resposta.status, 302);
+        assert.match(resposta.headers.get('location'), /^\/login\.html\?next=/);
     }
     const script = await get('/js/biblioteca.js');
     assert.equal(script.status, 200);
     assert.match(await script.text(), /\/api\/livros/);
+    const historico = await get('/js/meusEmprestimos.js');
+    assert.equal(historico.status, 200);
+    assert.match(await historico.text(), /\/api\/minhas-reservas/);
 });
 
 test("saúde da API não depende de uma conexão com o banco", async t => {
@@ -78,24 +81,20 @@ test("falhas de conexão não expõem dados internos", async t => {
     const get = await iniciar(t, () => {
         throw Object.assign(new Error("senha-de-teste-e-SQL-interno"), { code: "ECONNREFUSED" });
     });
-    for (const caminho of ["/api/health/db", "/api/livros", "/api/dashboard"]) {
+    for (const caminho of ["/api/health/db", "/api/livros"]) {
         const resposta = await get(caminho);
         assert.equal(resposta.status, 503);
         assert.deepEqual(await resposta.json(), { erro: "Banco de dados indisponível." });
     }
 });
 
-test('Dashboard devolve os indicadores e impede cache de dados antigos', async t => {
-    const dados = { totalLivros: 2, exemplaresDisponiveis: 3, leitoresAtivos: 1,
-        emprestimosAbertos: 1, emprestimosAtrasados: 0, recentes: [] };
-    const get = await iniciar(t, async (sql, parametros) => {
-        assert.match(parametros[0], /^\d{4}-\d{2}-\d{2}$/);
-        return { rows: [dados] };
-    });
-    const resposta = await get('/api/dashboard');
-    assert.equal(resposta.status, 200);
-    assert.equal(resposta.headers.get('cache-control'), 'no-store');
-    assert.deepEqual(await resposta.json(), dados);
+test('APIs administrativas rejeitam requisições sem sessão', async t => {
+    const get = await iniciar(t, () => { throw new Error("A API não deve consultar o banco sem sessão"); });
+    for (const caminho of ['/api/dashboard', '/api/leitores', '/api/emprestimos']) {
+        const resposta = await get(caminho);
+        assert.equal(resposta.status, 401);
+        assert.equal(resposta.headers.get('cache-control'), 'no-store');
+    }
 });
 
 test("timeout de conexão do pg sem código retorna indisponibilidade", async t => {

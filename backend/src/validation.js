@@ -56,6 +56,27 @@ export function validarLeitor(body) {
         turma: texto(body.turma, 'Turma', false, 100), telefone: texto(body.telefone, 'Telefone', false, 30), email };
 }
 
+export function validarCredenciais(body) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw erroHttp(400, 'Credenciais inválidas.');
+    const email = texto(body.email, 'E-mail', true, 254).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw erroHttp(400, 'Informe um e-mail válido.');
+    if (typeof body.senha !== 'string' || body.senha.length < 1 || body.senha.length > 128) {
+        throw erroHttp(400, 'Informe a senha.');
+    }
+    return { email, senha: body.senha };
+}
+
+export function validarTrocaSenha(body) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)
+        || typeof body.senhaAtual !== 'string' || body.senhaAtual.length > 128) {
+        throw erroHttp(400, 'Informe a senha temporária ou atual.');
+    }
+    if (typeof body.novaSenha !== 'string' || body.novaSenha.length < 12 || body.novaSenha.length > 128) {
+        throw erroHttp(400, 'A nova senha deve ter de 12 a 128 caracteres.');
+    }
+    return { senhaAtual: body.senhaAtual, novaSenha: body.novaSenha };
+}
+
 function texto(valor, nome, obrigatorio = false, limite = 500) {
     if (valor == null && !obrigatorio) return null;
     if (typeof valor !== "string" || valor.trim().length > limite || (obrigatorio && !valor.trim())) {

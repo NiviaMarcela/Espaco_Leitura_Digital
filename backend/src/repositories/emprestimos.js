@@ -72,6 +72,12 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil) {
             const dataHoje = hoje();
             return (await banco.query(`${consulta} ORDER BY p.data_devolucao NULLS FIRST, p.data_prevista_devolucao, p.id`)).rows.map(p => comStatus(p, dataHoje));
         },
+        async listarDoLeitor(leitorId) {
+            const dataHoje = hoje();
+            return (await banco.query(`${consulta} WHERE p.leitor_id=$1
+                ORDER BY p.data_devolucao NULLS FIRST, p.data_prevista_devolucao, p.id`, [leitorId]))
+                .rows.map(p => comStatus(p, dataHoje));
+        },
         async opcoes() {
             const leitores = (await banco.query(`SELECT l.id, l.nome, l.matricula_codigo AS "matriculaCodigo", c.nome AS centro,
                 (SELECT count(*)::integer FROM emprestimos p WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL) AS abertos,

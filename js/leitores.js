@@ -3,11 +3,14 @@ import { calcularIdade, hojeCivil } from './datas.mjs';
 const elemento = id => document.getElementById(id);
 const form = elemento('formLeitor');
 const modal = elemento('modalLeitor');
+const formAcesso = elemento('formAcessoLeitor');
+const modalAcesso = elemento('modalAcessoLeitor');
 const campos = { nome: 'nomeLeitor', tipo: 'tipoLeitor', dataNascimento: 'nascimentoLeitor',
     centroId: 'centroLeitor', matriculaCodigo: 'matriculaLeitor', turma: 'turmaLeitor',
     telefone: 'telefoneLeitor', email: 'emailLeitor', status: 'statusLeitor' };
 let leitores = [];
 let idEditando = null;
+let leitorAcesso = null;
 let salvando = false;
 
 async function api(caminho, metodo = 'GET', dados) {
@@ -21,6 +24,7 @@ async function api(caminho, metodo = 'GET', dados) {
             ? 'Não foi possível conectar. Abra a página em http://127.0.0.1:3001/leitores.html com o backend iniciado.'
             : 'Não foi possível confirmar o salvamento. Feche o formulário e atualize a página antes de reenviar, para evitar duplicação.');
     }
+    if (resposta.status === 204) return null;
     let resultado;
     try { resultado = await resposta.json(); }
     catch { throw new Error('Resposta inesperada. Abra http://127.0.0.1:3001/leitores.html.'); }
@@ -44,7 +48,7 @@ function renderizar() {
     elemento('totalLeitores').textContent = `${filtrados.length} de ${leitores.length} leitor(es) · ${leitores.filter(l => l.status === 'Ativo').length} ativo(s)`;
     if (!filtrados.length) {
         const td = document.createElement('td');
-        td.colSpan = 7;
+        td.colSpan = 8;
         td.textContent = leitores.length ? 'Nenhum leitor corresponde aos filtros.' : 'Nenhum leitor cadastrado. Clique em Novo leitor para começar.';
         tbody.insertRow().append(td);
     }
@@ -56,12 +60,19 @@ function renderizar() {
             // Dados digitados são texto, nunca HTML executável.
             linha.insertCell().textContent = valor;
         }
+        linha.insertCell().textContent = leitor.temAcesso ? 'Ativo' : 'Sem acesso';
         const botao = document.createElement('button');
         botao.className = 'btn btn-primary-custom btn-sm';
         botao.textContent = 'Editar';
         botao.setAttribute('aria-label', `Editar ${leitor.nome}`);
         botao.addEventListener('click', () => abrirFormulario(leitor));
-        linha.insertCell().append(botao);
+        const acesso = document.createElement('button');
+        acesso.type = 'button';
+        acesso.className = 'btn btn-secondary-custom btn-sm ms-1';
+        acesso.textContent = leitor.temAcesso ? 'Redefinir senha' : 'Criar acesso';
+        acesso.setAttribute('aria-label', `${leitor.temAcesso ? 'Redefinir senha de' : 'Criar acesso para'} ${leitor.nome}`);
+        acesso.addEventListener('click', () => abrirAcesso(leitor));
+        linha.insertCell().append(botao, acesso);
     }
 }
 
@@ -105,10 +116,44 @@ async function carregar() {
         elemento('avisoLeitores').textContent = 'Leitores conectados ao banco de dados.';
     } catch (erro) {
         elemento('avisoLeitores').textContent = erro.message;
-        elemento('tabelaLeitores').innerHTML = '<tr><td colspan="7">Não foi possível carregar os leitores.</td></tr>';
+        elemento('tabelaLeitores').innerHTML = '<tr><td colspan="8">Não foi possível carregar os leitores.</td></tr>';
         elemento('recarregarLeitores').hidden = false;
     }
 }
+
+function abrirAcesso(leitor) {
+    leitorAcesso = leitor;
+    formAcesso.reset();
+    elemento('emailAcessoLeitor').textContent = `Conta: ${leitor.email || 'cadastre um e-mail no perfil antes de criar o acesso.'}`;
+    elemento('erroAcessoLeitor').textContent = '';
+    elemento('salvarAcessoLeitor').textContent = leitor.temAcesso ? 'Redefinir senha' : 'Criar acesso';
+    bootstrap.Modal.getOrCreateInstance(modalAcesso).show();
+}
+
+formAcesso.addEventListener('submit', async evento => {
+    evento.preventDefault();
+    if (salvando || !leitorAcesso || !formAcesso.reportValidity()) return;
+    salvando = true;
+    elemento('erroAcessoLeitor').textContent = '';
+    modalAcesso.querySelectorAll('input, button').forEach(controle => { controle.disabled = true; });
+    elemento('salvarAcessoLeitor').textContent = 'Salvando…';
+    try {
+        await api(`/leitores/${leitorAcesso.id}/acesso`, 'POST', {
+            senhaInicial: elemento('senhaInicialLeitor').value
+        });
+        leitorAcesso.temAcesso = true;
+        renderizar();
+        elemento('avisoLeitores').textContent = `Acesso configurado para ${leitorAcesso.nome}. A senha inicial deverá ser alterada no primeiro login.`;
+        bootstrap.Modal.getOrCreateInstance(modalAcesso).hide();
+    } catch (erro) {
+        elemento('erroAcessoLeitor').textContent = erro.message;
+        elemento('erroAcessoLeitor').focus();
+    } finally {
+        salvando = false;
+        modalAcesso.querySelectorAll('input, button').forEach(controle => { controle.disabled = false; });
+        elemento('salvarAcessoLeitor').textContent = leitorAcesso?.temAcesso ? 'Redefinir senha' : 'Criar acesso';
+    }
+});
 
 form.addEventListener('submit', async evento => {
     evento.preventDefault();
@@ -140,6 +185,8 @@ form.addEventListener('submit', async evento => {
 });
 modal.addEventListener('hide.bs.modal', evento => { if (salvando) evento.preventDefault(); });
 modal.addEventListener('shown.bs.modal', () => elemento('nomeLeitor').focus());
+modalAcesso.addEventListener('hide.bs.modal', evento => { if (salvando) evento.preventDefault(); });
+modalAcesso.addEventListener('shown.bs.modal', () => elemento('senhaInicialLeitor').focus());
 elemento('novoLeitor').addEventListener('click', () => abrirFormulario());
 elemento('nascimentoLeitor').addEventListener('input', mostrarIdade);
 elemento('recarregarLeitores').addEventListener('click', carregar);

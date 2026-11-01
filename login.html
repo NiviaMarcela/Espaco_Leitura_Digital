@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar | Espaço de Leitura Digital</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main class="auth-shell">
+        <section class="content-card auth-card">
+            <span class="page-eyebrow">Espaço de Leitura Digital</span>
+            <h1 class="h3 mb-2">Entrar</h1>
+            <p class="text-secondary">Use o e-mail cadastrado e a senha fornecida pelo administrador.</p>
+            <form id="formLogin">
+                <label for="emailLogin" class="form-label">E-mail</label>
+                <input id="emailLogin" class="form-control mb-3" type="email" autocomplete="username" maxlength="254" required>
+                <label for="senhaLogin" class="form-label">Senha</label>
+                <input id="senhaLogin" class="form-control mb-3" type="password" autocomplete="current-password" maxlength="128" required>
+                <p id="erroLogin" class="text-danger" role="alert" tabindex="-1"></p>
+                <button id="entrarLogin" class="btn btn-primary-custom w-100" type="submit">Entrar</button>
+            </form>
+            <a class="d-inline-block mt-3" href="biblioteca.html">Voltar à Biblioteca</a>
+        </section>
+    </main>
+    <script src="js/login.js"></script>
+</body>
+</html>

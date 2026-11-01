@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { somarDias, hojeCivil } from '../../js/datas.mjs';
 import { validarEmprestimo, validarRenovacao, validarDevolucao } from '../src/validation.js';
 import { criarRepositorioEmprestimos } from '../src/repositories/emprestimos.js';
+import { criarRepositorioAutenticacao } from '../src/repositories/autenticacao.js';
 import { criarApp } from '../src/app.js';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -44,15 +45,25 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         banco = new pg.Pool({ ...config, options: `-c search_path=${schema}` });
-        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql']) {
+        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql']) {
             await banco.query(await readFile(new URL(`../database/${arquivo}`, import.meta.url), 'utf8'));
         }
+        const auth = criarRepositorioAutenticacao(banco);
+        await auth.inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
         servidor = criarApp(banco, () => {}).listen(0, '127.0.0.1');
         await once(servidor, 'listening');
         const base = `http://127.0.0.1:${servidor.address().port}`;
+        const loginAdmin = await fetch(`${base}/api/auth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'admin@example.org', senha: 'admin-temporario-integration' })
+        });
+        assert.equal(loginAdmin.status, 200);
+        const cookieAdmin = loginAdmin.headers.get('set-cookie').split(';')[0];
         const enviar = async (path, dados) => {
-            const r = await fetch(base + '/api' + path, { method: dados ? 'POST' : 'GET', headers: {'Content-Type':'application/json'}, body: dados ? JSON.stringify(dados) : undefined });
-            return { status: r.status, body: await r.json() };
+            const r = await fetch(base + '/api' + path, { method: dados ? 'POST' : 'GET',
+                headers: { 'Content-Type': 'application/json', Cookie: cookieAdmin },
+                body: dados ? JSON.stringify(dados) : undefined });
+            return { status: r.status, body: r.status === 204 ? null : await r.json() };
         };
         const leitores = [];
         for (const nome of ['Leitor A', 'Leitor B', 'Leitor C', 'Leitor D']) {
@@ -61,11 +72,41 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         }
         const obra = await enviar('/livros', { titulo: 'Livro de teste', autor: 'Autora', categoria: 'Literatura', quantidade: 20, centroId: 1 });
         const exemplares = obra.body.exemplares.map(e => e.id);
+        const leitorReservaId = leitores[3];
+        await banco.query('UPDATE leitores SET email=$2 WHERE id=$1', [leitorReservaId, 'leitor@example.org']);
+        assert.equal((await enviar(`/leitores/${leitorReservaId}/acesso`, {
+            senhaInicial: 'senha-temporaria-leitor'
+        })).status, 204);
+        const loginLeitor = await fetch(`${base}/api/auth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'leitor@example.org', senha: 'senha-temporaria-leitor' })
+        });
+        assert.equal(loginLeitor.status, 200);
+        const cookieLeitor = loginLeitor.headers.get('set-cookie').split(';')[0];
+        const trocarSenha = await fetch(`${base}/api/auth/change-password`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookieLeitor },
+            body: JSON.stringify({ senhaAtual: 'senha-temporaria-leitor', novaSenha: 'senha-definitiva-leitor' })
+        });
+        assert.equal(trocarSenha.status, 200);
+        const reservaHttp = await fetch(`${base}/api/reservas`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookieLeitor },
+            body: JSON.stringify({ leitorId: leitores[0], exemplarId: exemplares[10] })
+        });
+        assert.equal(reservaHttp.status, 201);
+        const reserva = await reservaHttp.json();
+        assert.equal(reserva.leitorId, leitorReservaId);
+        const historicoLeitor = await fetch(`${base}/api/minhas-reservas`, { headers: { Cookie: cookieLeitor } });
+        assert.equal(historicoLeitor.status, 200);
+        assert.deepEqual((await historicoLeitor.json()).map(item => item.id), [reserva.id]);
+        const acessoNegado = await fetch(`${base}/api/dashboard`, { headers: { Cookie: cookieLeitor } });
+        assert.equal(acessoNegado.status, 403);
         const criar = (leitorId, exemplarId) => enviar('/emprestimos', { leitorId, exemplarId });
         assert.equal((await enviar('/emprestimos', { leitorId: '1', exemplarId: 1 })).status, 400);
         assert.equal((await criar(99999, exemplares[0])).status, 404);
         assert.equal((await criar(leitores[0], 99999)).status, 404);
         await banco.query("UPDATE leitores SET status='Inativo' WHERE id=$1", [leitores[3]]);
+        const sessaoInativa = await fetch(`${base}/api/minhas-reservas`, { headers: { Cookie: cookieLeitor } });
+        assert.equal(sessaoInativa.status, 401);
         assert.equal((await criar(leitores[3], exemplares[0])).status, 409);
         for (const [indice, status] of [[15, 'Reservado'], [16, 'Danificado'], [17, 'Perdido']]) {
             await banco.query('UPDATE exemplares SET status=$2 WHERE id=$1', [exemplares[indice], status]);
@@ -85,7 +126,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 10);
         assert.equal((await enviar('/emprestimos/opcoes')).body.exemplares.some(e => e.id === primeiro.exemplarId), false);
         const disponiveis = (await enviar(`/livros/${obra.body.id}`)).body.exemplares.filter(e => e.status === 'Emprestado');
-        assert.equal(disponiveis.length, 10);
+        assert.equal(disponiveis.length, 11);
 
         // Dois leitores disputam a mesma cópia: só um registro pode ser criado.
         const disputa = await Promise.all([criar(leitores[1], exemplares[11]), criar(leitores[2], exemplares[11])]);

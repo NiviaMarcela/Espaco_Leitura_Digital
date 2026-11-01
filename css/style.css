@@ -1729,6 +1729,22 @@ body {
 
 }
 
+.auth-shell {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+    background: var(--background);
+}
+
+.auth-card {
+    width: min(100%, 460px);
+}
+
+.user-info .btn {
+    white-space: nowrap;
+}
+
 
 
 /* =========================================================

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Empréstimos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-auth-role="leitor">
+    <aside class="sidebar d-none d-lg-flex">
+        <div class="brand">
+            <img
+                class="logo-instituto"
+                src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
+                alt="Instituto Janela para o Mundo"
+            >
+            <div class="system-name">
+                <strong>Espaço de Leitura Digital</strong>
+                <span>Gestão de acervo e empréstimos</span>
+            </div>
+        </div>
+
+        <nav class="menu" aria-label="Menu principal">
+            <a class="menu-item" href="biblioteca.html">
+                <i class="bi bi-collection" aria-hidden="true"></i>Biblioteca
+            </a>
+            <a class="menu-item active" href="meusEmprestimos.html" aria-current="page">
+                <i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Meus Empréstimos
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span>Instituto Janela para o Mundo</span>
+            <small>Espaço de Leitura Digital</small>
+        </div>
+    </aside>
+
+    <div class="offcanvas offcanvas-start sidebar-mobile" tabindex="-1" id="menuMobile" aria-label="Menu principal">
+        <div class="offcanvas-header">
+            <h2 class="h5 mb-0">Espaço de Leitura Digital</h2>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="menu">
+                <a class="menu-item" href="biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+                <a class="menu-item active" href="meusEmprestimos.html" aria-current="page"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Meus Empréstimos</a>
+            </nav>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <button class="btn btn-secondary-custom d-lg-none mt-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-controls="menuMobile">
+            <i class="bi bi-list" aria-hidden="true"></i> Menu
+        </button>
+        <section class="page-header">
+            <div>
+                <span class="page-eyebrow">Biblioteca</span>
+                <h2>Meus Empréstimos</h2>
+                <p>Consulte os empréstimos registrados para o seu cadastro, incluindo os já devolvidos.</p>
+            </div>
+            <div class="user-info"><div><strong>Leitor</strong><span>Conta autenticada</span></div></div>
+        </section>
+
+        <p id="avisoMeusEmprestimos" role="status" aria-live="polite">Carregando empréstimos…</p>
+        <button id="atualizarMeusEmprestimos" class="btn btn-secondary-custom mb-3" type="button">
+            Atualizar lista
+        </button>
+
+        <section class="content-card">
+            <div class="card-heading">
+                <div>
+                    <h3>Histórico de empréstimos</h3>
+                    <p id="resumoMeusEmprestimos">Aguardando conexão.</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table align-middle">
+                    <caption class="visually-hidden">Empréstimos do leitor, prazos e devoluções</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Livro / exemplar</th>
+                            <th scope="col">Retirada</th>
+                            <th scope="col">Devolver até</th>
+                            <th scope="col">Devolvido em</th>
+                            <th scope="col">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaMeusEmprestimos">
+                        <tr><td colspan="5">Carregando…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/meusEmprestimos.js"></script>
+    <script src="js/auth-ui.js"></script>
+</body>
+</html>

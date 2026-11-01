@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { once } from "node:events";
 import pg from "pg";
 import { criarApp } from "../src/app.js";
+import { criarRepositorioAutenticacao } from "../src/repositories/autenticacao.js";
 
 test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
     skip: process.env.RUN_POSTGRES_TESTS !== "1"
@@ -20,12 +21,23 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         await banco.query(await readFile(new URL("../database/001_acervo.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/002_leitores.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/003_baixa_exemplares.sql", import.meta.url), "utf8"));
+        await banco.query(await readFile(new URL("../database/006_autenticacao.sql", import.meta.url), "utf8"));
+        const auth = criarRepositorioAutenticacao(banco);
+        await auth.inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
         servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
         await once(servidor, "listening");
         const base = `http://127.0.0.1:${servidor.address().port}`;
+        const login = await fetch(`${base}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'admin@example.org', senha: 'admin-temporario-integration' })
+        });
+        assert.equal(login.status, 200);
+        const cookieAdmin = login.headers.get('set-cookie').split(';')[0];
         async function enviar(caminho, metodo = "GET", dados) {
             const r = await fetch(base + caminho, { method: metodo,
-                headers: { "Content-Type": "application/json" }, body: dados ? JSON.stringify(dados) : undefined });
+                headers: { "Content-Type": "application/json", Cookie: cookieAdmin },
+                body: dados ? JSON.stringify(dados) : undefined });
             return { status: r.status, body: await r.json() };
         }
         const obra = { titulo: "Obra de teste", autor: "Autora", categoria: "Literatura", faixaEtaria: "Livre", quantidade: 2, centroId: 1 };

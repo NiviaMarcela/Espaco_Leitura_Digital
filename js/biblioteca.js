@@ -11,6 +11,10 @@ const tabela = elemento("tabelaBiblioteca");
 const aviso = elemento("avisoBiblioteca");
 const repetir = elemento("recarregarBiblioteca");
 const limpar = elemento("limparBiblioteca");
+const modalReserva = elemento("modalReserva");
+const formReserva = elemento("formReserva");
+let livroReservar = null;
+let reservando = false;
 
 // textContent trata o conteúdo do cadastro como texto, nunca como código HTML.
 function criar(tag, texto, classe) {
@@ -23,6 +27,10 @@ function criar(tag, texto, classe) {
 // Assim, buscar "ciencias" também encontra "Ciências".
 function normalizar(texto) {
     return String(texto ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function formatarData(data) {
+    return data ? data.split('-').reverse().join('/') : '—';
 }
 
 function quantidadeDisponivel(livro) {
@@ -107,11 +115,89 @@ function aplicarFiltros() {
         botao.dataset.bsToggle = "modal";
         botao.dataset.bsTarget = "#modalBiblioteca";
         botao.addEventListener("click", () => mostrarDetalhes(livro));
-        acao.append(botao);
+        const reservar = criar("button", "Reservar Livro", "btn btn-primary-custom btn-sm mt-2");
+        reservar.type = "button";
+        reservar.disabled = quantidadeDisponivel(livro) === 0;
+        reservar.setAttribute("aria-label", `Reservar ${livro.titulo}`);
+        reservar.addEventListener("click", () => abrirReserva(livro));
+        acao.append(botao, reservar);
         linha.append(celulaLivro, celulaCategoria, criar("td", livro.faixaEtaria || "Não informada"), celulaStatus, acao);
         tabela.append(linha);
     });
 }
+
+async function abrirReserva(livro) {
+    let sessao;
+    try {
+        const resposta = await fetch('/api/auth/me', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        if (resposta.status === 401) {
+            location.assign(`/login.html?next=${encodeURIComponent('/biblioteca.html')}`);
+            return;
+        }
+        if (!resposta.ok) throw new Error('Não foi possível verificar a sessão. Tente novamente.');
+        sessao = await resposta.json();
+    } catch (erro) {
+        aviso.textContent = erro.message || 'Não foi possível conectar ao servidor.';
+        return;
+    }
+    if (sessao.perfil !== 'leitor') {
+        aviso.textContent = 'Entre com uma conta de leitor para pegar livros emprestados.';
+        return;
+    }
+    if (sessao.trocarSenha) {
+        location.assign('/alterarSenha.html');
+        return;
+    }
+
+    livroReservar = livro;
+    formReserva.reset();
+    elemento('erroReserva').textContent = '';
+    elemento('tituloReserva').textContent = `Reservar: ${livro.titulo}`;
+    const disponiveis = livro.exemplares.filter(exemplar => exemplar.status === 'Disponível');
+    const select = elemento('exemplarReserva');
+    select.replaceChildren(new Option('Selecione uma cópia', ''));
+    disponiveis.forEach(exemplar => select.add(new Option(
+        `${exemplar.centro} · ${exemplar.codigo}${exemplar.localizacao ? ` · ${exemplar.localizacao}` : ''}`,
+        String(exemplar.id)
+    )));
+    elemento('avisoReserva').textContent = 'Ao confirmar, o empréstimo será registrado no seu cadastro com prazo de 30 dias corridos.';
+    bootstrap.Modal.getOrCreateInstance(modalReserva).show();
+}
+
+formReserva.addEventListener('submit', async evento => {
+    evento.preventDefault();
+    if (reservando || !livroReservar || !formReserva.reportValidity()) return;
+    reservando = true;
+    elemento('confirmarReserva').disabled = true;
+    elemento('confirmarReserva').textContent = 'Registrando…';
+    elemento('erroReserva').textContent = '';
+    try {
+        const resposta = await fetch('/api/reservas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ exemplarId: Number(elemento('exemplarReserva').value) }),
+            signal: AbortSignal.timeout(15000)
+        });
+        const resultado = resposta.status === 204 ? null : await resposta.json();
+        if (resposta.status === 401) {
+            location.assign(`/login.html?next=${encodeURIComponent('/biblioteca.html')}`);
+            return;
+        }
+        if (!resposta.ok) throw new Error(resultado?.erro || 'Não foi possível registrar o empréstimo.');
+        bootstrap.Modal.getOrCreateInstance(modalReserva).hide();
+        await carregarBiblioteca();
+        aviso.textContent = `Empréstimo registrado para ${resultado.livro}. Prazo: ${formatarData(resultado.dataPrevistaDevolucao)}.`;
+    } catch (erro) {
+        elemento('erroReserva').textContent = erro.name === 'TimeoutError' || erro instanceof TypeError
+            ? 'Não foi possível confirmar a reserva. Consulte “Meus Empréstimos” antes de tentar novamente.'
+            : erro.message || 'Não foi possível conectar ao servidor.';
+        elemento('erroReserva').focus();
+    } finally {
+        reservando = false;
+        elemento('confirmarReserva').disabled = false;
+        elemento('confirmarReserva').textContent = 'Confirmar empréstimo';
+    }
+});
 
 function mostrarDetalhes(livro) {
     elemento("tituloLivroBiblioteca").textContent = livro.titulo;
