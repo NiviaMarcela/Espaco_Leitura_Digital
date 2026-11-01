@@ -4,11 +4,11 @@ A Biblioteca consulta os livros que você cadastra no Acervo. As duas telas usam
 
 ## 1. HTML: a estrutura
 
-Em `biblioteca.html`, o menu, o cabeçalho, os cartões e a tabela usam as classes já existentes em `css/style.css`. Por exemplo, `content-card` aplica a aparência dos cartões e `btn-primary-custom` aplica o estilo do botão principal. Não foi necessário criar outro CSS.
+Em `biblioteca.html`, o cabeçalho, os cartões e a tabela usam as classes já existentes em `css/style.css`. Por exemplo, `content-card` aplica a aparência dos cartões e `btn-primary-custom` aplica o estilo do botão principal. Não foi necessário criar outro CSS.
 
 O atributo `class` serve para aplicar estilos. Já o `id` identifica um elemento específico para o JavaScript encontrá-lo. Por exemplo, `id="tabelaBiblioteca"` identifica o corpo da tabela que receberá os livros.
 
-Nos menus de computador e celular das outras páginas, o link `href="biblioteca.html"` permite entrar no catálogo. Na Biblioteca, a classe `active` destaca a página atual.
+Nos menus de computador e celular das outras páginas, o link `href="biblioteca.html"` permite entrar no catálogo. A Biblioteca pública não possui sidebar nem menus administrativos.
 
 ## 2. Servidor: liberar o endereço
 
@@ -19,7 +19,7 @@ Em `backend/src/app.js`, a lista de páginas permitidas agora inclui `biblioteca
 Leia `js/biblioteca.js` começando por `carregarBiblioteca()`:
 
 ```js
-const resposta = await fetch("/api/livros", { signal: AbortSignal.timeout(15000) });
+const resposta = await fetch("/api/biblioteca", { signal: AbortSignal.timeout(15000) });
 livros = await resposta.json();
 ```
 
@@ -66,3 +66,5 @@ Leia como: “quando o conteúdo do campo de busca mudar, execute aplicarFiltros
 Os dados são consultados ao abrir ou recarregar a página. Depois de alterar o Acervo em outra aba, recarregue a Biblioteca para obter os dados atuais.
 
 Os testes automatizados verificam a rota, os links, a busca, os filtros, a ordenação e os estados de erro e lista vazia. A conferência visual e a interação real com o modal ainda precisam ser feitas no navegador: o navegador integrado bloqueou o acesso local neste ambiente.
+
+A Biblioteca é pública. A API do catálogo não envia observações internas das baixas. As páginas de gestão exigem sessão; veja `backend/AUTENTICACAO.md`.

@@ -1,3 +1,6 @@
+
+> **Atualização — login:** a Biblioteca continua pública. Para a gestão, execute as migrações e crie o primeiro administrador com `node --env-file=.env scripts/criar-admin.js`, dentro de `backend`. Consulte [o guia de autenticação](backend/AUTENTICACAO.md). O teste `/api/health/db` agora exige login; `/api/health` permanece público.
+
 # Espaço de Leitura Digital: instalação e uso no Windows
 
 Este tutorial corresponde à estrutura atual do projeto. O frontend usa HTML, CSS e JavaScript; o Express entrega as páginas e a API, e o PostgreSQL armazena os dados. A migração para Next.js ainda será uma etapa posterior.

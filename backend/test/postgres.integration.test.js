@@ -1,3 +1,4 @@
+import { sessaoAdmin } from './helpers/sessao.js';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -20,12 +21,14 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         await banco.query(await readFile(new URL("../database/001_acervo.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/002_leitores.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/003_baixa_exemplares.sql", import.meta.url), "utf8"));
+        for(const n of ['004_emprestimos.sql','005_devolucoes.sql']) await banco.query(await readFile(new URL('../database/'+n,import.meta.url),'utf8'));
+        const cookie = await sessaoAdmin(banco);
         servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
         await once(servidor, "listening");
         const base = `http://127.0.0.1:${servidor.address().port}`;
         async function enviar(caminho, metodo = "GET", dados) {
             const r = await fetch(base + caminho, { method: metodo,
-                headers: { "Content-Type": "application/json" }, body: dados ? JSON.stringify(dados) : undefined });
+                headers: { "Content-Type": "application/json", Cookie:cookie, "X-Requested-With":"EspacoLeitura" }, body: dados ? JSON.stringify(dados) : undefined });
             return { status: r.status, body: await r.json() };
         }
         const obra = { titulo: "Obra de teste", autor: "Autora", categoria: "Literatura", faixaEtaria: "Livre", quantidade: 2, centroId: 1 };
@@ -113,7 +116,7 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         assert.equal((await enviar("/.env")).status, 404);
         const negada = await fetch(base + "/api/livros", { method: "POST", headers: { Origin: "https://outro-site.example", "Content-Type": "application/json" }, body: JSON.stringify(obra) });
         assert.equal(negada.status, 403);
-        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" })).status, 400);
+        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json", "X-Requested-With":"EspacoLeitura", Cookie:cookie }, body: "{" })).status, 400);
     } finally {
         if (servidor) await new Promise(resolve => { servidor.close(resolve); servidor.closeAllConnections(); });
         if (banco) await banco.end();

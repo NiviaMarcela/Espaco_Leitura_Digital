@@ -108,6 +108,27 @@ function aplicarFiltros() {
         botao.dataset.bsTarget = "#modalBiblioteca";
         botao.addEventListener("click", () => mostrarDetalhes(livro));
         acao.append(botao);
+        const usuario = globalThis.window?.usuarioAtual;
+        if (quantidadeDisponivel(livro) && (!usuario || usuario.perfil === 'Leitor')) {
+            const reservar = criar('button', 'Pegar emprestado', 'btn btn-primary-custom ms-2');
+            reservar.type = 'button';
+            reservar.addEventListener('click', async () => {
+                if (!usuario) { location.assign('/cadastro.html'); return; }
+                const exemplar = livro.exemplares.find(e => e.status === 'Disponível' && e.centroId === usuario.centroId);
+                if (!exemplar) { aviso.textContent = 'Não há exemplares disponíveis no seu centro.'; return; }
+                reservar.disabled = true;
+                try {
+                    const resposta = await fetch('/api/reservas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({exemplarId:exemplar.id}) });
+                    const dados = await resposta.json();
+                    if (!resposta.ok) throw new Error(dados.erro);
+                    await carregarBiblioteca();
+                    await carregarReservasLeitor();
+                    aviso.textContent = dados.mensagem;
+                } catch (erro) { aviso.textContent = erro.message; }
+                finally { reservar.disabled = false; }
+            });
+            acao.append(reservar);
+        }
         linha.append(celulaLivro, celulaCategoria, criar("td", livro.faixaEtaria || "Não informada"), celulaStatus, acao);
         tabela.append(linha);
     });
@@ -142,7 +163,8 @@ async function carregarBiblioteca() {
     aviso.textContent = "Carregando biblioteca…";
     mensagemTabela("Carregando livros…");
     try {
-        const resposta = await fetch("/api/livros", { signal: AbortSignal.timeout(15000) });
+        if (globalThis.window?.sessaoPronta) await window.sessaoPronta;
+        const resposta = await fetch("/api/biblioteca", { signal: AbortSignal.timeout(15000) });
         if (!resposta.ok) throw new Error("Não foi possível consultar o acervo. Verifique se o servidor e o banco estão funcionando.");
         livros = await resposta.json();
         preencherFiltro(categoria, "categoria", "Todas as categorias");
@@ -173,3 +195,49 @@ limpar.addEventListener("click", () => {
 });
 repetir.addEventListener("click", carregarBiblioteca);
 carregarBiblioteca();
+
+async function carregarReservasLeitor() {
+    const lista = elemento('listaReservas');
+    const mensagem = elemento('avisoReservas');
+    lista.replaceChildren();
+    try {
+        const r = await fetch('/api/reservas');
+        const dados = await r.json();
+        if (!r.ok) throw new Error(dados.erro);
+        mensagem.textContent = dados.length ? '' : 'Você ainda não tem reservas.';
+        for (const reserva of dados) {
+            const linha = criar('div', undefined, 'border-bottom py-3');
+            linha.append(criar('span', `${reserva.livro} · ${reserva.codigo} · ${reserva.centro} · ${reserva.status}`));
+            if (reserva.status === 'Pendente') {
+                const cancelar = criar('button','Cancelar reserva','btn btn-outline-danger ms-2');
+                cancelar.type = 'button';
+                cancelar.onclick = async () => {
+                    cancelar.disabled = true;
+                    try {
+                        const r = await fetch(`/api/reservas/${reserva.id}/cancelar`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+                        const d = await r.json();if (!r.ok) throw new Error(d.erro);
+                        await carregarReservasLeitor();await carregarBiblioteca();mensagem.textContent=d.mensagem;
+                    } catch(erro) {mensagem.textContent=erro.message;cancelar.disabled=false;}
+                };
+                linha.append(cancelar);
+            }
+            lista.append(linha);
+        }
+    } catch(erro) {mensagem.textContent=erro.message;}
+}
+if (globalThis.window?.sessaoPronta) window.sessaoPronta.then(async usuario => {
+    elemento('linkCadastro').hidden = Boolean(usuario);
+    if (usuario?.perfil !== 'Leitor') return;
+    elemento('areaLeitor').hidden = false;
+    elemento('atualizarReservas').onclick = carregarReservasLeitor;
+    elemento('senhaLeitor').onsubmit = async evento => {
+        evento.preventDefault();const form=evento.currentTarget;const mensagem=elemento('avisoSenhaLeitor');
+        if(form.novaSenha.value!==form.confirmarSenha.value){mensagem.textContent='As senhas não conferem.';return;}
+        const botao=form.querySelector('button');botao.disabled=true;
+        try {
+            const r=await fetch('/api/auth/senha',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senhaAtual:form.senhaAtual.value,novaSenha:form.novaSenha.value})});
+            const d=await r.json();if(!r.ok)throw new Error(d.erro);form.reset();location.assign('/login.html');
+        }catch(erro){mensagem.textContent=erro.message;}finally{botao.disabled=false;}
+    };
+    await carregarReservasLeitor();
+}).catch(() => {});

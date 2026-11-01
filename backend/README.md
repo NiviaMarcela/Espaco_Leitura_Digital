@@ -1,3 +1,6 @@
+
+> **Atualização — login:** a Biblioteca continua pública. Para a gestão, execute as migrações e crie o primeiro administrador com `node --env-file=.env scripts/criar-admin.js`, dentro de `backend`. Consulte [AUTENTICACAO.md](AUTENTICACAO.md). O teste `/api/health/db` agora exige login; `/api/health` permanece público.
+
 # Backend do Espaço de Leitura Digital
 
 O acervo está integrado à API Express e ao PostgreSQL para consultar, cadastrar e editar obras e adicionar exemplares. Abra http://127.0.0.1:3001/acervo.html com o backend em execução. Não use arquivo local ou Live Server para essa página: as chamadas /api usam o mesmo endereço da página. Os antigos livros de demonstração não são importados automaticamente. A migração para Next.js será uma etapa posterior.

@@ -1,3 +1,4 @@
+await window.sessaoPronta;
 import { calcularIdade, hojeCivil } from './datas.mjs';
 
 const elemento = id => document.getElementById(id);

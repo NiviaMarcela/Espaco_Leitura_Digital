@@ -1,3 +1,4 @@
+await window.sessaoPronta;
 import { hojeCivil } from './datas.mjs';
 
 const el = id => document.getElementById(id);

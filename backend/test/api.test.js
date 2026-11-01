@@ -4,13 +4,14 @@ import { once } from "node:events";
 import { criarApp } from "../src/app.js";
 
 async function iniciar(t, query) {
-    const servidor = criarApp({ query }, () => {}).listen(0, "127.0.0.1");
+    const servidor = criarApp({ query: (sql, valores) => sql.includes('FROM sessoes s')
+        ? Promise.resolve({rows:[{id:1,nome:'Admin teste',perfil:'Administrador',centroId:null}]}) : query(sql,valores) }, () => {}).listen(0, "127.0.0.1");
     await once(servidor, "listening");
     t.after(() => new Promise(resolve => {
         servidor.close(resolve);
         servidor.closeAllConnections();
     }));
-    return caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`);
+    return caminho => fetch(`http://127.0.0.1:${servidor.address().port}${caminho}`, {headers:{Cookie:"eld_sessao="+"a".repeat(64)}});
 }
 
 test("biblioteca é servida e está nos menus de todas as páginas", async t => {
@@ -19,12 +20,12 @@ test("biblioteca é servida e está nos menus de todas as páginas", async t => 
         const resposta = await get(`/${pagina}.html`);
         assert.equal(resposta.status, 200);
         const html = await resposta.text();
-        assert.equal((html.match(/href="biblioteca.html"/g) || []).length, 2);
+        assert.equal((html.match(/href="biblioteca.html"/g) || []).length, pagina === "biblioteca" ? 0 : 2);
         assert.match(html, /css\/style.css/);
     }
     const script = await get('/js/biblioteca.js');
     assert.equal(script.status, 200);
-    assert.match(await script.text(), /\/api\/livros/);
+    assert.match(await script.text(), /\/api\/biblioteca/);
 });
 
 test("saúde da API não depende de uma conexão com o banco", async t => {
@@ -46,13 +47,13 @@ test("consulta de livro usa parâmetro e mantém os exemplares na resposta", asy
     let parametros;
     const livro = { id: 7, titulo: "Obra", exemplares: [{ id: 9, status: "Emprestado" }] };
     const get = await iniciar(t, async (sql, valores) => {
-        assert.match(sql, /WHERE l.id = \$1/);
+        assert.match(sql, /WHERE l.id = \$2/);
         parametros = valores;
         return { rows: [livro] };
     });
     const resposta = await get("/api/livros/7");
     assert.equal(resposta.status, 200);
-    assert.deepEqual(parametros, [7]);
+    assert.deepEqual(parametros, [null, 7]);
     assert.deepEqual(await resposta.json(), livro);
 });
 

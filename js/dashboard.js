@@ -1,3 +1,4 @@
+await window.sessaoPronta;
 const el = id => document.getElementById(id);
 const indicadores = ['totalLivros', 'exemplaresDisponiveis', 'emprestimosAbertos', 'emprestimosAtrasados', 'leitoresAtivos'];
 const numero = new Intl.NumberFormat('pt-BR');
@@ -47,7 +48,7 @@ async function carregar() {
             ? 'O banco de dados está indisponível. Confira o PostgreSQL e tente atualizar.'
             : 'Não foi possível consultar o Dashboard. Confira o terminal do backend e tente atualizar.');
         renderizar(await resposta.json());
-        el('avisoDashboard').textContent = `Dados de todos os centros · Atualizado às ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Fortaleza' }).format(new Date())} (Fortaleza).`;
+        el('avisoDashboard').textContent = `${window.usuarioAtual?.centro || "Dados de todos os centros"} · Atualizado às ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Fortaleza' }).format(new Date())} (Fortaleza).`;
     } catch (erro) {
         for (const id of indicadores) el(id).textContent = '—';
         mensagemTabela('Dados indisponíveis. Use Atualizar para tentar novamente.');

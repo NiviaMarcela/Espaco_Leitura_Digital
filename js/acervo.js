@@ -381,7 +381,7 @@ function renderizarLivros(lista) {
                     class="table-action"
                     title="Editar livro"
                     aria-label="Editar livro"
-                    data-editar-livro-id="${livro.id}"
+                    data-editar-livro-id="${livro.id}" ${window.usuarioAtual?.perfil === "Administrador" ? "" : "hidden"}
                     onclick="editarLivro(${livro.id})"
                 >
 
@@ -1085,4 +1085,4 @@ for (const [modalId, form] of [["modalLivro", formLivro], ["modalDetalhesLivro",
         if (form.dataset.salvando) event.preventDefault();
     });
 }
-carregarAcervo();
+window.sessaoPronta.then(usuario => { if(usuario) carregarAcervo(); }).catch(() => {});

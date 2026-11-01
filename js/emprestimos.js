@@ -1,3 +1,4 @@
+await window.sessaoPronta;
 import { hojeCivil, somarDias } from './datas.mjs';
 
 const el = id => document.getElementById(id);
