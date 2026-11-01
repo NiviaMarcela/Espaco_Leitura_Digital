@@ -22,7 +22,7 @@ class Elemento {
     focus() {}
 }
 
-async function preparar(resposta) {
+async function preparar(resposta, extras = {}) {
     const elementos = new Map();
     const get = id => {
         if (!elementos.has(id)) elementos.set(id, new Elemento());
@@ -32,7 +32,7 @@ async function preparar(resposta) {
     const contexto = vm.createContext({
         document: { getElementById: get, createElement: () => new Elemento() },
         Option: Elemento, AbortSignal,
-        fetch: async () => resposta
+        fetch: async () => resposta, ...extras
     });
     vm.runInContext(readFileSync(new URL('../../js/biblioteca.js', import.meta.url), 'utf8'), contexto);
     await new Promise(resolve => setImmediate(resolve));

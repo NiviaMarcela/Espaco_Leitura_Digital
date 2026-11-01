@@ -228,7 +228,7 @@ async function carregarBiblioteca() {
     aviso.textContent = "Carregando biblioteca…";
     mensagemTabela("Carregando livros…");
     try {
-        const resposta = await fetch("/api/livros", { signal: AbortSignal.timeout(15000) });
+        const resposta = await fetch("/api/biblioteca", { signal: AbortSignal.timeout(15000) });
         if (!resposta.ok) throw new Error("Não foi possível consultar o acervo. Verifique se o servidor e o banco estão funcionando.");
         livros = await resposta.json();
         preencherFiltro(categoria, "categoria", "Todas as categorias");

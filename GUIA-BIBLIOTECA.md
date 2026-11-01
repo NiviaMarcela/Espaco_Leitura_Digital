@@ -19,7 +19,7 @@ Em `backend/src/app.js`, a lista de páginas permitidas agora inclui `biblioteca
 Leia `js/biblioteca.js` começando por `carregarBiblioteca()`:
 
 ```js
-const resposta = await fetch("/api/livros", { signal: AbortSignal.timeout(15000) });
+const resposta = await fetch("/api/biblioteca", { signal: AbortSignal.timeout(15000) });
 livros = await resposta.json();
 ```
 
@@ -66,3 +66,5 @@ Leia como: “quando o conteúdo do campo de busca mudar, execute aplicarFiltros
 Os dados são consultados ao abrir ou recarregar a página. Depois de alterar o Acervo em outra aba, recarregue a Biblioteca para obter os dados atuais.
 
 Os testes automatizados verificam a rota, os links, a busca, os filtros, a ordenação e os estados de erro e lista vazia. A conferência visual e a interação real com o modal ainda precisam ser feitas no navegador: o navegador integrado bloqueou o acesso local neste ambiente.
+
+A Biblioteca é pública. As páginas de gestão exigem sessão. O administrador configura o acesso do leitor na tela Leitores.

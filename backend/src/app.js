@@ -13,6 +13,15 @@ import { criarRepositorioDashboard } from './repositories/dashboard.js';
 const COOKIE_SESSAO = 'espaco_sessao';
 const DURACAO_SESSAO_SEGUNDOS = 8 * 60 * 60;
 
+function catalogoPublico(livro) {
+    return {
+        ...livro,
+        exemplares: livro.exemplares.map(({ id, codigo, centroId, centro, localizacao, status }) => ({
+            id, codigo, centroId, centro, localizacao, status
+        }))
+    };
+}
+
 function tokenDaRequisicao(req) {
     const cookie = req.headers.cookie?.split(';').map(parte => parte.trim())
         .find(parte => parte.startsWith(`${COOKIE_SESSAO}=`));
@@ -35,7 +44,7 @@ export function criarApp(banco, registrarErro = console.error) {
     app.disable("x-powered-by");
     app.use("/api", (req, res, next) => {
         res.set("Cache-Control", "no-store");
-        if (["POST", "PUT"].includes(req.method)) {
+        if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
             if (req.get("origin") && req.get("origin") !== `${req.protocol}://${req.get("host")}`) {
                 return res.status(403).json({ erro: "Use o sistema no mesmo endereço da API." });
             }
@@ -123,10 +132,13 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/api/centros", async (req, res) => {
         res.json(await acervo.listarCentros());
     });
-    app.get("/api/livros", async (req, res) => {
+    app.get("/api/biblioteca", async (req, res) => {
+        res.json((await acervo.listarLivros()).map(catalogoPublico));
+    });
+    app.get("/api/livros", exigirAdmin, async (req, res) => {
         res.json(await acervo.listarLivros());
     });
-    app.get("/api/livros/:id", async (req, res) => {
+    app.get("/api/livros/:id", exigirAdmin, async (req, res) => {
         const livro = await acervo.buscarLivro(Number(req.params.id));
         if (!livro) return res.status(404).json({ erro: "Livro não encontrado." });
         res.json(livro);
@@ -222,6 +234,7 @@ export function criarApp(banco, registrarErro = console.error) {
         if (erro.type === "entity.parse.failed") return res.status(400).json({ erro: "JSON inválido." });
         if (erro.type === "entity.too.large") return res.status(413).json({ erro: "Dados enviados excedem o tamanho permitido." });
         if ([400, 401, 403, 404, 409].includes(erro.status)) return res.status(erro.status).json({ erro: erro.message });
+        if (erro.status === 429) return res.status(429).json({ erro: erro.message });
         if (erro.code === "23503") return res.status(400).json({ erro: "Livro ou Centro não encontrado." });
         registrarErro("Falha ao consultar o banco:", erro.code || "SEM_CODIGO");
         const indisponivel = ["BANCO_NAO_CONFIGURADO", "ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "57P03"].includes(erro.code)

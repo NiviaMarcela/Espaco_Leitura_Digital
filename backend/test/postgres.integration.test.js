@@ -125,7 +125,7 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         assert.equal((await enviar("/.env")).status, 404);
         const negada = await fetch(base + "/api/livros", { method: "POST", headers: { Origin: "https://outro-site.example", "Content-Type": "application/json" }, body: JSON.stringify(obra) });
         assert.equal(negada.status, 403);
-        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" })).status, 400);
+        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json", "X-Requested-With":"EspacoLeitura", Cookie:cookie }, body: "{" })).status, 400);
     } finally {
         if (servidor) await new Promise(resolve => { servidor.close(resolve); servidor.closeAllConnections(); });
         if (banco) await banco.end();

@@ -1,7 +1,7 @@
 import { erroHttp } from "../validation.js";
 
 // O banco usa snake_case; a resposta mantém os nomes usados no frontend atual.
-export function criarRepositorioAcervo(banco) {
+export function criarRepositorioAcervo(banco, centroId = null) {
     const consultaLivros = `
         SELECT l.id, l.titulo, l.autor, l.isbn, l.editora, l.ano, l.categoria,
                l.faixa_etaria AS "faixaEtaria", l.capa_url AS "capaUrl", l.sinopse,
@@ -15,7 +15,7 @@ export function criarRepositorioAcervo(banco) {
                    '[]'::jsonb
                ) AS exemplares
         FROM livros l
-        LEFT JOIN exemplares e ON e.livro_id = l.id
+        LEFT JOIN exemplares e ON e.livro_id = l.id AND ($1::integer IS NULL OR e.centro_id=$1)
         LEFT JOIN centros c ON c.id = e.centro_id
     `;
 
@@ -35,6 +35,7 @@ export function criarRepositorioAcervo(banco) {
     }
 
     async function inserirExemplares(conexao, livroId, dados) {
+        if (centroId !== null && dados.centroId !== centroId) throw erroHttp(403, 'Use o seu centro.');
         const centro = await conexao.query("SELECT id FROM centros WHERE id = $1", [dados.centroId]);
         if (!centro.rowCount) throw erroHttp(400, "Centro não encontrado.");
         await conexao.query(`INSERT INTO exemplares(livro_id, centro_id, localizacao)
@@ -48,7 +49,7 @@ export function criarRepositorioAcervo(banco) {
         async baixarExemplar(id, dados) {
             return transacao(async conexao => {
                 // O bloqueio impede duas baixas simultâneas de sobrescreverem o motivo.
-                const resultado = await conexao.query('SELECT livro_id, status FROM exemplares WHERE id=$1 FOR UPDATE', [id]);
+                const resultado = await conexao.query('SELECT livro_id, status FROM exemplares WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE', [id, centroId]);
                 const exemplar = resultado.rows[0];
                 if (!exemplar) throw erroHttp(404, 'Exemplar não encontrado.');
                 if (exemplar.status === 'Baixado') throw erroHttp(409, 'Este exemplar já recebeu baixa.');
@@ -57,7 +58,7 @@ export function criarRepositorioAcervo(banco) {
                 }
                 await conexao.query(`UPDATE exemplares SET status='Baixado', baixa_motivo=$2,
                     baixa_observacao=$3, baixa_em=now() WHERE id=$1`, [id, dados.motivo, dados.observacao]);
-                return criarRepositorioAcervo(conexao).buscarLivro(exemplar.livro_id);
+                return criarRepositorioAcervo(conexao, centroId).buscarLivro(exemplar.livro_id);
             });
         },
         async criarLivro(dados, exemplares) {
@@ -67,17 +68,18 @@ export function criarRepositorioAcervo(banco) {
                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`, valoresObra(dados));
                 const id = resultado.rows[0].id;
                 await inserirExemplares(conexao, id, exemplares);
-                return criarRepositorioAcervo(conexao).buscarLivro(id);
+                return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);
             });
         },
         async editarLivro(id, dados) {
+            if (centroId !== null) throw erroHttp(403, 'Somente administradores podem editar a descrição compartilhada da obra.');
             return transacao(async conexao => {
                 const resultado = await conexao.query(`UPDATE livros SET
                     titulo=$1, autor=$2, isbn=$3, editora=$4, ano=$5, categoria=$6,
                     faixa_etaria=$7, capa_url=$8, sinopse=$9 WHERE id=$10 RETURNING id`,
                     [...valoresObra(dados), id]);
                 if (!resultado.rowCount) throw erroHttp(404, "Livro não encontrado.");
-                return criarRepositorioAcervo(conexao).buscarLivro(id);
+                return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);
             });
         },
         async adicionarExemplares(id, dados) {
@@ -85,22 +87,22 @@ export function criarRepositorioAcervo(banco) {
                 const livro = await conexao.query("SELECT id FROM livros WHERE id=$1 FOR UPDATE", [id]);
                 if (!livro.rowCount) throw erroHttp(404, "Livro não encontrado.");
                 await inserirExemplares(conexao, id, dados);
-                return criarRepositorioAcervo(conexao).buscarLivro(id);
+                return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);
             });
         },
         async listarLivros() {
-            const resultado = await banco.query(`${consultaLivros} GROUP BY l.id ORDER BY l.id`);
+            const resultado = await banco.query(`${consultaLivros} WHERE ($1::integer IS NULL OR e.id IS NOT NULL) GROUP BY l.id ORDER BY l.id`, [centroId]);
             return resultado.rows;
         },
         async buscarLivro(id) {
             // $1 recebe o valor separadamente do SQL, evitando concatenar entrada do usuário.
             const resultado = await banco.query(
-                `${consultaLivros} WHERE l.id = $1 GROUP BY l.id`, [id]
+                `${consultaLivros} WHERE l.id = $2 AND ($1::integer IS NULL OR e.id IS NOT NULL) GROUP BY l.id`, [centroId, id]
             );
             return resultado.rows[0] ?? null;
         },
         async listarCentros() {
-            const resultado = await banco.query("SELECT id, nome FROM centros ORDER BY nome");
+            const resultado = await banco.query("SELECT id, nome FROM centros WHERE ($1::integer IS NULL OR id=$1) ORDER BY nome", [centroId]);
             return resultado.rows;
         }
     };

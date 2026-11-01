@@ -48,8 +48,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql']) {
             await banco.query(await readFile(new URL(`../database/${arquivo}`, import.meta.url), 'utf8'));
         }
-        const auth = criarRepositorioAutenticacao(banco);
-        await auth.inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
+        await criarRepositorioAutenticacao(banco).inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
         servidor = criarApp(banco, () => {}).listen(0, '127.0.0.1');
         await once(servidor, 'listening');
         const base = `http://127.0.0.1:${servidor.address().port}`;
@@ -63,7 +62,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
             const r = await fetch(base + '/api' + path, { method: dados ? 'POST' : 'GET',
                 headers: { 'Content-Type': 'application/json', Cookie: cookieAdmin },
                 body: dados ? JSON.stringify(dados) : undefined });
-            return { status: r.status, body: r.status === 204 ? null : await r.json() };
+            return { status: r.status, body: await r.json() };
         };
         const leitores = [];
         for (const nome of ['Leitor A', 'Leitor B', 'Leitor C', 'Leitor D']) {
@@ -181,19 +180,12 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal((await criar(leitores[0], primeiro.exemplarId)).status, 201);
         assert.equal((await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]).abertos, 10);
         assert.equal((await enviar(`/emprestimos/${primeiro.id}/devolucao`, { versao: 1, condicao: 'Disponível' })).status, 409);
-        // Limites independentes: dez no centro 1 não bloqueiam dez no centro 2.
-        const outraObra = await enviar('/livros', { titulo: 'Outro centro', autor: 'Autora', categoria: 'Literatura', quantidade: 11, centroId: 2 });
-        const outroCentro = await Promise.all(outraObra.body.exemplares.map(e => criar(leitores[0], e.id)));
-        assert.equal(outroCentro.filter(r => r.status === 201).length, 10);
-        assert.equal(outroCentro.filter(r => r.status === 409).length, 1);
-        let saldo = (await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]);
-        assert.equal(saldo.abertos, 20);
-        assert.deepEqual(saldo.abertosPorCentro, { '1': 10, '2': 10 });
-        const segundoCentro = outroCentro.find(r => r.status === 201).body;
-        assert.equal((await enviar('/emprestimos/' + segundoCentro.id + '/devolucao', { versao: 0, condicao: 'Disponível' })).status, 200);
-        saldo = (await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]);
-        assert.deepEqual(saldo.abertosPorCentro, { '1': 10, '2': 9 });
-        assert.equal((await criar(leitores[0], segundoCentro.exemplarId)).status, 201);
+        // Leitor só pode retirar no centro em que está cadastrado.
+        const outraObra = await enviar('/livros', { titulo: 'Outro centro', autor: 'Autora', categoria: 'Literatura', quantidade: 1, centroId: 2 });
+        assert.equal((await criar(leitores[0],outraObra.body.exemplares[0].id)).status,403);
+        const saldo = (await enviar('/emprestimos/opcoes')).body.leitores.find(l => l.id === leitores[0]);
+        assert.equal(saldo.abertos,10);
+        assert.deepEqual(saldo.abertosPorCentro, {'1':10});
         const sobra = (await enviar('/emprestimos/opcoes')).body.exemplares.find(e => e.centroId === 1);
         assert.equal((await criar(leitores[0], sobra.id)).status, 409);
 

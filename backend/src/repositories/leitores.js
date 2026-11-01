@@ -8,14 +8,15 @@ const consulta = `SELECT l.id, l.nome, l.tipo, l.matricula_codigo AS "matriculaC
     EXISTS (SELECT 1 FROM usuarios u WHERE u.leitor_id=l.id) AS "temAcesso"
     FROM leitores l JOIN centros c ON c.id = l.centro_id`;
 
-export function criarRepositorioLeitores(banco) {
+export function criarRepositorioLeitores(banco, centroId = null) {
     // Idade é derivada a cada consulta; não armazenamos um número que envelhece.
     const comIdade = leitor => leitor ? { ...leitor, idade: calcularIdade(leitor.dataNascimento) } : null;
     async function buscar(id) {
-        const { rows } = await banco.query(`${consulta} WHERE l.id = $1`, [id]);
+        const { rows } = await banco.query(`${consulta} WHERE l.id = $1 AND ($2::integer IS NULL OR l.centro_id=$2)`, [id,centroId]);
         return comIdade(rows[0]);
     }
     async function salvar(dados, id = null) {
+        if (centroId !== null && dados.centroId !== centroId) throw erroHttp(403, 'Use o seu centro.');
         const valores = [dados.nome, dados.tipo, dados.matriculaCodigo, dados.turma,
             dados.dataNascimento, dados.telefone, dados.email, dados.centroId, dados.status];
         const conexao = await banco.connect();
@@ -53,7 +54,7 @@ export function criarRepositorioLeitores(banco) {
     return {
         buscar, salvar,
         async listar() {
-            const { rows } = await banco.query(`${consulta} ORDER BY l.nome, l.id`);
+            const { rows } = await banco.query(`${consulta} WHERE ($1::integer IS NULL OR l.centro_id=$1) ORDER BY l.nome, l.id`, [centroId]);
             return rows.map(comIdade);
         }
     };
