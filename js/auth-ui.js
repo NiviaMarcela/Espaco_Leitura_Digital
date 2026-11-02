@@ -14,6 +14,7 @@ async function carregarUsuario() {
         return;
     }
     const usuario = await resposta.json();
+    window.usuarioAtual = usuario;
     linksAnonimos.forEach(link => { link.hidden = true; });
     if (usuario.perfil === 'admin') linksAdmin.forEach(link => { link.hidden = false; });
     if (usuario.trocarSenha && pagina !== '/alterarSenha.html') {
@@ -26,10 +27,22 @@ async function carregarUsuario() {
     }
     const identificacao = document.querySelector('.user-info');
     if (identificacao) {
-        const nome = identificacao.querySelector('strong');
-        const perfil = identificacao.querySelector('span');
-        if (nome) nome.textContent = usuario.nome || usuario.email;
-        if (perfil) perfil.textContent = usuario.perfil === 'admin' ? 'Administrador' : 'Leitor';
+        let nome = identificacao.querySelector('strong');
+        let perfil = identificacao.querySelector('span');
+        if (!nome || !perfil) {
+            const avatar = document.createElement('div');
+            avatar.className = 'user-avatar';
+            avatar.setAttribute('aria-hidden', 'true');
+            avatar.textContent = (usuario.nome || usuario.email).slice(0, 2).toLocaleUpperCase('pt-BR');
+            const detalhes = document.createElement('div');
+            detalhes.className = 'd-none d-md-block';
+            nome = document.createElement('strong');
+            perfil = document.createElement('span');
+            detalhes.append(nome, perfil);
+            identificacao.replaceChildren(avatar, detalhes);
+        }
+        nome.textContent = usuario.nome || usuario.email;
+        perfil.textContent = usuario.perfil === 'admin' ? 'Administrador' : 'Leitor';
         const alterar = document.createElement('a');
         alterar.href = '/alterarSenha.html';
         alterar.className = 'btn btn-secondary-custom btn-sm ms-2';

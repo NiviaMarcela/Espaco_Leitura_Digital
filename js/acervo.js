@@ -1085,4 +1085,4 @@ for (const [modalId, form] of [["modalLivro", formLivro], ["modalDetalhesLivro",
         if (form.dataset.salvando) event.preventDefault();
     });
 }
-window.sessaoPronta.then(usuario => { if(usuario) carregarAcervo(); }).catch(() => {});
+carregarAcervo();

@@ -1,4 +1,3 @@
-await window.sessaoPronta;
 const el = id => document.getElementById(id);
 const indicadores = ['totalLivros', 'exemplaresDisponiveis', 'emprestimosAbertos', 'emprestimosAtrasados', 'leitoresAtivos'];
 const numero = new Intl.NumberFormat('pt-BR');
