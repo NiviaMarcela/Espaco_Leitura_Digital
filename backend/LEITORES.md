@@ -30,6 +30,13 @@ Matrícula/código, quando preenchida, é única dentro do Centro sem distinguir
 maiúsculas e minúsculas. O status começa como Ativo e pode ser editado para Inativo.
 Não há exclusão de leitores nesta etapa.
 
+A tela inicial permite que visitantes enviem um cadastro pelo modal. A rota pública
+`POST /api/cadastro-leitor` valida os mesmos campos, sempre cria o leitor como Ativo
+e limita cinco envios por endereço IP a cada 15 minutos. O cadastro não cria uma
+conta nem uma senha: um administrador precisa configurar o acesso antes de o leitor
+poder entrar e solicitar empréstimos. A rota administrativa `POST /api/leitores`
+continua protegida.
+
 ## Como os blocos se conectam
 
 1. `../leitores.html` define os campos, filtros e tabela. O campo de nascimento usa
@@ -73,4 +80,5 @@ Os testes de integração criam um schema temporário separado e o removem ao fi
 Há verificações de persistência, matrícula duplicada, edição, status, Centro inválido,
 datas futuras/inexistentes, aniversário e ano bissexto. A migração incremental pode
 ser reaplicada com `node --env-file=.env scripts/migrate.js`; arquivos já registrados
-em `schema_migrations` são ignorados. A etapa de autenticação permanece futura.
+em `schema_migrations` são ignorados. A criação do acesso de login permanece restrita
+à equipe administradora e é feita separadamente do cadastro público.

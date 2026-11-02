@@ -41,6 +41,7 @@ export function criarApp(banco, registrarErro = console.error) {
     const emprestimos = criarRepositorioEmprestimos(banco);
     const dashboard = criarRepositorioDashboard(banco);
     const tentativasLogin = new Map();
+    const tentativasCadastro = new Map();
     app.disable("x-powered-by");
     app.use("/api", (req, res, next) => {
         res.set("Cache-Control", "no-store");
@@ -131,6 +132,18 @@ export function criarApp(banco, registrarErro = console.error) {
     });
     app.get("/api/centros", async (req, res) => {
         res.json(await acervo.listarCentros());
+    });
+    app.post('/api/cadastro-leitor', async (req, res) => {
+        const chave = req.ip;
+        const agora = Date.now();
+        const recentes = (tentativasCadastro.get(chave) || []).filter(t => agora - t < 15 * 60 * 1000);
+        if (recentes.length >= 5) {
+            return res.status(429).json({ erro: 'Muitos cadastros enviados. Aguarde 15 minutos e tente novamente.' });
+        }
+        recentes.push(agora);
+        tentativasCadastro.set(chave, recentes);
+        await leitores.salvar(validarLeitor({ ...req.body, status: 'Ativo' }));
+        res.status(201).json({ mensagem: 'Cadastro recebido.' });
     });
     app.get("/api/biblioteca", exigirLeitor, async (req, res) => {
         res.json((await acervo.listarLivros()).map(catalogoPublico));

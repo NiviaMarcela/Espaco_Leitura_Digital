@@ -18,10 +18,10 @@
             <span>Espaço de <strong>Leitura Digital</strong></span>
         </a>
         <nav class="home-actions" aria-label="Acesso">
-            <a class="home-register" href="/leitores.html?novoLeitor=1">
+            <button class="home-register" type="button" data-bs-toggle="modal" data-bs-target="#modalCadastroLeitor">
                 <i class="bi bi-person-plus" aria-hidden="true"></i>
                 Cadastro de leitor
-            </a>
+            </button>
             <a class="home-login" href="/login.html">
                 <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
                 Entrar
@@ -142,11 +142,90 @@
         </section>
     </main>
 
+    <div class="modal fade" id="modalCadastroLeitor" tabindex="-1" aria-labelledby="tituloCadastroLeitor" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content custom-modal">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title fs-5" id="tituloCadastroLeitor">Cadastro de leitor</h2>
+                        <p>Preencha seus dados para fazer parte do Espaço de Leitura.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form id="formCadastroPublico">
+                    <div class="modal-body">
+                        <fieldset id="camposCadastroPublico">
+                            <legend class="visually-hidden">Dados do novo leitor</legend>
+                            <p class="home-registration-note"><i class="bi bi-info-circle" aria-hidden="true"></i> Após o cadastro, a equipe da biblioteca poderá configurar seu acesso para empréstimos.</p>
+                            <p class="text-secondary">Os campos com * são obrigatórios.</p>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label for="nomeCadastroPublico" class="form-label">Nome completo *</label>
+                                    <input id="nomeCadastroPublico" name="nome" class="form-control" maxlength="200" autocomplete="name" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="tipoCadastroPublico" class="form-label">Tipo *</label>
+                                    <select id="tipoCadastroPublico" name="tipo" class="form-select" required>
+                                        <option value="">Selecione</option>
+                                        <option>Aluno</option>
+                                        <option>Professor</option>
+                                        <option>Funcionário</option>
+                                        <option>Voluntário</option>
+                                        <option>Comunidade</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="nascimentoCadastroPublico" class="form-label">Data de nascimento *</label>
+                                    <input id="nascimentoCadastroPublico" name="dataNascimento" type="date" min="0001-01-01" class="form-control" autocomplete="bday" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="centroCadastroPublico" class="form-label">Centro de Educação *</label>
+                                    <select id="centroCadastroPublico" name="centroId" class="form-select" required disabled>
+                                        <option value="">Carregando Centros…</option>
+                                    </select>
+                                    <small id="avisoCentrosCadastro" class="form-text" role="status"></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="matriculaCadastroPublico" class="form-label">Matrícula / código</label>
+                                    <input id="matriculaCadastroPublico" name="matriculaCodigo" class="form-control" maxlength="80">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="turmaCadastroPublico" class="form-label">Turma</label>
+                                    <input id="turmaCadastroPublico" name="turma" class="form-control" maxlength="100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="telefoneCadastroPublico" class="form-label">Telefone</label>
+                                    <input id="telefoneCadastroPublico" name="telefone" type="tel" class="form-control" maxlength="30" autocomplete="tel">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="emailCadastroPublico" class="form-label">E-mail</label>
+                                    <input id="emailCadastroPublico" name="email" type="email" class="form-control" maxlength="254" autocomplete="email">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div id="sucessoCadastroPublico" class="home-registration-success" role="status" hidden>
+                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                            <h3>Cadastro enviado!</h3>
+                            <p>Seus dados foram registrados. A equipe da biblioteca poderá orientar você sobre como acessar os empréstimos.</p>
+                        </div>
+                        <p id="erroCadastroPublico" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="tentarCentrosCadastro" type="button" class="btn btn-secondary-custom" hidden>Tentar carregar Centros novamente</button>
+                        <button id="cancelarCadastroPublico" type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                        <button id="enviarCadastroPublico" type="submit" class="btn btn-primary-custom" disabled>Cadastrar leitor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <footer class="home-footer">
         <span>© 2026 Instituto Janela para o Mundo</span>
         <span>Espaço de Leitura Digital</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/home.js"></script>
 </body>
 </html>

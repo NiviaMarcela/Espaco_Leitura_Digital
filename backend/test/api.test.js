@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { criarApp } from "../src/app.js";
 
-async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }) {
-    const servidor = criarApp({ query: (sql, valores) => sql.includes('FROM sessoes s')
-        ? Promise.resolve({ rows: [usuario] }) : query(sql,valores) }, () => {}).listen(0, "127.0.0.1");
+async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }, connect) {
+    const banco = { query: (sql, valores) => sql.includes('FROM sessoes s')
+        ? Promise.resolve({ rows: [usuario] }) : query(sql,valores) };
+    if (connect) banco.connect = connect;
+    const servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
     await once(servidor, "listening");
     t.after(() => new Promise(resolve => {
         servidor.close(resolve);
@@ -17,11 +19,16 @@ async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil:
 
 test("login é público; Biblioteca e páginas de gestão exigem sessão", async t => {
     const get = await iniciar(t, () => { throw new Error("Página não deve consultar o banco"); });
-    assert.equal((await get("/login.html")).status, 200);
+    const login = await get("/login.html");
+    assert.equal(login.status, 200);
+    assert.match(await login.text(), /href="\/\?cadastro=1">Cadastre-se como leitor/);
     for (const pagina of ["/", "/index.html"]) {
         const resposta = await get(pagina);
         assert.equal(resposta.status, 200);
-        assert.match(await resposta.text(), /Espaço de Leitura Digital \| Instituto Janela para o Mundo/);
+        const html = await resposta.text();
+        assert.match(html, /Espaço de Leitura Digital \| Instituto Janela para o Mundo/);
+        assert.match(html, /id="modalCadastroLeitor"/);
+        assert.match(html, /js\/home\.js/);
     }
     for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);
@@ -32,6 +39,55 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
     assert.equal(cadastro.status, 302);
     assert.match(cadastro.headers.get('location'), /leitores\.html%3FnovoLeitor%3D1/);
     assert.equal((await get('/api/biblioteca')).status, 401);
+});
+
+test("cadastro público cria leitor ativo sem abrir a área administrativa", async t => {
+    let dadosSalvos;
+    const get = await iniciar(t, async sql => {
+        assert.match(sql, /FROM leitores l JOIN centros c/);
+        return { rows: [{ id: 15, nome: 'Pessoa de teste', tipo: 'Comunidade',
+            dataNascimento: '2000-01-01', centroId: 1, status: 'Ativo' }] };
+    }, undefined, async () => ({
+        async query(sql, valores) {
+            if (sql.includes('INSERT INTO leitores')) dadosSalvos = valores;
+            return sql.includes('INSERT INTO leitores') ? { rowCount: 1, rows: [{ id: 15 }] } : { rowCount: 0, rows: [] };
+        },
+        release() {}
+    }));
+    const resposta = await get('/api/cadastro-leitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01',
+            centroId: 1, status: 'Inativo' })
+    });
+    assert.equal(resposta.status, 201);
+    assert.deepEqual(await resposta.json(), { mensagem: 'Cadastro recebido.' });
+    assert.equal(dadosSalvos[8], 'Ativo');
+});
+
+test("cadastro público valida os dados antes de gravar", async t => {
+    const get = await iniciar(t, () => { throw new Error("Cadastro inválido não deve consultar o banco"); });
+    const resposta = await get('/api/cadastro-leitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2999-01-01', centroId: 1 })
+    });
+    assert.equal(resposta.status, 400);
+    assert.match((await resposta.json()).erro, /data de nascimento válida/);
+});
+
+test("cadastro público limita envios inválidos por endereço IP", async t => {
+    const get = await iniciar(t, () => { throw new Error("Cadastro inválido não deve consultar o banco"); });
+    const opcoes = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    };
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+        assert.equal((await get('/api/cadastro-leitor', opcoes)).status, 400);
+    }
+    const bloqueada = await get('/api/cadastro-leitor', opcoes);
+    assert.equal(bloqueada.status, 429);
 });
 
 test("somente leitores acessam a Biblioteca e seu catálogo", async t => {

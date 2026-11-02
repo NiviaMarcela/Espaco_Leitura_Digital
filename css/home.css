@@ -52,6 +52,10 @@
     transition: background-color .2s, color .2s, border-color .2s;
 }
 
+.home-register {
+    cursor: pointer;
+}
+
 .home-register:hover {
     border-color: #009b83;
     background: #009b83;
@@ -71,6 +75,49 @@
     border-color: white;
     background: #edf2f7;
     color: var(--ijm-blue);
+}
+
+.home-registration-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: #eaf5f3;
+    color: var(--ijm-blue);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.home-registration-note i {
+    margin-top: 1px;
+    color: #008f7a;
+}
+
+.home-registration-success {
+    padding: 28px 8px;
+    color: var(--ijm-blue);
+    text-align: center;
+}
+
+.home-registration-success > i {
+    color: #008f7a;
+    font-size: 42px;
+}
+
+.home-registration-success h3 {
+    margin: 12px 0 8px;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.home-registration-success p {
+    max-width: 430px;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .home-hero,

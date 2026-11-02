@@ -1738,7 +1738,59 @@ body {
 }
 
 .auth-card {
+
     width: min(100%, 460px);
+
+}
+
+.login-register-action {
+
+    border: 1px solid #009b83;
+
+    background-color: #009b83;
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+.login-register-action:hover,
+.login-register-action:focus-visible {
+
+    border-color: #008872;
+
+    background-color: #008872;
+
+    color: white;
+
+}
+
+.login-home-action {
+
+    border: 1px solid var(--ijm-green);
+
+    background-color: var(--ijm-green);
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+.login-home-action:hover,
+.login-home-action:focus-visible {
+
+    border-color: #008f7a;
+
+    background-color: #008f7a;
+
+    color: white;
+
 }
 
 .user-info .btn {
