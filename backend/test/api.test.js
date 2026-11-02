@@ -18,11 +18,19 @@ async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil:
 test("login é público; Biblioteca e páginas de gestão exigem sessão", async t => {
     const get = await iniciar(t, () => { throw new Error("Página não deve consultar o banco"); });
     assert.equal((await get("/login.html")).status, 200);
+    for (const pagina of ["/", "/index.html"]) {
+        const resposta = await get(pagina);
+        assert.equal(resposta.status, 200);
+        assert.match(await resposta.text(), /Espaço de Leitura Digital \| Instituto Janela para o Mundo/);
+    }
     for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);
         assert.equal(resposta.status, 302);
         assert.match(resposta.headers.get('location'), /^\/login\.html\?next=/);
     }
+    const cadastro = await get("/leitores.html?novoLeitor=1");
+    assert.equal(cadastro.status, 302);
+    assert.match(cadastro.headers.get('location'), /leitores\.html%3FnovoLeitor%3D1/);
     assert.equal((await get('/api/biblioteca')).status, 401);
 });
 

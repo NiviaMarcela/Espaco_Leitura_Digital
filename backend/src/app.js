@@ -217,7 +217,8 @@ export function criarApp(banco, registrarErro = console.error) {
             next();
         } catch (erro) { next(erro); }
     };
-    app.get("/", (req, res) => res.redirect("/biblioteca.html"));
+    app.get("/", arquivoPagina("index"));
+    app.get("/index.html", arquivoPagina("index"));
     app.get("/login.html", arquivoPagina("login"));
     app.get("/biblioteca.html", paginaProtegida('leitor'), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));

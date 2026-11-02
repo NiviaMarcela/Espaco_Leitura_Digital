@@ -114,6 +114,13 @@ async function carregar() {
         renderizar();
         controles.forEach(id => elemento(id).disabled = false);
         elemento('avisoLeitores').textContent = 'Leitores conectados ao banco de dados.';
+        const parametros = new URLSearchParams(location.search);
+        if (parametros.get('novoLeitor') === '1') {
+            parametros.delete('novoLeitor');
+            const consulta = parametros.toString();
+            history.replaceState(null, '', `${location.pathname}${consulta ? `?${consulta}` : ''}${location.hash}`);
+            abrirFormulario();
+        }
     } catch (erro) {
         elemento('avisoLeitores').textContent = erro.message;
         elemento('tabelaLeitores').innerHTML = '<tr><td colspan="8">Não foi possível carregar os leitores.</td></tr>';
