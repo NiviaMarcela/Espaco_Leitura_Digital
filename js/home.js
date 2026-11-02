@@ -84,7 +84,7 @@ form.addEventListener('submit', async evento => {
 
     salvando = true;
     erro.textContent = '';
-    form.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = true; });
+    modal.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = true; });
     botaoEnviar.textContent = 'Enviando…';
 
     try {
@@ -116,7 +116,7 @@ form.addEventListener('submit', async evento => {
         erro.focus();
     } finally {
         salvando = false;
-        form.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = false; });
+        modal.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = false; });
         centro.disabled = !centrosCarregados;
         botaoEnviar.disabled = !centrosCarregados;
         if (!botaoEnviar.hidden) botaoEnviar.textContent = 'Cadastrar leitor';

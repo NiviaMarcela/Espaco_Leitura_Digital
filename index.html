@@ -152,8 +152,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form id="formCadastroPublico">
-                    <div class="modal-body">
+                <form id="formCadastroPublico" class="modal-body">
                         <fieldset id="camposCadastroPublico">
                             <legend class="visually-hidden">Dados do novo leitor</legend>
                             <p class="home-registration-note"><i class="bi bi-info-circle" aria-hidden="true"></i> Cadastre seu e-mail e crie uma senha para acessar sua conta de leitor.</p>
@@ -219,13 +218,12 @@
                             <a id="linkLoginCadastroPublico" class="btn login-register-action mt-3" href="/login.html" hidden>Ir para login</a>
                         </div>
                         <p id="erroCadastroPublico" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="tentarCentrosCadastro" type="button" class="btn btn-secondary-custom" hidden>Tentar carregar Centros novamente</button>
-                        <button id="cancelarCadastroPublico" type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
-                        <button id="enviarCadastroPublico" type="submit" class="btn btn-primary-custom" disabled>Cadastrar leitor</button>
-                    </div>
                 </form>
+                <div class="modal-footer">
+                    <button id="tentarCentrosCadastro" type="button" class="btn btn-secondary-custom" hidden>Tentar carregar Centros novamente</button>
+                    <button id="cancelarCadastroPublico" type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="enviarCadastroPublico" type="submit" form="formCadastroPublico" class="btn btn-primary-custom" disabled>Cadastrar leitor</button>
+                </div>
             </div>
         </div>
     </div>
