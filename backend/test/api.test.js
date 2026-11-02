@@ -41,6 +41,27 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
     assert.equal((await get('/api/biblioteca')).status, 401);
 });
 
+test("destaques públicos exibem apenas dados básicos dos livros sem exigir sessão", async t => {
+    let consultaDestaques;
+    const livros = [{
+        id: 8,
+        titulo: "Livro em destaque",
+        autor: "Autora de teste",
+        categoria: "Aventura",
+        capaUrl: "https://example.org/capa.jpg",
+        sinopse: "Uma aventura de teste."
+    }];
+    const get = await iniciar(t, async sql => {
+        consultaDestaques = sql;
+        return { rows: livros };
+    });
+    const resposta = await get("/api/destaques");
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), livros);
+    assert.match(consultaDestaques, /FROM livros ORDER BY id DESC LIMIT 12/);
+    assert.doesNotMatch(consultaDestaques, /exemplares|leitores|usuarios/i);
+});
+
 test("cadastro público cria leitor ativo sem abrir a área administrativa", async t => {
     let dadosLeitor;
     let dadosUsuario;

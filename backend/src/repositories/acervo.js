@@ -94,6 +94,11 @@ export function criarRepositorioAcervo(banco, centroId = null) {
             const resultado = await banco.query(`${consultaLivros} WHERE ($1::integer IS NULL OR e.id IS NOT NULL) GROUP BY l.id ORDER BY l.id`, [centroId]);
             return resultado.rows;
         },
+        async listarDestaques() {
+            const resultado = await banco.query(`SELECT id, titulo, autor, categoria,
+                capa_url AS "capaUrl", sinopse FROM livros ORDER BY id DESC LIMIT 12`);
+            return resultado.rows;
+        },
         async buscarLivro(id) {
             // $1 recebe o valor separadamente do SQL, evitando concatenar entrada do usuário.
             const resultado = await banco.query(

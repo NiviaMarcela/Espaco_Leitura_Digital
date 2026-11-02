@@ -10,6 +10,145 @@ const botaoTentarCentros = elemento('tentarCentrosCadastro');
 let centrosCarregados = false;
 let salvando = false;
 
+const carrosselDestaques = elemento('destaquesLeitura');
+const slidesDestaques = elemento('slidesDestaques');
+const indicadoresDestaques = elemento('indicadoresDestaques');
+const controlesDestaques = carrosselDestaques.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+
+function criarNo(tag, texto, classe) {
+    const no = document.createElement(tag);
+    if (texto !== undefined) no.textContent = texto;
+    if (classe) no.className = classe;
+    return no;
+}
+
+function mostrarEstadoDestaques(mensagem, falha = false) {
+    const conteudo = criarNo('div', undefined, 'home-slide home-slide-empty');
+    const mensagemElemento = criarNo('p', mensagem);
+    conteudo.append(mensagemElemento);
+    if (falha) {
+        const tentarNovamente = criarNo('button', 'Tentar novamente', 'home-slide-retry');
+        tentarNovamente.type = 'button';
+        tentarNovamente.addEventListener('click', carregarDestaques);
+        conteudo.append(tentarNovamente);
+    }
+    slidesDestaques.replaceChildren(criarNo('article', undefined, 'carousel-item active'));
+    slidesDestaques.firstElementChild.append(conteudo);
+    slidesDestaques.setAttribute('aria-busy', 'false');
+    indicadoresDestaques.replaceChildren();
+    indicadoresDestaques.hidden = true;
+    controlesDestaques.forEach(controle => { controle.hidden = true; });
+}
+
+function criarSlideLivro(livro, indice, ordemCategoria, totalCategoria) {
+    const categoria = livro.categoria || 'Outras leituras';
+    const artigo = criarNo('article', undefined, `carousel-item${indice === 0 ? ' active' : ''}`);
+    const slide = criarNo('div', undefined, `home-slide ${['home-slide-stories', 'home-slide-adventure', 'home-slide-learning'][indice % 3]}`);
+    const texto = criarNo('div', undefined, 'home-slide-copy');
+    const titulo = livro.titulo || 'Livro sem título';
+    const autor = livro.autor ? `Por ${livro.autor}. ` : '';
+    texto.append(
+        criarNo('span', `${categoria} · ${String(ordemCategoria).padStart(2, '0')} de ${totalCategoria}`, 'home-slide-label'),
+        criarNo('h2', titulo)
+    );
+    const descricao = [autor, livro.sinopse].filter(Boolean).join('');
+    texto.append(criarNo('p', descricao || 'Uma leitura esperando por você no nosso acervo.'));
+    const link = criarNo('a');
+    link.href = '/login.html?next=%2Fbiblioteca.html';
+    link.setAttribute('aria-label', `Entrar para conhecer ${titulo}`);
+    link.append(document.createTextNode('Conheça este livro '));
+    const iconeLink = criarNo('i');
+    iconeLink.className = 'bi bi-arrow-up-right';
+    iconeLink.setAttribute('aria-hidden', 'true');
+    link.append(iconeLink);
+    texto.append(link);
+
+    const capa = criarNo('div', undefined, 'home-book-art home-featured-book-art');
+    const criarCapaFallback = () => {
+        const fallback = criarNo('div', undefined, 'home-book home-book-front home-book-fallback');
+        const icone = criarNo('i');
+        icone.className = 'bi bi-book-half';
+        icone.setAttribute('aria-hidden', 'true');
+        fallback.append(icone, criarNo('span', titulo), criarNo('small', categoria));
+        return fallback;
+    };
+    const urlCapa = livro.capaUrl;
+    if (typeof urlCapa === 'string' && /^https?:\/\//i.test(urlCapa)) {
+        const fallback = criarCapaFallback();
+        fallback.setAttribute('aria-hidden', 'true');
+        const imagem = document.createElement('img');
+        imagem.className = 'home-featured-book-cover';
+        imagem.src = urlCapa;
+        imagem.alt = `Capa de ${titulo}`;
+        imagem.loading = 'lazy';
+        imagem.referrerPolicy = 'no-referrer';
+        imagem.addEventListener('error', () => capa.replaceChildren(criarCapaFallback()), { once: true });
+        imagem.addEventListener('load', () => fallback.remove(), { once: true });
+        capa.append(fallback, imagem);
+    } else {
+        capa.append(criarCapaFallback());
+    }
+
+    slide.append(texto, capa);
+    artigo.append(slide);
+    return artigo;
+}
+
+async function carregarDestaques() {
+    slidesDestaques.setAttribute('aria-busy', 'true');
+    try {
+        const resposta = await fetch('/api/destaques', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        if (!resposta.ok) throw new Error('Não foi possível carregar os livros do acervo.');
+        const livros = await resposta.json();
+        if (!Array.isArray(livros)) throw new Error('A resposta dos livros está em um formato inesperado.');
+        if (livros.length === 0) {
+            mostrarEstadoDestaques('Ainda não há livros cadastrados no acervo.');
+            return;
+        }
+
+        const categorias = new Map();
+        livros.forEach(livro => {
+            const categoria = livro.categoria || 'Outras leituras';
+            if (!categorias.has(categoria)) categorias.set(categoria, []);
+            categorias.get(categoria).push(livro);
+        });
+        const destaques = [...categorias.entries()]
+            .sort(([categoriaA], [categoriaB]) => categoriaA.localeCompare(categoriaB, 'pt-BR'))
+            .flatMap(([, titulos]) => titulos.map((livro, indice) => ({
+                livro,
+                ordemCategoria: indice + 1,
+                totalCategoria: titulos.length
+            })));
+
+        slidesDestaques.replaceChildren(...destaques.map(({ livro, ordemCategoria, totalCategoria }, indice) =>
+            criarSlideLivro(livro, indice, ordemCategoria, totalCategoria)));
+        slidesDestaques.setAttribute('aria-busy', 'false');
+        indicadoresDestaques.replaceChildren(...destaques.map(({ livro }, indice) => {
+            const indicador = document.createElement('button');
+            indicador.type = 'button';
+            indicador.dataset.bsTarget = '#destaquesLeitura';
+            indicador.dataset.bsSlideTo = String(indice);
+            indicador.setAttribute('aria-label', `Livro ${indice + 1}: ${livro.titulo || 'sem título'} · ${livro.categoria || 'Outras leituras'}`);
+            if (indice === 0) {
+                indicador.className = 'active';
+                indicador.setAttribute('aria-current', 'true');
+            }
+            return indicador;
+        }));
+        indicadoresDestaques.hidden = destaques.length < 2;
+        controlesDestaques.forEach(controle => { controle.hidden = destaques.length < 2; });
+        const carrossel = bootstrap.Carousel.getOrCreateInstance(carrosselDestaques, { interval: 6500 });
+        if (destaques.length > 1) carrossel.cycle();
+        else carrossel.pause();
+    } catch (falha) {
+        mostrarEstadoDestaques(falha.name === 'TimeoutError'
+            ? 'A consulta aos livros demorou demais. Tente novamente.'
+            : falha.message || 'Não foi possível carregar os livros do acervo.', true);
+    }
+}
+
+carregarDestaques();
+
 async function carregarCentros() {
     centro.disabled = true;
     botaoEnviar.disabled = true;

@@ -41,66 +41,19 @@
                 <span class="home-note"><i class="bi bi-bookmark-heart" aria-hidden="true"></i> Entre para consultar o acervo e reservar livros.</span>
             </div>
 
-            <div id="destaquesLeitura" class="carousel slide home-carousel" data-bs-ride="carousel" data-bs-interval="6500">
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#destaquesLeitura" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Contos e imaginação"></button>
-                    <button type="button" data-bs-target="#destaquesLeitura" data-bs-slide-to="1" aria-label="Aventura e fantasia"></button>
-                    <button type="button" data-bs-target="#destaquesLeitura" data-bs-slide-to="2" aria-label="Conhecimento e descobertas"></button>
-                </div>
-                <div class="carousel-inner">
+            <div id="destaquesLeitura" class="carousel slide home-carousel" aria-label="Livros em destaque">
+                <div class="carousel-indicators" id="indicadoresDestaques"></div>
+                <div class="carousel-inner" id="slidesDestaques" aria-live="polite" aria-busy="true">
                     <article class="carousel-item active">
-                        <div class="home-slide home-slide-stories">
-                            <div class="home-slide-copy">
-                                <span class="home-slide-label">01 · Para imaginar</span>
-                                <h2>Contos e histórias</h2>
-                                <p>Personagens inesquecíveis e histórias para compartilhar em qualquer idade.</p>
-                                <a href="/login.html?next=%2Fbiblioteca.html" aria-label="Entrar para explorar o acervo de contos e histórias">
-                                    Explorar leituras <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                            <div class="home-book-art" aria-hidden="true">
-                                <div class="home-book home-book-back"><i class="bi bi-stars"></i><span>Novos<br>mundos</span></div>
-                                <div class="home-book home-book-front"><i class="bi bi-moon-stars"></i><span>Contos<br>e histórias</span><small>Uma história começa aqui</small></div>
-                            </div>
-                        </div>
-                    </article>
-                    <article class="carousel-item">
-                        <div class="home-slide home-slide-adventure">
-                            <div class="home-slide-copy">
-                                <span class="home-slide-label">02 · Para explorar</span>
-                                <h2>Aventura e fantasia</h2>
-                                <p>Embarque em jornadas cheias de descobertas, coragem e novos lugares.</p>
-                                <a href="/login.html?next=%2Fbiblioteca.html" aria-label="Entrar para explorar o acervo de aventura e fantasia">
-                                    Explorar leituras <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                            <div class="home-book-art" aria-hidden="true">
-                                <div class="home-book home-book-back"><i class="bi bi-compass"></i><span>Novas<br>jornadas</span></div>
-                                <div class="home-book home-book-front"><i class="bi bi-mountains"></i><span>Aventura<br>e fantasia</span><small>O próximo capítulo espera</small></div>
-                            </div>
-                        </div>
-                    </article>
-                    <article class="carousel-item">
-                        <div class="home-slide home-slide-learning">
-                            <div class="home-slide-copy">
-                                <span class="home-slide-label">03 · Para descobrir</span>
-                                <h2>Conhecimento e descobertas</h2>
-                                <p>Aprenda sobre o mundo, desperte a curiosidade e faça novas perguntas.</p>
-                                <a href="/login.html?next=%2Fbiblioteca.html" aria-label="Entrar para explorar o acervo de conhecimento e descobertas">
-                                    Explorar leituras <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                            <div class="home-book-art" aria-hidden="true">
-                                <div class="home-book home-book-back"><i class="bi bi-globe-americas"></i><span>Ideias<br>em viagem</span></div>
-                                <div class="home-book home-book-front"><i class="bi bi-lightbulb"></i><span>Ciência<br>e saber</span><small>Curiosidade sem limites</small></div>
-                            </div>
+                        <div class="home-slide home-slide-empty">
+                            <p>Carregando livros do acervo…</p>
                         </div>
                     </article>
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#destaquesLeitura" data-bs-slide="prev" aria-label="Categoria anterior">
+                <button class="carousel-control-prev" type="button" data-bs-target="#destaquesLeitura" data-bs-slide="prev" aria-label="Livro anterior" hidden>
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#destaquesLeitura" data-bs-slide="next" aria-label="Próxima categoria">
+                <button class="carousel-control-next" type="button" data-bs-target="#destaquesLeitura" data-bs-slide="next" aria-label="Próximo livro" hidden>
                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 </button>
             </div>

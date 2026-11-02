@@ -254,6 +254,37 @@
     background: linear-gradient(125deg, #087d73 0%, #00b398 100%);
 }
 
+.home-slide-empty {
+    min-height: 380px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    background: linear-gradient(125deg, #1b365d 0%, #315c75 100%);
+    color: white;
+    text-align: center;
+}
+
+.home-slide-empty p {
+    max-width: 360px;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.home-slide-retry {
+    padding: 9px 15px;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.home-slide-retry:hover {
+    background: rgba(255, 255, 255, .15);
+}
+
 .home-slide-copy {
     z-index: 1;
     width: 54%;
@@ -281,6 +312,10 @@
     color: rgba(255, 255, 255, .8);
     font-size: 13px;
     line-height: 1.65;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
 }
 
 .home-slide-copy a {
@@ -305,6 +340,23 @@
     height: 250px;
     flex-shrink: 0;
     margin-right: 4px;
+}
+
+.home-featured-book-art {
+    width: 180px;
+    height: 245px;
+}
+
+.home-featured-book-cover {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 155px;
+    height: 220px;
+    border: 1px solid rgba(255, 255, 255, .5);
+    border-radius: 5px 13px 13px 5px;
+    box-shadow: 0 18px 30px rgba(11, 24, 43, .3);
+    object-fit: cover;
 }
 
 .home-book {
@@ -364,6 +416,22 @@
 .home-book-front small {
     color: rgba(255, 255, 255, .75);
     font-size: 9px;
+}
+
+.home-book-fallback {
+    top: 18px;
+    left: 13px;
+    width: 155px;
+    height: 220px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .14);
+}
+
+.home-book-fallback > span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
 }
 
 .home-carousel .carousel-indicators {
