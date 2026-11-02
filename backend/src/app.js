@@ -2,10 +2,10 @@ import express from "express";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { criarRepositorioAcervo } from "./repositories/acervo.js";
-import { criarRepositorioAutenticacao } from "./repositories/autenticacao.js";
+import { criarRepositorioAutenticacao, validarSenha } from "./repositories/autenticacao.js";
 import { validarObra, validarExemplares, validarLeitor, validarBaixa,
     validarCredenciais, validarTrocaSenha, validarEmprestimo,
-    validarRenovacao, validarDevolucao } from "./validation.js";
+    validarRenovacao, validarDevolucao, erroHttp } from "./validation.js";
 import { criarRepositorioLeitores } from './repositories/leitores.js';
 import { criarRepositorioEmprestimos } from './repositories/emprestimos.js';
 import { criarRepositorioDashboard } from './repositories/dashboard.js';
@@ -142,8 +142,11 @@ export function criarApp(banco, registrarErro = console.error) {
         }
         recentes.push(agora);
         tentativasCadastro.set(chave, recentes);
-        await leitores.salvar(validarLeitor({ ...req.body, status: 'Ativo' }));
-        res.status(201).json({ mensagem: 'Cadastro recebido.' });
+        const dados = validarLeitor({ ...req.body, status: 'Ativo' });
+        if (!dados.email) throw erroHttp(400, 'Informe um e-mail para criar seu acesso.');
+        const senha = validarSenha(req.body?.senha);
+        await autenticacao.cadastrarLeitor(dados, senha);
+        res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
     });
     app.get("/api/biblioteca", exigirLeitor, async (req, res) => {
         res.json((await acervo.listarLivros()).map(catalogoPublico));

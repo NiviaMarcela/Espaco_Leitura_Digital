@@ -42,15 +42,29 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
 });
 
 test("cadastro público cria leitor ativo sem abrir a área administrativa", async t => {
-    let dadosSalvos;
+    let dadosLeitor;
+    let dadosUsuario;
+    let transacao = [];
+    const senha = 'senha-bem-segura-123';
     const get = await iniciar(t, async sql => {
-        assert.match(sql, /FROM leitores l JOIN centros c/);
-        return { rows: [{ id: 15, nome: 'Pessoa de teste', tipo: 'Comunidade',
-            dataNascimento: '2000-01-01', centroId: 1, status: 'Ativo' }] };
+        if (sql.includes('FROM usuarios u LEFT JOIN leitores l')) {
+            return { rows: [{ id: 25, email: dadosUsuario[0], senha_hash: dadosUsuario[1],
+                perfil: 'leitor', leitor_id: dadosUsuario[2], trocar_senha: false, nome: 'Pessoa de teste' }] };
+        }
+        if (sql.includes('INSERT INTO sessoes')) return { rows: [], rowCount: 1 };
+        throw new Error(`Consulta inesperada: ${sql}`);
     }, undefined, async () => ({
-        async query(sql, valores) {
-            if (sql.includes('INSERT INTO leitores')) dadosSalvos = valores;
-            return sql.includes('INSERT INTO leitores') ? { rowCount: 1, rows: [{ id: 15 }] } : { rowCount: 0, rows: [] };
+        async query(sql, valores = []) {
+            transacao.push(sql);
+            if (sql.includes('INSERT INTO leitores')) {
+                dadosLeitor = valores;
+                return { rowCount: 1, rows: [{ id: 15 }] };
+            }
+            if (sql.includes('INSERT INTO usuarios')) {
+                dadosUsuario = valores;
+                return { rowCount: 1, rows: [{ id: 25 }] };
+            }
+            return { rowCount: 0, rows: [] };
         },
         release() {}
     }));
@@ -58,11 +72,26 @@ test("cadastro público cria leitor ativo sem abrir a área administrativa", asy
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01',
-            centroId: 1, status: 'Inativo' })
+            centroId: 1, status: 'Inativo', email: '  LEITOR@example.org  ', senha })
     });
     assert.equal(resposta.status, 201);
-    assert.deepEqual(await resposta.json(), { mensagem: 'Cadastro recebido.' });
-    assert.equal(dadosSalvos[8], 'Ativo');
+    assert.deepEqual(await resposta.json(), { mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
+    assert.equal(dadosLeitor[7], 1);
+    assert.match(transacao[1], /VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,'Ativo'\)/);
+    assert.equal(dadosUsuario[0], 'leitor@example.org');
+    assert.equal(dadosUsuario[2], 15);
+    assert.match(dadosUsuario[1], /^scrypt\$16384\$8\$1\$/);
+    assert.notEqual(dadosUsuario[1], senha);
+    assert.match(transacao[transacao.length - 1], /COMMIT/);
+
+    const login = await get('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'LEITOR@example.org', senha })
+    });
+    assert.equal(login.status, 200);
+    assert.match(login.headers.get('set-cookie'), /HttpOnly/);
+    assert.equal((await login.json()).perfil, 'leitor');
 });
 
 test("cadastro público valida os dados antes de gravar", async t => {
@@ -70,10 +99,53 @@ test("cadastro público valida os dados antes de gravar", async t => {
     const resposta = await get('/api/cadastro-leitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2999-01-01', centroId: 1 })
+        body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2999-01-01',
+            centroId: 1, email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
     });
     assert.equal(resposta.status, 400);
     assert.match((await resposta.json()).erro, /data de nascimento válida/);
+});
+
+test("cadastro público exige e-mail e senha forte", async t => {
+    const get = await iniciar(t, () => { throw new Error("Cadastro incompleto não deve consultar o banco"); });
+    const dados = { nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1 };
+    for (const [adicional, mensagem] of [
+        [{ senha: 'senha-bem-segura-123' }, /e-mail para criar seu acesso/],
+        [{ email: 'leitor@example.org', senha: 'curta' }, /12 a 128 caracteres/]
+    ]) {
+        const resposta = await get('/api/cadastro-leitor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...dados, ...adicional })
+        });
+        assert.equal(resposta.status, 400);
+        assert.match((await resposta.json()).erro, mensagem);
+    }
+});
+
+test("cadastro público desfaz o leitor se o e-mail já pertence a uma conta", async t => {
+    let comandos = [];
+    const get = await iniciar(t, () => { throw new Error("Não deveria consultar fora da transação"); }, undefined, async () => ({
+        async query(sql) {
+            comandos.push(sql);
+            if (sql.includes('INSERT INTO leitores')) return { rowCount: 1, rows: [{ id: 15 }] };
+            if (sql.includes('INSERT INTO usuarios')) {
+                throw Object.assign(new Error('duplicate key'), { code: '23505', constraint: 'usuarios_email_unico' });
+            }
+            return { rowCount: 0, rows: [] };
+        },
+        release() {}
+    }));
+    const resposta = await get('/api/cadastro-leitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01',
+            centroId: 1, email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
+    });
+    assert.equal(resposta.status, 409);
+    assert.match((await resposta.json()).erro, /já possui uma conta/);
+    assert.match(comandos[0], /BEGIN/);
+    assert.match(comandos[comandos.length - 1], /ROLLBACK/);
 });
 
 test("cadastro público limita envios inválidos por endereço IP", async t => {

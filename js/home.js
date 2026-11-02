@@ -61,6 +61,7 @@ modal.addEventListener('hidden.bs.modal', () => {
     form.reset();
     campos.hidden = false;
     elemento('sucessoCadastroPublico').hidden = true;
+    elemento('linkLoginCadastroPublico').hidden = true;
     elemento('cancelarCadastroPublico').textContent = 'Cancelar';
     botaoEnviar.hidden = false;
     botaoEnviar.disabled = !centrosCarregados;
@@ -73,6 +74,13 @@ botaoTentarCentros.addEventListener('click', carregarCentros);
 form.addEventListener('submit', async evento => {
     evento.preventDefault();
     if (salvando || !form.reportValidity()) return;
+
+    const senha = elemento('senhaCadastroPublico').value;
+    if (senha !== elemento('confirmarSenhaCadastroPublico').value) {
+        erro.textContent = 'As senhas não coincidem. Confira os dois campos.';
+        elemento('confirmarSenhaCadastroPublico').focus();
+        return;
+    }
 
     salvando = true;
     erro.textContent = '';
@@ -98,6 +106,7 @@ form.addEventListener('submit', async evento => {
 
         campos.hidden = true;
         elemento('sucessoCadastroPublico').hidden = false;
+        elemento('linkLoginCadastroPublico').hidden = false;
         elemento('cancelarCadastroPublico').textContent = 'Fechar';
         botaoEnviar.hidden = true;
     } catch (falha) {
@@ -108,6 +117,7 @@ form.addEventListener('submit', async evento => {
     } finally {
         salvando = false;
         form.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = false; });
+        centro.disabled = !centrosCarregados;
         botaoEnviar.disabled = !centrosCarregados;
         if (!botaoEnviar.hidden) botaoEnviar.textContent = 'Cadastrar leitor';
     }

@@ -30,19 +30,20 @@ Matrícula/código, quando preenchida, é única dentro do Centro sem distinguir
 maiúsculas e minúsculas. O status começa como Ativo e pode ser editado para Inativo.
 Não há exclusão de leitores nesta etapa.
 
-A tela inicial permite que visitantes enviem um cadastro pelo modal. A rota pública
-`POST /api/cadastro-leitor` valida os mesmos campos, sempre cria o leitor como Ativo
-e limita cinco envios por endereço IP a cada 15 minutos. O cadastro não cria uma
-conta nem uma senha: um administrador precisa configurar o acesso antes de o leitor
-poder entrar e solicitar empréstimos. A rota administrativa `POST /api/leitores`
-continua protegida.
+A tela inicial permite que visitantes criem uma conta pelo modal. A rota pública
+`POST /api/cadastro-leitor` valida os campos, exige e-mail e senha de 12 a 128
+caracteres, cria o leitor e sua conta ativa na mesma transação e limita cinco envios
+por endereço IP a cada 15 minutos. Senhas são armazenadas com scrypt; leitores podem
+entrar imediatamente com as credenciais escolhidas. A rota administrativa
+`POST /api/leitores` continua protegida.
 
 ## Como os blocos se conectam
 
-1. `../leitores.html` define os campos, filtros e tabela. O campo de nascimento usa
-   `type="date"`; seu valor enviado é `AAAA-MM-DD`, independente da aparência do navegador.
-2. `../js/leitores.js` lê o formulário, envia JSON por `fetch`, aguarda a resposta e
-   só então atualiza a lista. O botão fica desabilitado durante o envio.
+1. `../leitores.html` define os campos, filtros e tabela. A tela inicial `../index.html`
+   também permite a inscrição pública, incluindo e-mail e senha. O campo de nascimento
+   usa `type="date"`; seu valor enviado é `AAAA-MM-DD`, independente da aparência do navegador.
+2. `../js/leitores.js` lê o formulário administrativo, envia JSON por `fetch`, aguarda
+   a resposta e só então atualiza a lista. O botão fica desabilitado durante o envio.
 3. `src/app.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
    `/api/leitores/:id`. POST cadastra; PUT edita; GET consulta.
 4. `validarLeitor`, em `src/validation.js`, verifica os campos no servidor. A validação

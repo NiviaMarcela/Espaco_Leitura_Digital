@@ -56,6 +56,37 @@ export function criarRepositorioAutenticacao(banco) {
     }
 
     return {
+        async cadastrarLeitor(dados, senha) {
+            validarSenha(senha);
+            const email = normalizarEmail(dados.email);
+            const senhaHash = await hashSenha(senha);
+            const conexao = await banco.connect();
+            try {
+                await conexao.query('BEGIN');
+                const resultado = await conexao.query(`INSERT INTO leitores (nome, tipo, matricula_codigo, turma,
+                    data_nascimento, telefone, email, centro_id, status)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Ativo') RETURNING id`,
+                [dados.nome, dados.tipo, dados.matriculaCodigo, dados.turma,
+                    dados.dataNascimento, dados.telefone, email, dados.centroId]);
+                const leitorId = resultado.rows[0].id;
+                await conexao.query(`INSERT INTO usuarios(email, senha_hash, perfil, leitor_id, trocar_senha)
+                    VALUES ($1,$2,'leitor',$3,false)`, [email, senhaHash, leitorId]);
+                await conexao.query('COMMIT');
+            } catch (erro) {
+                await conexao.query('ROLLBACK').catch(() => {});
+                if (erro.code === '23505' && erro.constraint === 'usuarios_email_unico') {
+                    throw erroHttp(409, 'Este e-mail já possui uma conta. Entre com sua senha ou use outro e-mail.');
+                }
+                if (erro.code === '23505' && erro.constraint === 'leitores_matricula_centro_unica') {
+                    throw erroHttp(409, 'Esta matrícula/código já está cadastrada neste Centro.');
+                }
+                if (erro.code === '23503') throw erroHttp(400, 'Centro não encontrado.');
+                throw erro;
+            } finally {
+                conexao.release();
+            }
+        },
+
         async inicializarAdministrador(email, senha) {
             const emailNormalizado = normalizarEmail(email);
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {

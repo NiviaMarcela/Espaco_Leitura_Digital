@@ -156,8 +156,8 @@
                     <div class="modal-body">
                         <fieldset id="camposCadastroPublico">
                             <legend class="visually-hidden">Dados do novo leitor</legend>
-                            <p class="home-registration-note"><i class="bi bi-info-circle" aria-hidden="true"></i> Após o cadastro, a equipe da biblioteca poderá configurar seu acesso para empréstimos.</p>
-                            <p class="text-secondary">Os campos com * são obrigatórios.</p>
+                            <p class="home-registration-note"><i class="bi bi-info-circle" aria-hidden="true"></i> Cadastre seu e-mail e crie uma senha para acessar sua conta de leitor.</p>
+                            <p class="text-secondary">Os campos com * são obrigatórios. A senha deve ter pelo menos 12 caracteres.</p>
                             <div class="row g-3">
                                 <div class="col-md-8">
                                     <label for="nomeCadastroPublico" class="form-label">Nome completo *</label>
@@ -198,15 +198,25 @@
                                     <input id="telefoneCadastroPublico" name="telefone" type="tel" class="form-control" maxlength="30" autocomplete="tel">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="emailCadastroPublico" class="form-label">E-mail</label>
-                                    <input id="emailCadastroPublico" name="email" type="email" class="form-control" maxlength="254" autocomplete="email">
+                                    <label for="emailCadastroPublico" class="form-label">E-mail *</label>
+                                    <input id="emailCadastroPublico" name="email" type="email" class="form-control" maxlength="254" autocomplete="email" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="senhaCadastroPublico" class="form-label">Crie uma senha *</label>
+                                    <input id="senhaCadastroPublico" name="senha" type="password" class="form-control" minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="dicaSenhaCadastroPublico" required>
+                                    <small id="dicaSenhaCadastroPublico" class="form-text">Use de 12 a 128 caracteres.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="confirmarSenhaCadastroPublico" class="form-label">Confirme sua senha *</label>
+                                    <input id="confirmarSenhaCadastroPublico" type="password" class="form-control" minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="dicaSenhaCadastroPublico" required>
                                 </div>
                             </div>
                         </fieldset>
                         <div id="sucessoCadastroPublico" class="home-registration-success" role="status" hidden>
                             <i class="bi bi-check-circle" aria-hidden="true"></i>
-                            <h3>Cadastro enviado!</h3>
-                            <p>Seus dados foram registrados. A equipe da biblioteca poderá orientar você sobre como acessar os empréstimos.</p>
+                            <h3>Cadastro concluído!</h3>
+                            <p>Sua conta de leitor já está ativa. Entre com o e-mail e a senha que você cadastrou.</p>
+                            <a id="linkLoginCadastroPublico" class="btn login-register-action mt-3" href="/login.html" hidden>Ir para login</a>
                         </div>
                         <p id="erroCadastroPublico" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
                     </div>
