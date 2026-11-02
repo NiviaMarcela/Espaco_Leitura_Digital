@@ -6,7 +6,7 @@ function destino(usuario) {
     const proximo = new URLSearchParams(location.search).get('next');
     if (proximo?.startsWith('/') && !proximo.startsWith('//')
         && !proximo.startsWith('/login.html') && !proximo.startsWith('/alterarSenha.html')) return proximo;
-    return usuario.perfil === 'admin' ? '/dashboard.html' : '/meusEmprestimos.html';
+    return usuario.perfil === 'admin' ? '/dashboard.html' : '/biblioteca.html';
 }
 
 form.addEventListener('submit', async evento => {
