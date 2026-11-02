@@ -108,8 +108,7 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil, centroId = 
                 const { rows } = await c.query(`SELECT count(*)::integer AS total FROM emprestimos p
                     JOIN exemplares e ON e.id=p.exemplar_id
                     WHERE p.leitor_id=$1 AND p.data_devolucao IS NULL AND e.centro_id=$2`, [dados.leitorId, exemplar.centro_id]);
-                const reservas = await c.query("SELECT count(*)::int AS total FROM reservas WHERE leitor_id=$1 AND status='Pendente'", [dados.leitorId]);
-                if (rows[0].total + reservas.rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, `Este leitor já tem ${LIMITE_EXEMPLARES} empréstimos ou reservas neste centro.`);
+                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, `Este leitor já tem ${LIMITE_EXEMPLARES} empréstimos neste centro.`);
                 const dataHoje = hoje();
                 const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao)
                     VALUES ($1,$2,$3,$4,$5) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao]);
