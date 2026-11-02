@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { criarApp } from "../src/app.js";
 
-async function iniciar(t, query) {
+async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }) {
     const servidor = criarApp({ query: (sql, valores) => sql.includes('FROM sessoes s')
-        ? Promise.resolve({rows:[{id:1,nome:'Admin teste',perfil:'admin',centroId:null}]}) : query(sql,valores) }, () => {}).listen(0, "127.0.0.1");
+        ? Promise.resolve({ rows: [usuario] }) : query(sql,valores) }, () => {}).listen(0, "127.0.0.1");
     await once(servidor, "listening");
     t.after(() => new Promise(resolve => {
         servidor.close(resolve);
@@ -15,20 +15,31 @@ async function iniciar(t, query) {
         { redirect: 'manual', ...opcoes });
 }
 
-test("catálogo e login são públicos; páginas de gestão exigem sessão", async t => {
+test("login é público; Biblioteca e páginas de gestão exigem sessão", async t => {
     const get = await iniciar(t, () => { throw new Error("Página não deve consultar o banco"); });
-    for (const pagina of ["biblioteca", "login"]) assert.equal((await get(`/${pagina}.html`)).status, 200);
-    for (const pagina of ["acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
+    assert.equal((await get("/login.html")).status, 200);
+    for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);
         assert.equal(resposta.status, 302);
         assert.match(resposta.headers.get('location'), /^\/login\.html\?next=/);
     }
-    const script = await get('/js/biblioteca.js');
-    assert.equal(script.status, 200);
-    assert.match(await script.text(), /\/api\/biblioteca/);
-    const historico = await get('/js/meusEmprestimos.js');
-    assert.equal(historico.status, 200);
-    assert.match(await historico.text(), /\/api\/minhas-reservas/);
+    assert.equal((await get('/api/biblioteca')).status, 401);
+});
+
+test("somente leitores acessam a Biblioteca e seu catálogo", async t => {
+    const cookie = `espaco_sessao=${'a'.repeat(43)}`;
+    const admin = await iniciar(t, () => { throw new Error("Admin não deve consultar o catálogo"); });
+    const negada = { headers: { Cookie: cookie }, redirect: 'manual' };
+    assert.equal((await admin('/biblioteca.html', negada)).headers.get('location'), '/dashboard.html');
+    assert.equal((await admin('/api/biblioteca', negada)).status, 403);
+
+    const leitor = await iniciar(t, async () => ({ rows: [] }), {
+        id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
+    });
+    assert.equal((await leitor('/biblioteca.html', negada)).status, 200);
+    const catalogo = await leitor('/api/biblioteca', negada);
+    assert.equal(catalogo.status, 200);
+    assert.deepEqual(await catalogo.json(), []);
 });
 
 test("saúde da API não depende de uma conexão com o banco", async t => {
@@ -67,8 +78,10 @@ test("catálogo público não expõe observações internas de baixa", async t =
         exemplares: [{ id: 9, codigo: "EX-0009", centroId: 1, centro: "Centro", status: "Baixado",
             baixaMotivo: "Perda", baixaObservacao: "Anotação privada", baixaEm: "2026-10-01" }]
     };
-    const get = await iniciar(t, async () => ({ rows: [livro] }));
-    const resposta = await get("/api/biblioteca");
+    const get = await iniciar(t, async () => ({ rows: [livro] }), {
+        id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
+    });
+    const resposta = await get("/api/biblioteca", { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } });
     assert.equal(resposta.status, 200);
     assert.deepEqual((await resposta.json())[0].exemplares[0], {
         id: 9, codigo: "EX-0009", centroId: 1, centro: "Centro", status: "Baixado"
@@ -84,10 +97,17 @@ test("IDs inválidos são rejeitados antes de consultar o banco", async t => {
 
 test("livro inexistente retorna 404; listagens vazias retornam arrays", async t => {
     const get = await iniciar(t, async () => ({ rows: [] }));
-    const autenticado = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
-    assert.equal((await get("/api/livros/1", autenticado)).status, 404);
-    for (const [caminho, opcoes] of [["/api/livros", autenticado], ["/api/biblioteca"], ["/api/centros"]]) {
-        const resposta = await get(caminho, opcoes);
+    const leitor = await iniciar(t, async () => ({ rows: [] }), {
+        id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
+    });
+    const autenticadoAdmin = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
+    const autenticadoLeitor = { headers: { Cookie: `espaco_sessao=${'b'.repeat(43)}` } };
+    assert.equal((await get("/api/livros/1", autenticadoAdmin)).status, 404);
+    const privado = await get("/api/livros", autenticadoAdmin);
+    assert.equal(privado.status, 200);
+    assert.deepEqual(await privado.json(), []);
+    for (const [solicitar, caminho, opcoes] of [[leitor, "/api/biblioteca", autenticadoLeitor], [get, "/api/centros", {}]]) {
+        const resposta = await solicitar(caminho, opcoes);
         assert.equal(resposta.status, 200);
         assert.deepEqual(await resposta.json(), []);
     }
@@ -97,9 +117,9 @@ test("livro inexistente retorna 404; listagens vazias retornam arrays", async t 
 test("falhas de conexão não expõem dados internos", async t => {
     const get = await iniciar(t, () => {
         throw Object.assign(new Error("senha-de-teste-e-SQL-interno"), { code: "ECONNREFUSED" });
-    });
-    for (const caminho of ["/api/health/db", "/api/biblioteca"]) {
-        const resposta = await get(caminho);
+    }, { id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1 });
+    for (const [caminho, opcoes] of [["/api/health/db", {}], ["/api/biblioteca", { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } }]]) {
+        const resposta = await get(caminho, opcoes);
         assert.equal(resposta.status, 503);
         assert.deepEqual(await resposta.json(), { erro: "Banco de dados indisponível." });
     }
@@ -116,16 +136,20 @@ test('APIs administrativas rejeitam requisições sem sessão', async t => {
 
 test("timeout de conexão do pg sem código retorna indisponibilidade", async t => {
     for (const mensagem of ["Connection terminated due to connection timeout", "timeout exceeded when trying to connect"]) {
-        const get = await iniciar(t, () => { throw new Error(mensagem); });
-        const resposta = await get("/api/biblioteca");
+        const get = await iniciar(t, () => { throw new Error(mensagem); }, {
+            id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
+        });
+        const resposta = await get("/api/biblioteca", { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } });
         assert.equal(resposta.status, 503);
         assert.deepEqual(await resposta.json(), { erro: "Banco de dados indisponível." });
     }
 });
 
 test("erro inesperado de SQL retorna 500 com mensagem genérica", async t => {
-    const get = await iniciar(t, () => { throw Object.assign(new Error("SQL"), { code: "42P01" }); });
-    const resposta = await get("/api/biblioteca");
+    const get = await iniciar(t, () => { throw Object.assign(new Error("SQL"), { code: "42P01" }); }, {
+        id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
+    });
+    const resposta = await get("/api/biblioteca", { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } });
     assert.equal(resposta.status, 500);
     assert.deepEqual(await resposta.json(), { erro: "Não foi possível concluir a consulta." });
 });

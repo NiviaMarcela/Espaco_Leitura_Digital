@@ -121,7 +121,7 @@ export function criarApp(banco, registrarErro = console.error) {
         res.json({ ok: true });
     });
 
-    // Health and the catalogue remain public; all management APIs require an administrator.
+    // Health stays public; the reader catalogue requires a reader session.
     app.get("/api/health", (req, res) => {
         res.json({ status: "ok", servico: "espaco-leitura-api" });
     });
@@ -132,7 +132,7 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/api/centros", async (req, res) => {
         res.json(await acervo.listarCentros());
     });
-    app.get("/api/biblioteca", async (req, res) => {
+    app.get("/api/biblioteca", exigirLeitor, async (req, res) => {
         res.json((await acervo.listarLivros()).map(catalogoPublico));
     });
     app.get("/api/livros", exigirAdmin, async (req, res) => {
@@ -219,7 +219,7 @@ export function criarApp(banco, registrarErro = console.error) {
     };
     app.get("/", (req, res) => res.redirect("/biblioteca.html"));
     app.get("/login.html", arquivoPagina("login"));
-    app.get("/biblioteca.html", arquivoPagina("biblioteca"));
+    app.get("/biblioteca.html", paginaProtegida('leitor'), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
     for (const pagina of ["dashboard", "leitores", "acervo", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida('admin'), arquivoPagina(pagina));
