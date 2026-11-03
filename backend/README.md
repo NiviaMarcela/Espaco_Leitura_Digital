@@ -22,7 +22,7 @@ O banco gera os identificadores e códigos `EX-0001`, `EX-0002` etc. Não usamos
 
 Os status físicos previstos são Disponível, Emprestado, Reservado, Danificado, Perdido e Baixado. Indisponível é uma classificação geral calculada da obra. O status físico `Reservado` pode ser usado para bloquear uma cópia; o botão da Biblioteca registra um empréstimo imediato para um leitor autenticado, não cria uma fila de espera.
 
-ISBN é opcional e não tem restrição de unicidade nesta etapa. Categorias e faixas etárias permanecem textuais por enquanto. A migração `006_autenticacao.sql` cria contas e sessões com papéis de administrador e leitor. Empréstimos usam prazo de 30 dias corridos e limite de 10 exemplares simultâneos por leitor em cada centro. Consulte `EMPRESTIMOS.md` para entender as renovações e o fluxo do código.
+ISBN é opcional e não tem restrição de unicidade nesta etapa. Categorias e faixas etárias permanecem textuais por enquanto. A migração `006_autenticacao.sql` cria contas e sessões. A migração `007_perfis_reservas.sql` acrescenta coordenadores, até quatro administradores e reservas. Empréstimos usam prazo de 30 dias corridos e limite total de 10 exemplares por leitor, somando reservas pendentes e empréstimos abertos. Consulte `EMPRESTIMOS.md` para entender as renovações e o fluxo do código.
 
 ## Organização e fluxo
 
@@ -66,7 +66,7 @@ Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas
 2. Copie `.env.example` para `.env` dentro de `backend`.
 3. Preencha `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` e `PGPASSWORD` no `.env`. Os campos separados permitem usar a senha sem codificação de URL. Mantenha a senha entre aspas para preservar caracteres como `#`; se ela contiver aspas duplas, use aspas simples externas (ou vice-versa). Não envie credenciais pelo chat. O arquivo local foi preparado com `postgres` para esta configuração inicial; para uso da aplicação, prepare depois um usuário dedicado com permissões limitadas. Alternativamente, use `DATABASE_URL`, que tem prioridade sobre os campos separados. Em serviços hospedados, use a conexão e os certificados indicados pelo provedor, sem desativar a verificação TLS.
 4. Execute `pnpm db:migrate`.
-5. Execute `pnpm admin:criar` para cadastrar o primeiro administrador. Informe o e-mail e digite uma senha forte com pelo menos 12 caracteres; ela não aparece no terminal.
+5. Execute `pnpm admin:criar` para cadastrar o primeiro administrador. Informe o e-mail e digite uma senha forte com pelo menos 8 caracteres; ela não aparece no terminal.
 6. Inicie a API com `pnpm dev` e abra `/api/health/db`.
 
 O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes de configurar os acessos necessários. A migração inicial insere apenas CE Maranhão, CE Piauí e CE Bahia; a consulta de livros retornará `[]` até haver obras no banco.
@@ -84,12 +84,12 @@ O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes 
 | `POST /api/auth/logout` | Encerra a sessão |
 | `GET /api/auth/me` | Retorna o perfil autenticado |
 | `POST /api/auth/change-password` | Troca a senha inicial/atual |
-| `POST /api/reservas` | Registra empréstimo para o leitor autenticado |
-| `GET /api/minhas-reservas` | Lista somente o histórico do leitor autenticado |
+| `POST /api/reservas` | Reserva uma cópia disponível do Centro do leitor |
+| `GET /api/minhas-reservas` | Lista as reservas do leitor autenticado |
 
 ID inválido retorna 400; obra ou rota inexistente, 404; banco não configurado ou conexão recusada, 503; outros erros de consulta, 500. As respostas não incluem credenciais nem SQL interno.
 
-As APIs de administração (`/api/dashboard`, `/api/leitores`, gravações do acervo e `/api/emprestimos`) requerem o perfil administrador. Reservas e histórico requerem o perfil leitor. Conta de leitor não pode enviar o ID de outra pessoa para criar empréstimo, e não consegue consultar registros administrativos.
+As APIs de gestão (`/api/dashboard`, `/api/leitores`, gravações do acervo e `/api/emprestimos`) aceitam administrador e coordenador, com filtro obrigatório pelo Centro para coordenadores. Reservas e histórico requerem o perfil leitor. Conta de leitor não pode enviar o ID de outra pessoa para criar empréstimo, e não consegue consultar registros administrativos.
 
 ### Gravações
 
@@ -99,11 +99,11 @@ As APIs de administração (`/api/dashboard`, `/api/leitores`, gravações do ac
 
 As gravações aceitam JSON, validam os dados no servidor e usam parâmetros SQL. São permitidos lotes de 1 a 1000 cópias por envio; esse limite é operacional e não limita o total da obra. IDs e códigos vêm do banco. O estado na tela só é atualizado depois da confirmação da API. Não existe repetição automática de gravações quando a rede falha: confira o acervo antes de tentar novamente.
 
-O backend serve o catálogo público e exige sessão de administrador para as telas e APIs de gerenciamento. Leitores entram com e-mail e senha; a reserva cria um empréstimo para o leitor autenticado, e a API não aceita o ID de outro leitor enviado pelo navegador. As sessões usam cookies HttpOnly, SameSite=Lax e tokens aleatórios armazenados somente como hash. Senhas são derivadas com scrypt. O administrador configura uma senha inicial para cada leitor ativo com e-mail válido; o leitor deve alterá-la no primeiro login. O administrador pode redefini-la na tela Leitores.
+O cadastro público cria uma conta de leitor com senha de 8 a 128 caracteres. Administradores têm acesso aos três Centros; coordenadores gerenciam apenas o Centro da sessão; leitores acessam o catálogo do próprio Centro, suas reservas e seu histórico. Somente administradores acessam a gestão de usuários. As sessões usam cookies HttpOnly, SameSite=Lax e tokens armazenados como hash; as senhas usam scrypt.
 
-Para habilitar um leitor, cadastre o e-mail no perfil de Leitores e use **Criar acesso** para definir a senha temporária. Depois de trocar a senha no primeiro login, a pessoa pode entrar pela Biblioteca, escolher um exemplar disponível e confirmar **Reservar Livro**. A confirmação registra imediatamente um empréstimo normal de 30 dias; não é uma fila de espera. A tela **Meus Empréstimos** consulta somente o histórico da conta autenticada.
+Reservar marca a cópia como Reservado e cria uma reserva Pendente, sem iniciar prazo. Em Empréstimos → Reservas aguardando retirada, o coordenador do Centro (ou administrador) confirma a entrega; só então nasce o empréstimo de 30 dias. O leitor acompanha e cancela reservas pendentes em Minhas reservas e empréstimos. Cancelar libera a cópia e uma vaga do limite de 10. Consulte GUIA-PERFIS-RESERVAS.md.
 
-Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `pnpm db:migrate` e depois `pnpm admin:criar`. O comando solicita o e-mail e a senha sem exibi-la e não permite criar outro administrador inicial. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
+Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `pnpm db:migrate` e depois `pnpm admin:criar`. O comando solicita o e-mail e a senha sem exibi-la e não permite criar outro administrador inicial. Os administradores adicionais são cadastrados em Usuários, até o total de quatro. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
 
 Express serve apenas páginas autorizadas e as pastas css, js e assets. A raiz do projeto, o backend e o .env não são servidos. A interface usa a mesma origem da API; pedidos de gravação vindos de outra origem são rejeitados. O login de administrador protege também as rotas que alteram o acervo, leitores, empréstimos e devoluções.
 

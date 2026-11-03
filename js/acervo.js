@@ -381,7 +381,7 @@ function renderizarLivros(lista) {
                     class="table-action"
                     title="Editar livro"
                     aria-label="Editar livro"
-                    data-editar-livro-id="${livro.id}" ${window.usuarioAtual?.perfil === "Administrador" ? "" : "hidden"}
+                    data-editar-livro-id="${livro.id}"
                     onclick="editarLivro(${livro.id})"
                 >
 
@@ -825,6 +825,7 @@ formLivro.addEventListener("submit", async function (event) {
     document.getElementById("textoSalvarLivro").textContent = "Salvando…";
     try {
         const livro = await requisitarApi(id === null ? "/livros" : `/livros/${id}`, id === null ? "POST" : "PUT", dadosObra);
+        if (id !== null && livro.id !== id) livros = livros.filter(item => item.id !== id);
         atualizarObraNaTela(livro);
         document.getElementById("avisoAcervo").textContent = "Livro salvo no banco de dados.";
         salvo = true;

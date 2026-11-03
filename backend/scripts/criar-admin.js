@@ -33,7 +33,7 @@ try {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     const email = await rl.question('Email de acesso: ');
     rl.close();
-    const senha = await senhaOculta('Senha (12 a 128 caracteres; não será exibida): ');
+    const senha = await senhaOculta('Senha (8 a 128 caracteres; não será exibida): ');
     const confirmacao = await senhaOculta('Repita a senha: ');
     if (senha !== confirmacao) throw new Error('As senhas não coincidem.');
     const autenticacao = criarRepositorioAutenticacao(banco);

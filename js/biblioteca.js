@@ -117,6 +117,7 @@ function aplicarFiltros() {
         botao.addEventListener("click", () => mostrarDetalhes(livro));
         const reservar = criar("button", "Reservar Livro", "btn btn-primary-custom btn-sm mt-2");
         reservar.type = "button";
+        reservar.setAttribute('data-leitor-only', '');
         reservar.disabled = quantidadeDisponivel(livro) === 0;
         reservar.setAttribute("aria-label", `Reservar ${livro.titulo}`);
         reservar.addEventListener("click", () => abrirReserva(livro));
@@ -160,7 +161,7 @@ async function abrirReserva(livro) {
         `${exemplar.centro} · ${exemplar.codigo}${exemplar.localizacao ? ` · ${exemplar.localizacao}` : ''}`,
         String(exemplar.id)
     )));
-    elemento('avisoReserva').textContent = 'Ao confirmar, o empréstimo será registrado no seu cadastro com prazo de 30 dias corridos.';
+    elemento('avisoReserva').textContent = 'A cópia ficará reservada. O prazo de 30 dias começa quando o coordenador confirmar sua retirada.';
     bootstrap.Modal.getOrCreateInstance(modalReserva).show();
 }
 
@@ -169,7 +170,7 @@ formReserva.addEventListener('submit', async evento => {
     if (reservando || !livroReservar || !formReserva.reportValidity()) return;
     reservando = true;
     elemento('confirmarReserva').disabled = true;
-    elemento('confirmarReserva').textContent = 'Registrando…';
+    elemento('confirmarReserva').textContent = 'Reservando…';
     elemento('erroReserva').textContent = '';
     try {
         const resposta = await fetch('/api/reservas', {
@@ -186,16 +187,16 @@ formReserva.addEventListener('submit', async evento => {
         if (!resposta.ok) throw new Error(resultado?.erro || 'Não foi possível registrar o empréstimo.');
         bootstrap.Modal.getOrCreateInstance(modalReserva).hide();
         await carregarBiblioteca();
-        aviso.textContent = `Empréstimo registrado para ${resultado.livro}. Prazo: ${formatarData(resultado.dataPrevistaDevolucao)}.`;
+        aviso.textContent = `Reserva registrada para ${resultado.livro}. Acompanhe em Minhas reservas e aguarde a retirada no seu Centro.`;
     } catch (erro) {
         elemento('erroReserva').textContent = erro.name === 'TimeoutError' || erro instanceof TypeError
-            ? 'Não foi possível confirmar a reserva. Consulte “Meus Empréstimos” antes de tentar novamente.'
+            ? 'Não foi possível confirmar a reserva. Consulte “Minhas reservas” antes de tentar novamente.'
             : erro.message || 'Não foi possível conectar ao servidor.';
         elemento('erroReserva').focus();
     } finally {
         reservando = false;
         elemento('confirmarReserva').disabled = false;
-        elemento('confirmarReserva').textContent = 'Confirmar empréstimo';
+        elemento('confirmarReserva').textContent = 'Confirmar reserva';
     }
 });
 

@@ -31,7 +31,7 @@
 </head>
 
 
-<body data-auth-role="admin">
+<body data-auth-role="admin,coordenador">
 
 
     <!-- =========================
@@ -64,6 +64,7 @@
 
 
         <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
             <a
                 href="dashboard.html"
@@ -72,6 +73,10 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 Dashboard
             </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
             <a
@@ -156,6 +161,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
                 <a
                     href="dashboard.html"
@@ -164,6 +170,10 @@
                     <i class="bi bi-grid-1x2-fill"></i>
                     Dashboard
                 </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
                 <a
@@ -247,7 +257,10 @@
             </div>
 
 
-            <div class="user-info" aria-live="polite">Conferindo sessão…</div></header>
+            <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+
+                <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+            </div></header>
 
 
 
@@ -310,8 +323,8 @@
         <div class="modal-body">
             <p id="emailAcessoLeitor"></p>
             <label for="senhaInicialLeitor" class="form-label">Senha inicial temporária *</label>
-            <input id="senhaInicialLeitor" class="form-control" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
-            <div class="form-text">Use pelo menos 12 caracteres. Compartilhe a senha com o leitor por um canal seguro; ele deverá alterá-la no primeiro login.</div>
+            <input id="senhaInicialLeitor" class="form-control" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+            <div class="form-text">Use pelo menos 8 caracteres. Compartilhe a senha com o leitor por um canal seguro; ele deverá alterá-la no primeiro login.</div>
             <p id="erroAcessoLeitor" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
         </div>
         <div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button><button id="salvarAcessoLeitor" type="submit" class="btn btn-primary-custom">Criar acesso</button></div>

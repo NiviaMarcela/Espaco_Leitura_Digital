@@ -37,7 +37,7 @@ async function carregar() {
     botao.disabled = true;
     aviso.textContent = 'Carregando seus empréstimos…';
     try {
-        const resposta = await fetch('/api/minhas-reservas', {
+        const resposta = await fetch('/api/meus-emprestimos', {
             cache: 'no-store',
             signal: AbortSignal.timeout(15000)
         });
@@ -66,3 +66,5 @@ async function carregar() {
 
 elemento('atualizarMeusEmprestimos').addEventListener('click', carregar);
 carregar();
+
+document.addEventListener('reservas-atualizadas', carregar);

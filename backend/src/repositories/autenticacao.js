@@ -8,13 +8,13 @@ const TAMANHO_HASH = 64;
 const HASH_DUMMY = `scrypt$16384$8$1$${'0'.repeat(32)}$${'0'.repeat(128)}`;
 
 export function validarSenha(senha, nome = 'Senha') {
-    if (typeof senha !== 'string' || senha.length < 12 || senha.length > 128) {
-        throw erroHttp(400, `${nome}: use de 12 a 128 caracteres.`);
+    if (typeof senha !== 'string' || senha.length < 8 || senha.length > 128) {
+        throw erroHttp(400, `${nome}: use de 8 a 128 caracteres.`);
     }
     return senha;
 }
 
-async function hashSenha(senha) {
+export async function hashSenha(senha) {
     const salt = randomBytes(16);
     const derivada = await scrypt(senha, salt, TAMANHO_HASH, {
         N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024
@@ -42,6 +42,7 @@ export function criarRepositorioAutenticacao(banco) {
             email: usuario.email,
             perfil: usuario.perfil,
             leitorId: usuario.leitor_id ?? null,
+            centroId: usuario.centro_id ?? null,
             nome: usuario.nome ?? 'Administrador',
             trocarSenha: usuario.trocar_senha
         };
@@ -95,8 +96,8 @@ export function criarRepositorioAutenticacao(banco) {
             validarSenha(senha, 'Senha do administrador');
             const existente = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
             if (existente.rowCount) return false;
-            const criado = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha)
-                VALUES ($1,$2,'admin',false) ON CONFLICT DO NOTHING RETURNING id`,
+            const criado = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha, vaga_admin)
+                VALUES ($1,$2,'admin',false,1) ON CONFLICT DO NOTHING RETURNING id`,
             [emailNormalizado, await hashSenha(senha)]);
             if (criado.rowCount) return true;
             const administrador = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
@@ -106,9 +107,9 @@ export function criarRepositorioAutenticacao(banco) {
 
         async entrar(email, senha) {
             const resultado = await banco.query(`SELECT u.id, u.email, u.senha_hash, u.perfil,
-                    u.leitor_id, u.trocar_senha, l.nome
+                    u.leitor_id, u.trocar_senha, COALESCE(u.nome,l.nome) AS nome, COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM usuarios u LEFT JOIN leitores l ON l.id=u.leitor_id
-                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil='admin' OR l.status='Ativo')`,
+                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador') OR l.status='Ativo')`,
             [normalizarEmail(email)]);
             const usuario = resultado.rows[0];
             if (!usuario) {
@@ -124,11 +125,11 @@ export function criarRepositorioAutenticacao(banco) {
         async autenticar(token) {
             if (!token || !/^[A-Za-z0-9_-]{40,50}$/.test(token)) return null;
             const resultado = await banco.query(`SELECT u.id, u.email, u.perfil, u.leitor_id,
-                    u.trocar_senha, l.nome
+                    u.trocar_senha, COALESCE(u.nome,l.nome) AS nome, COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE s.token_hash=$1 AND s.expira_em>now() AND u.ativo=true
-                    AND (u.perfil='admin' OR l.status='Ativo')`,
+                    AND (u.perfil IN ('admin','coordenador') OR l.status='Ativo')`,
             [hashToken(token)]);
             return resultado.rows[0] ? usuarioPublico(resultado.rows[0]) : null;
         },
@@ -152,10 +153,10 @@ export function criarRepositorioAutenticacao(banco) {
             return true;
         },
 
-        async definirAcessoLeitor(leitorId, senhaInicial) {
+        async definirAcessoLeitor(leitorId, senhaInicial, centroId = null) {
             validarSenha(senhaInicial, 'Senha inicial');
             const resultado = await banco.query(`SELECT id, email, nome, status
-                FROM leitores WHERE id=$1`, [leitorId]);
+                FROM leitores WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2)`, [leitorId, centroId]);
             const leitor = resultado.rows[0];
             if (!leitor) throw erroHttp(404, 'Leitor não encontrado.');
             if (leitor.status !== 'Ativo') throw erroHttp(409, 'Ative o cadastro do leitor antes de criar o acesso.');

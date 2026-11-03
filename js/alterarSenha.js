@@ -27,7 +27,7 @@ form.addEventListener('submit', async evento => {
         const sessao = await fetch('/api/auth/me', { cache: 'no-store' });
         if (!sessao.ok) throw new Error('A senha foi alterada. Entre novamente para continuar.');
         const usuario = await sessao.json();
-        location.assign(usuario.perfil === 'admin' ? '/dashboard.html' : '/meusEmprestimos.html');
+        location.assign(usuario.perfil !== 'leitor' ? '/dashboard.html' : '/meusEmprestimos.html');
     } catch (falha) {
         erro.textContent = falha.message || 'Não foi possível conectar ao servidor.';
         erro.focus();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meus Empréstimos</title>
+    <title>Minhas reservas e empréstimos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -27,7 +27,7 @@
                 <i class="bi bi-collection" aria-hidden="true"></i>Biblioteca
             </a>
             <a class="menu-item active" href="meusEmprestimos.html" aria-current="page">
-                <i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Meus Empréstimos
+                <i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Minhas reservas e empréstimos
             </a>
         </nav>
 
@@ -45,7 +45,7 @@
         <div class="offcanvas-body">
             <nav class="menu">
                 <a class="menu-item" href="biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
-                <a class="menu-item active" href="meusEmprestimos.html" aria-current="page"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Meus Empréstimos</a>
+                <a class="menu-item active" href="meusEmprestimos.html" aria-current="page"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Minhas reservas e empréstimos</a>
             </nav>
         </div>
     </div>
@@ -57,13 +57,18 @@
         <section class="page-header">
             <div>
                 <span class="page-eyebrow">Biblioteca</span>
-                <h2>Meus Empréstimos</h2>
+                <h2>Minhas reservas e empréstimos</h2>
                 <p>Consulte os empréstimos registrados para o seu cadastro, incluindo os já devolvidos.</p>
             </div>
             <div class="user-info"><div><strong>Leitor</strong><span>Conta autenticada</span></div></div>
         </section>
 
-        <p id="avisoMeusEmprestimos" role="status" aria-live="polite">Carregando empréstimos…</p>
+        <section class="content-card mb-4" aria-labelledby="tituloReservas">
+    <div class="card-heading"><h3 id="tituloReservas">Minhas reservas</h3><button id="atualizarReservas" class="btn btn-secondary-custom" type="button">Atualizar reservas</button></div>
+    <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
+    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+</section>
+<p id="avisoMeusEmprestimos" role="status" aria-live="polite">Carregando empréstimos…</p>
         <button id="atualizarMeusEmprestimos" class="btn btn-secondary-custom mb-3" type="button">
             Atualizar lista
         </button>
@@ -99,5 +104,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/meusEmprestimos.js"></script>
     <script src="js/auth-ui.js"></script>
+<script type="module" src="js/reservas.js"></script>
 </body>
 </html>

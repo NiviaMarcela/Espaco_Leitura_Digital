@@ -31,7 +31,7 @@
 </head>
 
 
-<body data-auth-role="admin">
+<body data-auth-role="admin,coordenador">
 
 
     <!-- =========================
@@ -64,6 +64,7 @@
 
 
         <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
             <a
                 href="dashboard.html"
@@ -72,6 +73,10 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 Dashboard
             </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
             <a
@@ -156,6 +161,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
                 <a
                     href="dashboard.html"
@@ -164,6 +170,10 @@
                     <i class="bi bi-grid-1x2-fill"></i>
                     Dashboard
                 </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
                 <a
@@ -247,7 +257,10 @@
             </div>
 
 
-            <div class="user-info" aria-live="polite">Conferindo sessão…</div></header>
+            <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+
+                <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+            </div></header>
 
 
 

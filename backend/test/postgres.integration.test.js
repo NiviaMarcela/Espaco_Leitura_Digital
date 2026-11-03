@@ -22,6 +22,9 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         await banco.query(await readFile(new URL("../database/002_leitores.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/003_baixa_exemplares.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/006_autenticacao.sql", import.meta.url), "utf8"));
+        for (const nome of ['004_emprestimos.sql', '005_devolucoes.sql', '007_perfis_reservas.sql']) {
+            await banco.query(await readFile(new URL('../database/' + nome, import.meta.url), 'utf8'));
+        }
         const auth = criarRepositorioAutenticacao(banco);
         await auth.inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
         servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
@@ -125,7 +128,7 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         assert.equal((await enviar("/.env")).status, 404);
         const negada = await fetch(base + "/api/livros", { method: "POST", headers: { Origin: "https://outro-site.example", "Content-Type": "application/json" }, body: JSON.stringify(obra) });
         assert.equal(negada.status, 403);
-        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json", "X-Requested-With":"EspacoLeitura", Cookie:cookie }, body: "{" })).status, 400);
+        assert.equal((await fetch(base + "/api/livros", { method: "POST", headers: { "Content-Type": "application/json", "X-Requested-With":"EspacoLeitura", Cookie:cookieAdmin }, body: "{" })).status, 400);
     } finally {
         if (servidor) await new Promise(resolve => { servidor.close(resolve); servidor.closeAllConnections(); });
         if (banco) await banco.end();
