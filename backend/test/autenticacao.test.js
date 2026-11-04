@@ -48,7 +48,7 @@ async function iniciar(t, perfil, trocarSenha = false) {
     const banco = {
         async query(sql, valores = []) {
             if (sql.includes('FROM usuarios u LEFT JOIN leitores l')) {
-                assert.doesNotMatch(sql, /u\.(?:nome|centro_id)\b/);
+                assert.match(sql, /COALESCE\(u\.centro_id,l\.centro_id\) AS centro_id/);
                 return { rows: [usuario], rowCount: 1 };
             }
             if (sql.includes('INSERT INTO sessoes')) {
@@ -56,7 +56,7 @@ async function iniciar(t, perfil, trocarSenha = false) {
                 return { rows: [], rowCount: 1 };
             }
             if (sql.includes('FROM sessoes s JOIN usuarios u')) {
-                assert.doesNotMatch(sql, /u\.(?:nome|centro_id)\b/);
+                assert.match(sql, /COALESCE\(u\.centro_id,l\.centro_id\) AS centro_id/);
                 const rows = valores[0] === tokenHash ? [usuario] : [];
                 return { rows, rowCount: rows.length };
             }

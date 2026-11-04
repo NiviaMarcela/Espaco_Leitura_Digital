@@ -107,7 +107,8 @@ export function criarRepositorioAutenticacao(banco) {
 
         async entrar(email, senha) {
             const resultado = await banco.query(`SELECT u.id, u.email, u.senha_hash, u.perfil,
-                    u.leitor_id, u.trocar_senha, l.nome AS nome, l.centro_id AS centro_id
+                    u.leitor_id, u.trocar_senha, COALESCE(u.nome,l.nome) AS nome,
+                    COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM usuarios u LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador') OR l.status='Ativo')`,
             [normalizarEmail(email)]);
@@ -125,7 +126,8 @@ export function criarRepositorioAutenticacao(banco) {
         async autenticar(token) {
             if (!token || !/^[A-Za-z0-9_-]{40,50}$/.test(token)) return null;
             const resultado = await banco.query(`SELECT u.id, u.email, u.perfil, u.leitor_id,
-                    u.trocar_senha, l.nome AS nome, l.centro_id AS centro_id
+                    u.trocar_senha, COALESCE(u.nome,l.nome) AS nome,
+                    COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE s.token_hash=$1 AND s.expira_em>now() AND u.ativo=true
