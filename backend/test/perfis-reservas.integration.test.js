@@ -112,6 +112,8 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             const r=await api('/api/reservas',leitores[0].cookie,{exemplarId:obras[0].exemplares[0].id,leitorId:leitores[1].id});
             assert.equal(r.status,201,JSON.stringify(r.body));reserva=r.body;
             assert.equal(reserva.leitorId,leitores[0].id);assert.equal(reserva.status,'Pendente');
+            assert.equal(reserva.dataLimiteRetirada,somarDias(reserva.dataReserva,7));
+            assert.equal(reserva.dataPrevistaDevolucao,somarDias(reserva.dataReserva,30));
             assert.equal(reserva.emprestimoId,null);
             assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1',[reserva.exemplarId])).rows[0].status,'Reservado');
             assert.equal((await api('/api/meus-emprestimos',leitores[0].cookie)).body.length,0);
@@ -122,11 +124,15 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             assert.equal((await api(`/api/reservas/${reserva.id}/retirar`,leitores[0].cookie,{})).status,403);
             assert.equal((await api('/api/reservas',leitores[0].cookie,{exemplarId:reserva.exemplarId})).status,409);
         });
-        await t.test('retirada confirmada no Centro cria apenas um empréstimo e inicia 30 dias na entrega', async () => {
-            await banco.query("UPDATE reservas SET criada_em=now()-interval '7 days' WHERE id=$1",[reserva.id]);
+        await t.test('retirada confirmada mantém a devolução prevista 30 dias após a reserva', async () => {
+            await banco.query("UPDATE reservas SET criada_em=($2::date::timestamp AT TIME ZONE 'America/Fortaleza') WHERE id=$1",
+                [reserva.id,somarDias(hojeCivil(),-7)]);
+            const reservaAtual=(await api('/api/minhas-reservas',leitores[0].cookie)).body.find(item=>item.id===reserva.id);
+            assert.equal(reservaAtual.dataLimiteRetirada,hojeCivil());
             const r=await api(`/api/reservas/${reserva.id}/retirar`,coords[0],{});
             assert.equal(r.status,200,JSON.stringify(r.body));assert.equal(r.body.status,'Retirada');
-            assert.equal(r.body.dataEmprestimo,hojeCivil());assert.equal(r.body.dataPrevistaDevolucao,somarDias(hojeCivil(),30));
+            assert.equal(r.body.dataEmprestimo,hojeCivil());
+            assert.equal(r.body.dataPrevistaDevolucao,somarDias(reservaAtual.dataReserva,30));
             assert.equal((await api(`/api/reservas/${reserva.id}/retirar`,coords[0],{})).status,409);
             assert.equal((await api(`/api/reservas/${reserva.id}/cancelar`,leitores[0].cookie,{})).status,409);
             const historico=await api('/api/meus-emprestimos',leitores[0].cookie);assert.equal(historico.body.length,1);
@@ -159,6 +165,19 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             const id=disputa.find(r=>r.status===201).body.id;
             const entrega=await Promise.all([1,2].map(()=>api(`/api/reservas/${id}/retirar`,coords[2],{})));
             assert.deepEqual(entrega.map(r=>r.status).sort(),[200,409]);
+        });
+        await t.test('reserva sem retirada após 7 dias libera a cópia automaticamente', async () => {
+            const exemplarId=obras[2].exemplares[1].id;
+            const criada=await api('/api/reservas',leitores[2].cookie,{exemplarId});
+            assert.equal(criada.status,201,JSON.stringify(criada.body));
+            await banco.query("UPDATE reservas SET criada_em=($2::date::timestamp AT TIME ZONE 'America/Fortaleza') WHERE id=$1",
+                [criada.body.id,somarDias(hojeCivil(),-8)]);
+            const opcoes=await api('/api/emprestimos/opcoes',coords[2]);
+            assert.equal(opcoes.status,200,JSON.stringify(opcoes.body));
+            assert.ok(opcoes.body.exemplares.some(item=>item.id===exemplarId));
+            assert.equal((await banco.query('SELECT status FROM reservas WHERE id=$1',[criada.body.id])).rows[0].status,'Cancelada');
+            assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=$1',[exemplarId])).rows[0].status,'Disponível');
+            assert.equal((await api('/api/reservas',leitores[2].cookie,{exemplarId})).status,201);
         });
         await t.test('coordenador edita sua obra sem alterar a descrição de outro Centro', async () => {
             const obra=await api(`/api/livros/${obras[0].id}/exemplares`,admin,{centroId:2,quantidade:1});assert.equal(obra.status,201);

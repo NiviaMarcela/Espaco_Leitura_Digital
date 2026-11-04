@@ -100,6 +100,7 @@ export function criarApp(banco, registrarErro = console.error) {
     const exigirAdmin = exigirPerfil('admin');
     const exigirGestao = exigirPerfil('admin', 'coordenador');
     const exigirLeitor = exigirPerfil('leitor');
+    const expirarReservas = usuario => criarRepositorioReservas(banco, usuario).expirarVencidas();
 
     app.post('/api/auth/login', async (req, res) => {
         const chave = req.ip;
@@ -170,12 +171,15 @@ export function criarApp(banco, registrarErro = console.error) {
         res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
     });
     app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'leitor'), async (req, res) => {
+        await expirarReservas(req.usuario);
         res.json((await req.repos.acervo.listarLivros()).map(catalogoPublico));
     });
     app.get("/api/livros", exigirGestao, async (req, res) => {
+        await expirarReservas(req.usuario);
         res.json(await req.repos.acervo.listarLivros());
     });
     app.get("/api/livros/:id", exigirGestao, async (req, res) => {
+        await expirarReservas(req.usuario);
         const livro = await req.repos.acervo.buscarLivro(Number(req.params.id));
         if (!livro) return res.status(404).json({ erro: "Livro não encontrado." });
         res.json(livro);
@@ -215,14 +219,21 @@ export function criarApp(banco, registrarErro = console.error) {
     });
 
     app.get('/api/dashboard', exigirGestao, async (req, res) => res.json(await req.repos.dashboard.consultar()));
-    app.get('/api/emprestimos/opcoes', exigirGestao, async (req, res) => res.json(await req.repos.emprestimos.opcoes()));
-    app.get('/api/emprestimos', exigirGestao, async (req, res) => res.json(await req.repos.emprestimos.listar()));
+    app.get('/api/emprestimos/opcoes', exigirGestao, async (req, res) => {
+        await expirarReservas(req.usuario);
+        res.json(await req.repos.emprestimos.opcoes());
+    });
+    app.get('/api/emprestimos', exigirGestao, async (req, res) => {
+        await expirarReservas(req.usuario);
+        res.json(await req.repos.emprestimos.listar());
+    });
     app.get('/api/emprestimos/:id', exigirGestao, async (req, res) => {
         const emprestimo = await req.repos.emprestimos.buscar(Number(req.params.id));
         if (!emprestimo) return res.status(404).json({ erro: 'Empréstimo não encontrado.' });
         res.json(emprestimo);
     });
     app.post('/api/emprestimos', exigirGestao, async (req, res) => {
+        await expirarReservas(req.usuario);
         const emprestimo = await req.repos.emprestimos.criar(validarEmprestimo(req.body));
         res.status(201).location(`/api/emprestimos/${emprestimo.id}`).json(emprestimo);
     });

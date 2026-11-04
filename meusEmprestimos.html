@@ -65,9 +65,10 @@
 
         <section class="content-card mb-4" aria-labelledby="tituloReservas">
     <div class="card-heading"><h3 id="tituloReservas">Minhas reservas</h3><button id="atualizarReservas" class="btn btn-secondary-custom" type="button">Atualizar reservas</button></div>
-    <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
-    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
-</section>
+            <p class="text-secondary">A retirada deve ser feita em até 7 dias corridos após a reserva. A devolução vence 30 dias após a data da reserva.</p>
+            <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
+            <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Retirar até</th><th>Devolver até</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+        </section>
 <p id="avisoMeusEmprestimos" role="status" aria-live="polite">Carregando empréstimos…</p>
         <button id="atualizarMeusEmprestimos" class="btn btn-secondary-custom mb-3" type="button">
             Atualizar lista

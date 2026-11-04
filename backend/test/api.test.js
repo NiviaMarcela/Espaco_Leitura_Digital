@@ -6,7 +6,10 @@ import { criarApp } from "../src/app.js";
 async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }, connect) {
     const banco = { query: (sql, valores) => sql.includes('FROM sessoes s')
         ? Promise.resolve({ rows: [{ ...usuario, centro_id: usuario.centroId ?? 1, leitor_id: usuario.leitorId ?? 7 }] }) : query(sql,valores) };
-    if (connect) banco.connect = connect;
+    banco.connect = connect || (async () => ({
+        async query() { return { rows: [], rowCount: 0 }; },
+        release() {}
+    }));
     const servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
     await once(servidor, "listening");
     t.after(() => new Promise(resolve => {

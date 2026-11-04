@@ -272,11 +272,12 @@
     <div><span class="page-eyebrow">Biblioteca</span><h2>Empréstimos</h2><p>Acompanhe as retiradas, os prazos e as renovações dos leitores.</p></div>
     <button id="novoEmprestimo" class="btn btn-primary-custom" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Novo empréstimo</button>
 </section>
-<p class="text-secondary">Prazo de 30 dias corridos · Até 10 exemplares por leitor, somando reservas e empréstimos · Renovações sem limite de quantidade, por 30 dias a partir do dia da renovação.</p>
+<p class="text-secondary">Empréstimo direto: 30 dias corridos. Reserva: retirada em até 7 dias e devolução em até 30 dias da reserva · Até 10 exemplares por leitor, somando reservas e empréstimos · Renovações sem limite de quantidade, por 30 dias a partir do dia da renovação.</p>
 <section class="content-card reservas-painel mb-4" aria-labelledby="tituloReservas">
     <div class="card-heading"><h3 id="tituloReservas"><i class="bi bi-bookmark-star me-2" aria-hidden="true"></i>Reservas aguardando retirada</h3><button id="atualizarReservas" class="btn btn-outline-primary" type="button"><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Atualizar reservas</button></div>
+    <p class="text-secondary">Reservas não retiradas no prazo de 7 dias são canceladas e liberam o exemplar. A data limite de devolução é calculada a partir da reserva.</p>
     <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
-    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Retirar até</th><th>Devolver até</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
 </section>
 <p id="avisoEmprestimos" role="status">Carregando empréstimos…</p>
 <button id="atualizarEmprestimos" class="btn btn-secondary-custom mb-3">Atualizar lista</button>

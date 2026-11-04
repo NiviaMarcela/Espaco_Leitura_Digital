@@ -1,5 +1,8 @@
 const el = id => document.getElementById(id);
 const gestao = document.body.hasAttribute('data-reservas-gestao');
+const formatarData = data => data
+    ? String(data).slice(0, 10).split('-').reverse().join('/')
+    : '—';
 let ocupado = false;
 
 // Cor, ícone e texto juntos identificam a situação sem depender apenas da cor.
@@ -38,13 +41,15 @@ async function carregar() {
         tabela.replaceChildren();
         if (!reservas.length) {
             const celula = tabela.insertRow().insertCell();
-            celula.colSpan = 5;
+            celula.colSpan = 7;
             celula.textContent = 'Nenhuma reserva encontrada.';
         }
         for (const reserva of reservas) {
             const linha = tabela.insertRow();
             for (const valor of [reserva.leitor, `${reserva.livro} · ${reserva.codigo} · ${reserva.centro}`,
-                new Date(reserva.criadaEm).toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })]) linha.insertCell().textContent = valor;
+                formatarData(reserva.dataReserva),
+                formatarData(reserva.dataLimiteRetirada),
+                formatarData(reserva.dataPrevistaDevolucao)]) linha.insertCell().textContent = valor;
             linha.insertCell().append(seloReserva(reserva.status));
             const acoes = linha.insertCell();
             const grupoAcoes = document.createElement('div');
@@ -62,7 +67,9 @@ async function carregar() {
                     botao.setAttribute('aria-label', `${texto}: ${reserva.livro}, ${reserva.codigo}`);
                     botao.addEventListener('click', async () => {
                         if (ocupado) return;
-                        if (!confirm(acao === 'retirar' ? 'Confirma que o leitor está recebendo esta cópia? Os 30 dias começarão agora.' : 'Cancelar esta reserva e liberar a cópia?')) return;
+                        if (!confirm(acao === 'retirar'
+                            ? 'Confirma que o leitor está recebendo esta cópia? A devolução vence 30 dias após a reserva.'
+                            : 'Cancelar esta reserva e liberar a cópia?')) return;
                         ocupado = true;
                         tabela.querySelectorAll('button').forEach(b => { b.disabled = true; });
                         try {
@@ -80,7 +87,7 @@ async function carregar() {
                 }
             }
         }
-        el('avisoReservas').textContent = `${reservas.filter(r => r.status === 'Pendente').length} reserva(s) aguardando retirada. O prazo de 30 dias começa na entrega.`;
+        el('avisoReservas').textContent = `${reservas.filter(r => r.status === 'Pendente').length} reserva(s) aguardando retirada. Reservas não retiradas em 7 dias são canceladas e liberam o exemplar; a devolução vence 30 dias após a reserva.`;
     } catch (erro) {
         el('avisoReservas').textContent = erro.message || 'Não foi possível carregar as reservas.';
     } finally { el('atualizarReservas').disabled = false; }
