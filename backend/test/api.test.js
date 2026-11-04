@@ -5,7 +5,7 @@ import { criarApp } from "../src/app.js";
 
 async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }, connect) {
     const banco = { query: (sql, valores) => sql.includes('FROM sessoes s')
-        ? Promise.resolve({ rows: [usuario] }) : query(sql,valores) };
+        ? Promise.resolve({ rows: [{ ...usuario, centro_id: usuario.centroId ?? 1, leitor_id: usuario.leitorId ?? 7 }] }) : query(sql,valores) };
     if (connect) banco.connect = connect;
     const servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
     await once(servidor, "listening");
@@ -158,7 +158,7 @@ test("cadastro público exige e-mail e senha forte", async t => {
     const dados = { nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1 };
     for (const [adicional, mensagem] of [
         [{ senha: 'senha-bem-segura-123' }, /e-mail para criar seu acesso/],
-        [{ email: 'leitor@example.org', senha: 'curta' }, /12 a 128 caracteres/]
+        [{ email: 'leitor@example.org', senha: 'curta' }, /8 a 128 caracteres/]
     ]) {
         const resposta = await get('/api/cadastro-leitor', {
             method: 'POST',
@@ -209,12 +209,18 @@ test("cadastro público limita envios inválidos por endereço IP", async t => {
     assert.equal(bloqueada.status, 429);
 });
 
-test("somente leitores acessam a Biblioteca e seu catálogo", async t => {
+test("administradores e leitores consultam a Biblioteca; reservas continuam exclusivas dos leitores", async t => {
     const cookie = `espaco_sessao=${'a'.repeat(43)}`;
-    const admin = await iniciar(t, () => { throw new Error("Admin não deve consultar o catálogo"); });
+    const admin = await iniciar(t, async () => ({ rows: [] }));
     const negada = { headers: { Cookie: cookie }, redirect: 'manual' };
-    assert.equal((await admin('/biblioteca.html', negada)).headers.get('location'), '/dashboard.html');
-    assert.equal((await admin('/api/biblioteca', negada)).status, 403);
+    assert.equal((await admin('/biblioteca.html', negada)).status, 200);
+    const catalogoAdmin = await admin('/api/biblioteca', negada);
+    assert.equal(catalogoAdmin.status, 200);
+    assert.deepEqual(await catalogoAdmin.json(), []);
+    assert.equal((await admin('/api/reservas', {
+        method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exemplarId: 1 })
+    })).status, 403);
 
     const leitor = await iniciar(t, async () => ({ rows: [] }), {
         id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
@@ -223,6 +229,34 @@ test("somente leitores acessam a Biblioteca e seu catálogo", async t => {
     const catalogo = await leitor('/api/biblioteca', negada);
     assert.equal(catalogo.status, 200);
     assert.deepEqual(await catalogo.json(), []);
+});
+
+test("links das sidebars administrativas abrem a Biblioteca e seus links de retorno", async t => {
+    const get = await iniciar(t, async () => ({ rows: [] }));
+    const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
+    for (const pagina of ['dashboard', 'acervo', 'leitores', 'emprestimos', 'devolucoes', 'usuarios']) {
+        const resposta = await get(`/${pagina}.html`, opcoes);
+        assert.equal(resposta.status, 200, pagina);
+        const html = await resposta.text();
+        const topo = html.match(/<header class="topbar">([\s\S]*?)<\/header>/)?.[1];
+        assert.ok(topo, `${pagina}: cabeçalho presente`);
+        assert.doesNotMatch(topo, /href="\/?biblioteca\.html"/, `${pagina}: sem Biblioteca no topo`);
+        const menus = [...html.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)];
+        assert.equal(menus.length, 2, `${pagina}: menu desktop e celular`);
+        const destino = '/biblioteca.html';
+        for (const menu of menus) {
+            assert.equal((menu[1].match(/href="\/biblioteca\.html"/g) || []).length, 1, `${pagina}: Biblioteca uma vez em cada sidebar`);
+        }
+        const biblioteca = await get(destino, opcoes);
+        assert.equal(biblioteca.status, 200, `${pagina}: Biblioteca sem redirecionamento`);
+        const conteudo = await biblioteca.text();
+        assert.match(conteudo, /data-auth-role="admin,coordenador,leitor"/);
+        for (const link of conteudo.matchAll(/<a[^>]+href="([^"]+\.html)"[^>]*data-admin-only/g)) {
+            assert.equal((await get(`/${link[1]}`, opcoes)).status, 200, `retorno: ${link[1]}`);
+        }
+        assert.match(conteudo, /href="index.html"/);
+        assert.equal((await get('/index.html', opcoes)).status, 200);
+    }
 });
 
 test("saúde da API não depende de uma conexão com o banco", async t => {

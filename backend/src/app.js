@@ -10,6 +10,9 @@ import { criarRepositorioLeitores } from './repositories/leitores.js';
 import { criarRepositorioEmprestimos } from './repositories/emprestimos.js';
 import { criarRepositorioDashboard } from './repositories/dashboard.js';
 
+import { criarRepositorioReservas } from './repositories/reservas.js';
+import { criarRepositorioUsuarios } from './repositories/usuarios.js';
+
 const COOKIE_SESSAO = 'espaco_sessao';
 const DURACAO_SESSAO_SEGUNDOS = 8 * 60 * 60;
 
@@ -37,9 +40,7 @@ export function criarApp(banco, registrarErro = console.error) {
     const app = express();
     const acervo = criarRepositorioAcervo(banco);
     const autenticacao = criarRepositorioAutenticacao(banco);
-    const leitores = criarRepositorioLeitores(banco);
-    const emprestimos = criarRepositorioEmprestimos(banco);
-    const dashboard = criarRepositorioDashboard(banco);
+    const usuarios = criarRepositorioUsuarios(banco);
     const tentativasLogin = new Map();
     const tentativasCadastro = new Map();
     app.disable("x-powered-by");
@@ -80,12 +81,24 @@ export function criarApp(banco, registrarErro = console.error) {
                 if (!perfis.includes(usuario.perfil)) {
                     return res.status(403).json({ erro: 'Você não tem permissão para esta operação.' });
                 }
+                if (usuario.perfil !== 'admin' && !Number.isInteger(usuario.centroId)) {
+                    return res.status(403).json({ erro: 'Conta sem Centro válido. Procure o administrador.' });
+                }
+                const centroId = usuario.perfil === 'admin' ? null : usuario.centroId;
+                // Escopo por requisição: nunca compartilhar repositórios de um Centro com outro.
+                req.repos = {
+                    acervo: criarRepositorioAcervo(banco, centroId),
+                    leitores: criarRepositorioLeitores(banco, centroId),
+                    emprestimos: criarRepositorioEmprestimos(banco, undefined, centroId),
+                    dashboard: criarRepositorioDashboard(banco, undefined, centroId)
+                };
                 next();
             } catch (erro) { next(erro); }
         };
     }
 
     const exigirAdmin = exigirPerfil('admin');
+    const exigirGestao = exigirPerfil('admin', 'coordenador');
     const exigirLeitor = exigirPerfil('leitor');
 
     app.post('/api/auth/login', async (req, res) => {
@@ -116,7 +129,7 @@ export function criarApp(banco, registrarErro = console.error) {
         if (!usuario) return res.status(401).json({ erro: 'Sessão não encontrada.' });
         res.json(usuario);
     });
-    app.post('/api/auth/change-password', exigirPerfil('admin', 'leitor'), async (req, res) => {
+    app.post('/api/auth/change-password', exigirPerfil('admin', 'coordenador', 'leitor'), async (req, res) => {
         const { senhaAtual, novaSenha } = validarTrocaSenha(req.body);
         await autenticacao.alterarSenha(req.usuario.id, req.tokenSessao, senhaAtual, novaSenha);
         res.json({ ok: true });
@@ -131,7 +144,9 @@ export function criarApp(banco, registrarErro = console.error) {
         res.json({ status: "ok", banco: "PostgreSQL" });
     });
     app.get("/api/centros", async (req, res) => {
-        res.json(await acervo.listarCentros());
+        const usuario = await carregarSessao(req);
+        if (usuario && usuario.perfil !== 'admin' && !Number.isInteger(usuario.centroId)) throw erroHttp(403, 'Conta sem Centro válido.');
+        res.json(await criarRepositorioAcervo(banco, usuario && usuario.perfil !== 'admin' ? usuario.centroId : null).listarCentros());
     });
     app.get("/api/destaques", async (req, res) => {
         res.json(await acervo.listarDestaques());
@@ -154,77 +169,90 @@ export function criarApp(banco, registrarErro = console.error) {
         await autenticacao.cadastrarLeitor(dados, senha);
         res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
     });
-    app.get("/api/biblioteca", exigirLeitor, async (req, res) => {
-        res.json((await acervo.listarLivros()).map(catalogoPublico));
+    app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'leitor'), async (req, res) => {
+        res.json((await req.repos.acervo.listarLivros()).map(catalogoPublico));
     });
-    app.get("/api/livros", exigirAdmin, async (req, res) => {
-        res.json(await acervo.listarLivros());
+    app.get("/api/livros", exigirGestao, async (req, res) => {
+        res.json(await req.repos.acervo.listarLivros());
     });
-    app.get("/api/livros/:id", exigirAdmin, async (req, res) => {
-        const livro = await acervo.buscarLivro(Number(req.params.id));
+    app.get("/api/livros/:id", exigirGestao, async (req, res) => {
+        const livro = await req.repos.acervo.buscarLivro(Number(req.params.id));
         if (!livro) return res.status(404).json({ erro: "Livro não encontrado." });
         res.json(livro);
     });
 
-    app.post("/api/livros", exigirAdmin, async (req, res) => {
-        const livro = await acervo.criarLivro(validarObra(req.body), validarExemplares(req.body));
+    app.post("/api/livros", exigirGestao, async (req, res) => {
+        const livro = await req.repos.acervo.criarLivro(validarObra(req.body), validarExemplares(req.body));
         res.status(201).location(`/api/livros/${livro.id}`).json(livro);
     });
-    app.put("/api/livros/:id", exigirAdmin, async (req, res) => {
-        res.json(await acervo.editarLivro(Number(req.params.id), validarObra(req.body)));
+    app.put("/api/livros/:id", exigirGestao, async (req, res) => {
+        res.json(await req.repos.acervo.editarLivro(Number(req.params.id), validarObra(req.body)));
     });
-    app.post("/api/livros/:id/exemplares", exigirAdmin, async (req, res) => {
-        res.status(201).json(await acervo.adicionarExemplares(Number(req.params.id), validarExemplares(req.body)));
+    app.post("/api/livros/:id/exemplares", exigirGestao, async (req, res) => {
+        res.status(201).json(await req.repos.acervo.adicionarExemplares(Number(req.params.id), validarExemplares(req.body)));
     });
 
-    app.get('/api/leitores', exigirAdmin, async (req, res) => res.json(await leitores.listar()));
-    app.post('/api/exemplares/:id/baixa', exigirAdmin, async (req, res) => {
-        res.json(await acervo.baixarExemplar(Number(req.params.id), validarBaixa(req.body)));
+    app.get('/api/leitores', exigirGestao, async (req, res) => res.json(await req.repos.leitores.listar()));
+    app.post('/api/exemplares/:id/baixa', exigirGestao, async (req, res) => {
+        res.json(await req.repos.acervo.baixarExemplar(Number(req.params.id), validarBaixa(req.body)));
     });
-    app.get('/api/leitores/:id', exigirAdmin, async (req, res) => {
-        const leitor = await leitores.buscar(Number(req.params.id));
+    app.get('/api/leitores/:id', exigirGestao, async (req, res) => {
+        const leitor = await req.repos.leitores.buscar(Number(req.params.id));
         if (!leitor) return res.status(404).json({ erro: 'Leitor não encontrado.' });
         res.json(leitor);
     });
-    app.post('/api/leitores', exigirAdmin, async (req, res) => {
-        const leitor = await leitores.salvar(validarLeitor(req.body));
+    app.post('/api/leitores', exigirGestao, async (req, res) => {
+        const leitor = await req.repos.leitores.salvar(validarLeitor(req.body));
         res.status(201).location(`/api/leitores/${leitor.id}`).json(leitor);
     });
-    app.put('/api/leitores/:id', exigirAdmin, async (req, res) => {
-        res.json(await leitores.salvar(validarLeitor(req.body), Number(req.params.id)));
+    app.put('/api/leitores/:id', exigirGestao, async (req, res) => {
+        res.json(await req.repos.leitores.salvar(validarLeitor(req.body), Number(req.params.id)));
     });
-    app.post('/api/leitores/:id/acesso', exigirAdmin, async (req, res) => {
+    app.post('/api/leitores/:id/acesso', exigirGestao, async (req, res) => {
         const senhaInicial = req.body?.senhaInicial;
-        await autenticacao.definirAcessoLeitor(Number(req.params.id), senhaInicial);
+        await autenticacao.definirAcessoLeitor(Number(req.params.id), senhaInicial, req.usuario.perfil === 'admin' ? null : req.usuario.centroId);
         res.status(204).end();
     });
 
-    app.get('/api/dashboard', exigirAdmin, async (req, res) => res.json(await dashboard.consultar()));
-    app.get('/api/emprestimos/opcoes', exigirAdmin, async (req, res) => res.json(await emprestimos.opcoes()));
-    app.get('/api/emprestimos', exigirAdmin, async (req, res) => res.json(await emprestimos.listar()));
-    app.get('/api/emprestimos/:id', exigirAdmin, async (req, res) => {
-        const emprestimo = await emprestimos.buscar(Number(req.params.id));
+    app.get('/api/dashboard', exigirGestao, async (req, res) => res.json(await req.repos.dashboard.consultar()));
+    app.get('/api/emprestimos/opcoes', exigirGestao, async (req, res) => res.json(await req.repos.emprestimos.opcoes()));
+    app.get('/api/emprestimos', exigirGestao, async (req, res) => res.json(await req.repos.emprestimos.listar()));
+    app.get('/api/emprestimos/:id', exigirGestao, async (req, res) => {
+        const emprestimo = await req.repos.emprestimos.buscar(Number(req.params.id));
         if (!emprestimo) return res.status(404).json({ erro: 'Empréstimo não encontrado.' });
         res.json(emprestimo);
     });
-    app.post('/api/emprestimos', exigirAdmin, async (req, res) => {
-        const emprestimo = await emprestimos.criar(validarEmprestimo(req.body));
+    app.post('/api/emprestimos', exigirGestao, async (req, res) => {
+        const emprestimo = await req.repos.emprestimos.criar(validarEmprestimo(req.body));
         res.status(201).location(`/api/emprestimos/${emprestimo.id}`).json(emprestimo);
     });
-    app.post('/api/emprestimos/:id/renovacoes', exigirAdmin, async (req, res) => {
-        res.json(await emprestimos.renovar(Number(req.params.id), validarRenovacao(req.body)));
+    app.post('/api/emprestimos/:id/renovacoes', exigirGestao, async (req, res) => {
+        res.json(await req.repos.emprestimos.renovar(Number(req.params.id), validarRenovacao(req.body)));
     });
-    app.post('/api/emprestimos/:id/devolucao', exigirAdmin, async (req, res) => {
-        res.json(await emprestimos.devolver(Number(req.params.id), validarDevolucao(req.body)));
+    app.post('/api/emprestimos/:id/devolucao', exigirGestao, async (req, res) => {
+        res.json(await req.repos.emprestimos.devolver(Number(req.params.id), validarDevolucao(req.body)));
+    });
+    app.get('/api/meus-emprestimos', exigirLeitor, async (req, res) => {
+        res.json(await req.repos.emprestimos.listarDoLeitor(req.usuario.leitorId));
     });
     app.get('/api/minhas-reservas', exigirLeitor, async (req, res) => {
-        res.json(await emprestimos.listarDoLeitor(req.usuario.leitorId));
+        res.json(await criarRepositorioReservas(banco, req.usuario).listar());
+    });
+    app.get('/api/reservas', exigirGestao, async (req, res) => {
+        res.json(await criarRepositorioReservas(banco, req.usuario).listar());
     });
     app.post('/api/reservas', exigirLeitor, async (req, res) => {
         const dados = validarEmprestimo({ leitorId: req.usuario.leitorId, exemplarId: req.body?.exemplarId });
-        const emprestimo = await emprestimos.criar(dados);
-        res.status(201).location(`/api/minhas-reservas`).json(emprestimo);
+        res.status(201).location('/api/minhas-reservas').json(await criarRepositorioReservas(banco, req.usuario).criar(dados.exemplarId));
     });
+    app.post('/api/reservas/:id/cancelar', exigirPerfil('admin','coordenador','leitor'), async (req, res) => {
+        res.json(await criarRepositorioReservas(banco, req.usuario).cancelar(Number(req.params.id)));
+    });
+    app.post('/api/reservas/:id/retirar', exigirGestao, async (req, res) => {
+        res.json(await criarRepositorioReservas(banco, req.usuario).retirar(Number(req.params.id)));
+    });
+    app.get('/api/usuarios', exigirAdmin, async (req, res) => res.json(await usuarios.listar()));
+    app.post('/api/usuarios', exigirAdmin, async (req, res) => res.status(201).json(await usuarios.criar(req.body)));
 
     // Public pages are open; protected pages are authorized on the server as well as in the UI.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -235,18 +263,19 @@ export function criarApp(banco, registrarErro = console.error) {
             if (!usuario) return res.redirect(`/login.html?next=${encodeURIComponent(req.originalUrl)}`);
             if (usuario.trocarSenha && req.path !== '/alterarSenha.html') return res.redirect('/alterarSenha.html');
             if (usuario.trocarSenha && req.path === '/alterarSenha.html') return next();
-            if (perfil && usuario.perfil !== perfil) return res.redirect(usuario.perfil === 'admin' ? '/dashboard.html' : '/biblioteca.html');
+            if (perfil && ![perfil].flat().includes(usuario.perfil)) return res.redirect(usuario.perfil !== 'leitor' ? '/dashboard.html' : '/biblioteca.html');
             next();
         } catch (erro) { next(erro); }
     };
     app.get("/", arquivoPagina("index"));
     app.get("/index.html", arquivoPagina("index"));
     app.get("/login.html", arquivoPagina("login"));
-    app.get("/biblioteca.html", paginaProtegida('leitor'), arquivoPagina("biblioteca"));
+    app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'leitor']), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
     for (const pagina of ["dashboard", "leitores", "acervo", "emprestimos", "devolucoes"]) {
-        app.get(`/${pagina}.html`, paginaProtegida('admin'), arquivoPagina(pagina));
+        app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador']), arquivoPagina(pagina));
     }
+    app.get('/usuarios.html', paginaProtegida('admin'), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida('leitor'), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {
         app.use(`/${pasta}`, express.static(path.join(raiz, pasta), { dotfiles: "deny" }));

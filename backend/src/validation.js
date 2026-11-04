@@ -71,8 +71,8 @@ export function validarTrocaSenha(body) {
         || typeof body.senhaAtual !== 'string' || body.senhaAtual.length > 128) {
         throw erroHttp(400, 'Informe a senha temporária ou atual.');
     }
-    if (typeof body.novaSenha !== 'string' || body.novaSenha.length < 12 || body.novaSenha.length > 128) {
-        throw erroHttp(400, 'A nova senha deve ter de 12 a 128 caracteres.');
+    if (typeof body.novaSenha !== 'string' || body.novaSenha.length < 8 || body.novaSenha.length > 128) {
+        throw erroHttp(400, 'A nova senha deve ter de 8 a 128 caracteres.');
     }
     return { senhaAtual: body.senhaAtual, novaSenha: body.novaSenha };
 }

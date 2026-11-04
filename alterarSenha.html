@@ -12,14 +12,14 @@
         <section class="content-card auth-card">
             <span class="page-eyebrow">Segurança da conta</span>
             <h1 class="h3 mb-2">Alterar senha</h1>
-            <p class="text-secondary">A senha temporária precisa ser trocada antes de continuar. Use pelo menos 12 caracteres.</p>
+            <p class="text-secondary">A senha temporária precisa ser trocada antes de continuar. Use pelo menos 8 caracteres.</p>
             <form id="formAlterarSenha">
                 <label for="senhaAtual" class="form-label">Senha temporária ou atual</label>
                 <input id="senhaAtual" class="form-control mb-3" type="password" autocomplete="current-password" maxlength="128" required>
                 <label for="novaSenha" class="form-label">Nova senha</label>
-                <input id="novaSenha" class="form-control mb-3" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+                <input id="novaSenha" class="form-control mb-3" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
                 <label for="confirmarSenha" class="form-label">Confirme a nova senha</label>
-                <input id="confirmarSenha" class="form-control mb-3" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+                <input id="confirmarSenha" class="form-control mb-3" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
                 <p id="erroAlterarSenha" class="text-danger" role="alert" tabindex="-1"></p>
                 <button id="salvarNovaSenha" class="btn btn-primary-custom w-100" type="submit">Salvar nova senha</button>
             </form>

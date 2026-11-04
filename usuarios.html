@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Usuários | Espaço de Leitura Digital</title>
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- CSS do projeto -->
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+</head>
+
+<body data-auth-role="admin">
+
+    <!-- =========================
+         SIDEBAR DESKTOP
+    ========================== -->
+
+    <aside class="sidebar d-none d-lg-flex">
+
+        <div class="brand">
+
+            <img
+                src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
+                alt="Instituto Janela para o Mundo"
+                class="logo-instituto"
+            >
+
+            <div class="system-name">
+
+                <strong>
+                    Espaço de Leitura Digital
+                </strong>
+
+                <span>
+                    Gestão de acervo e empréstimos
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="menu">
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+
+            <a
+                href="dashboard.html"
+                class="menu-item"
+            >
+                <i class="bi bi-grid-1x2-fill"></i>
+                Dashboard
+            </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
+
+
+            <a
+                href="acervo.html"
+                class="menu-item"
+            >
+                <i class="bi bi-book"></i>
+                Acervo
+            </a>
+
+
+            <a
+                href="leitores.html"
+                class="menu-item"
+            >
+                <i class="bi bi-people"></i>
+                Leitores
+            </a>
+
+
+            <a
+                href="emprestimos.html"
+                class="menu-item"
+            >
+                <i class="bi bi-arrow-up-right-circle"></i>
+                Empréstimos
+            </a>
+
+
+            <a
+                href="devolucoes.html"
+                class="menu-item"
+            >
+                <i class="bi bi-arrow-down-left-circle"></i>
+                Devoluções
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <span>
+                Instituto Janela para o Mundo
+            </span>
+
+            <small>
+                Espaço de Leitura Digital
+            </small>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =========================
+         MENU MOBILE
+    ========================== -->
+
+    <div
+        class="offcanvas offcanvas-start sidebar-mobile"
+        tabindex="-1"
+        id="menuMobile"
+    >
+
+        <div class="offcanvas-header">
+
+            <h5>
+                Espaço de Leitura Digital
+            </h5>
+
+            <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="offcanvas"
+            ></button>
+
+        </div>
+
+
+        <div class="offcanvas-body">
+
+            <nav class="menu">
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+
+                <a
+                    href="dashboard.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    Dashboard
+                </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
+
+                <a
+                    href="acervo.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-book"></i>
+                    Acervo
+                </a>
+
+                <a
+                    href="leitores.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-people"></i>
+                    Leitores
+                </a>
+
+                <a
+                    href="emprestimos.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                    Empréstimos
+                </a>
+
+                <a
+                    href="devolucoes.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-arrow-down-left-circle"></i>
+                    Devoluções
+                </a>
+
+            </nav>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         CONTEÚDO PRINCIPAL
+    ========================== -->
+
+    <main class="main-content">
+<button class="btn btn-secondary-custom d-lg-none mt-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-controls="menuMobile" aria-label="Abrir menu">Menu</button>
+<header class="topbar"><div><h1>Usuários do sistema</h1><p>Cadastre os acessos e seus Centros.</p></div><div class="user-info" aria-live="polite">Conferindo sessão…</div></header>
+<section class="page-header"><a class="btn btn-secondary-custom" href="dashboard.html">Voltar ao Dashboard</a></section>
+<p id="avisoUsuarios" role="status" aria-live="polite"></p><p id="limiteAdministradores"></p>
+<section class="content-card mb-4"><h2 class="h4">Cadastrar usuário</h2>
+<form id="formUsuario" class="row g-3">
+<div class="col-md-6"><label class="form-label" for="nomeUsuario">Nome</label><input class="form-control" id="nomeUsuario" name="nome" maxlength="200" required></div>
+<div class="col-md-6"><label class="form-label" for="perfilUsuario">Perfil</label><select class="form-select" id="perfilUsuario" name="perfil"><option value="coordenador">Coordenador</option><option value="admin">Administrador</option><option value="leitor">Leitor</option></select></div>
+<div class="col-md-6" id="grupoCentroUsuario"><label class="form-label" for="centroUsuario">Centro do coordenador</label><select class="form-select" id="centroUsuario" name="centroId"><option value="">Selecione</option></select></div>
+<div class="col-md-6" id="grupoLeitorUsuario" hidden><label class="form-label" for="leitorUsuario">Leitor cadastrado</label><select class="form-select" id="leitorUsuario" name="leitorId" disabled><option value="">Selecione</option></select><p>Para um novo leitor, faça primeiro o cadastro em <a href="leitores.html">Leitores</a>.</p></div>
+<div class="col-md-6"><label class="form-label" for="emailUsuario">E-mail</label><input class="form-control" type="email" id="emailUsuario" name="email" maxlength="254" required></div>
+<div class="col-md-6"><label class="form-label" for="senhaUsuario">Senha temporária (8 a 128 caracteres)</label><input class="form-control" type="password" id="senhaUsuario" name="senha" minlength="8" maxlength="128" autocomplete="new-password" required></div>
+<div class="col-12"><button class="btn btn-primary-custom" id="salvarUsuario" disabled>Cadastrar usuário</button></div>
+</form></section>
+<section class="content-card"><h2 class="h4">Contas cadastradas</h2><div class="table-responsive"><table class="table custom-table"><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Centro</th><th>Situação</th></tr></thead><tbody id="tabelaUsuarios"></tbody></table></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/auth-ui.js"></script><script type="module" src="js/usuarios.js"></script>
+</body></html>

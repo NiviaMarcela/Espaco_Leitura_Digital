@@ -22,6 +22,15 @@ export function criarRepositorioLeitores(banco, centroId = null) {
         const conexao = await banco.connect();
         try {
             await conexao.query('BEGIN');
+            if (id !== null) {
+                const atual = (await conexao.query('SELECT centro_id FROM leitores WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE', [id, centroId])).rows[0];
+                if (!atual) throw erroHttp(404, 'Leitor não encontrado.');
+                if (atual.centro_id !== dados.centroId) {
+                    const ativos = await conexao.query(`SELECT 1 FROM emprestimos WHERE leitor_id=$1 AND data_devolucao IS NULL
+                        UNION ALL SELECT 1 FROM reservas WHERE leitor_id=$1 AND status='Pendente' LIMIT 1`, [id]);
+                    if (ativos.rowCount) throw erroHttp(409, 'Encerre reservas e empréstimos antes de mudar o Centro do leitor.');
+                }
+            }
             const resultado = id === null
                 ? await conexao.query(`INSERT INTO leitores (nome, tipo, matricula_codigo, turma,
                     data_nascimento, telefone, email, centro_id, status)

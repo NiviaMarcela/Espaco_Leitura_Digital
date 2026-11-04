@@ -72,8 +72,20 @@ export function criarRepositorioAcervo(banco, centroId = null) {
             });
         },
         async editarLivro(id, dados) {
-            if (centroId !== null) throw erroHttp(403, 'Somente administradores podem editar a descrição compartilhada da obra.');
             return transacao(async conexao => {
+                if (centroId !== null) {
+                    await conexao.query('SELECT id FROM livros WHERE id=$1 FOR UPDATE', [id]);
+                    const copia = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id=$2 LIMIT 1', [id, centroId]);
+                    if (!copia.rowCount) throw erroHttp(404, 'Livro não encontrado no seu Centro.');
+                    const compartilhada = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id<>$2 LIMIT 1', [id, centroId]);
+                    if (compartilhada.rowCount) {
+                        // Se a obra é compartilhada, a edição cria uma descrição própria para este Centro.
+                        const nova = await conexao.query(`INSERT INTO livros(titulo,autor,isbn,editora,ano,categoria,faixa_etaria,capa_url,sinopse)
+                            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`, valoresObra(dados));
+                        await conexao.query('UPDATE exemplares SET livro_id=$3 WHERE livro_id=$1 AND centro_id=$2', [id, centroId, nova.rows[0].id]);
+                        return criarRepositorioAcervo(conexao, centroId).buscarLivro(nova.rows[0].id);
+                    }
+                }
                 const resultado = await conexao.query(`UPDATE livros SET
                     titulo=$1, autor=$2, isbn=$3, editora=$4, ano=$5, categoria=$6,
                     faixa_etaria=$7, capa_url=$8, sinopse=$9 WHERE id=$10 RETURNING id`,
@@ -86,6 +98,10 @@ export function criarRepositorioAcervo(banco, centroId = null) {
             return transacao(async conexao => {
                 const livro = await conexao.query("SELECT id FROM livros WHERE id=$1 FOR UPDATE", [id]);
                 if (!livro.rowCount) throw erroHttp(404, "Livro não encontrado.");
+                if (centroId !== null) {
+                    const pertence = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id=$2 LIMIT 1', [id, centroId]);
+                    if (!pertence.rowCount) throw erroHttp(404, 'Livro não encontrado no seu Centro.');
+                }
                 await inserirExemplares(conexao, id, dados);
                 return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);
             });

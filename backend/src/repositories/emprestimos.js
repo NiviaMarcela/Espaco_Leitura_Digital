@@ -80,13 +80,11 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil, centroId = 
         },
         async opcoes() {
             const leitores = (await banco.query(`SELECT l.id, l.nome, l.centro_id AS "centroId", l.matricula_codigo AS "matriculaCodigo", c.nome AS centro,
-                (SELECT count(*)::integer FROM emprestimos p JOIN exemplares e ON e.id=p.exemplar_id WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL AND ($1::integer IS NULL OR e.centro_id=$1)) AS abertos,
-                COALESCE((SELECT jsonb_object_agg(contagem.centro_id, contagem.total) FROM (
-                    SELECT e.centro_id, count(*)::integer AS total FROM emprestimos p
-                    JOIN exemplares e ON e.id=p.exemplar_id
-                    WHERE p.leitor_id=l.id AND p.data_devolucao IS NULL AND ($1::integer IS NULL OR e.centro_id=$1) GROUP BY e.centro_id
-                ) contagem), '{}'::jsonb) AS "abertosPorCentro"
-                FROM leitores l JOIN centros c ON c.id=l.centro_id WHERE l.status='Ativo' AND ($1::integer IS NULL OR l.centro_id=$1) ORDER BY l.nome, l.id`, [centroId])).rows;
+                ((SELECT count(*) FROM emprestimos WHERE leitor_id=l.id AND data_devolucao IS NULL) +
+                 (SELECT count(*) FROM reservas WHERE leitor_id=l.id AND status='Pendente'))::integer AS abertos
+                FROM leitores l JOIN centros c ON c.id=l.centro_id
+                WHERE l.status='Ativo' AND ($1::integer IS NULL OR l.centro_id=$1) ORDER BY l.nome,l.id`, [centroId])).rows;
+            leitores.forEach(l => { l.abertosPorCentro = { [l.centroId]: l.abertos }; });
             const exemplares = (await banco.query(`SELECT e.id, e.codigo, b.titulo, c.nome AS centro, e.centro_id AS "centroId" FROM exemplares e
                 JOIN livros b ON b.id=e.livro_id JOIN centros c ON c.id=e.centro_id
                 WHERE e.status='Disponível' AND ($1::integer IS NULL OR e.centro_id=$1) AND NOT EXISTS (SELECT 1 FROM emprestimos p WHERE p.exemplar_id=e.id AND p.data_devolucao IS NULL)
@@ -100,15 +98,16 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil, centroId = 
                 // Serializa retiradas do mesmo leitor, inclusive de cópias diferentes.
                 const leitor = (await c.query('SELECT status, centro_id FROM leitores WHERE id=$1 FOR UPDATE', [dados.leitorId])).rows[0];
                 if (!leitor) throw erroHttp(404, 'Leitor não encontrado.');
+                if (centroId !== null && leitor.centro_id !== centroId) throw erroHttp(404, 'Leitor não encontrado.');
                 if (leitor.status !== 'Ativo') throw erroHttp(409, 'Somente leitores ativos podem realizar empréstimos.');
                 const exemplar = (await c.query('SELECT status, centro_id FROM exemplares WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE', [dados.exemplarId,centroId])).rows[0];
                 if (!exemplar) throw erroHttp(404, 'Exemplar não encontrado.');
                 if (exemplar.status !== 'Disponível') throw erroHttp(409, 'Este exemplar não está disponível para empréstimo.');
                 if (leitor.centro_id !== exemplar.centro_id) throw erroHttp(403, 'O leitor só pode retirar exemplares do centro do seu cadastro.');
-                const { rows } = await c.query(`SELECT count(*)::integer AS total FROM emprestimos p
-                    JOIN exemplares e ON e.id=p.exemplar_id
-                    WHERE p.leitor_id=$1 AND p.data_devolucao IS NULL AND e.centro_id=$2`, [dados.leitorId, exemplar.centro_id]);
-                if (rows[0].total >= LIMITE_EXEMPLARES) throw erroHttp(409, `Este leitor já tem ${LIMITE_EXEMPLARES} empréstimos neste centro.`);
+                const { rows } = await c.query(`SELECT
+                    (SELECT count(*) FROM emprestimos WHERE leitor_id=$1 AND data_devolucao IS NULL) +
+                    (SELECT count(*) FROM reservas WHERE leitor_id=$1 AND status='Pendente') AS total`, [dados.leitorId]);
+                if (Number(rows[0].total) >= LIMITE_EXEMPLARES) throw erroHttp(409, `Limite de ${LIMITE_EXEMPLARES} exemplares entre reservas e empréstimos atingido.`);
                 const dataHoje = hoje();
                 const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao)
                     VALUES ($1,$2,$3,$4,$5) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao]);

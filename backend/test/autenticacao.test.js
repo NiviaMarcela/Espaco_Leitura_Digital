@@ -41,7 +41,7 @@ async function iniciar(t, perfil, trocarSenha = false) {
     const senha = 'senha-temporaria-segura';
     const usuario = {
         id: 8, email: 'leitor@example.org', senha_hash: await hashSenha(senha),
-        perfil, leitor_id: perfil === 'leitor' ? 42 : null,
+        perfil, centro_id: perfil === 'leitor' ? 1 : null, leitor_id: perfil === 'leitor' ? 42 : null,
         trocar_senha: trocarSenha, nome: perfil === 'leitor' ? 'Leitora Teste' : null
     };
     let tokenHash = null;
@@ -115,7 +115,7 @@ test('conta de leitor consulta somente seu histórico e não acessa administraç
         body: JSON.stringify({ email: 'leitor@example.org', senha: app.senha })
     });
     const cookie = login.headers.get('set-cookie').split(';')[0];
-    const proprio = await app.requisitar('/api/minhas-reservas', { headers: { Cookie: cookie } });
+    const proprio = await app.requisitar('/api/meus-emprestimos', { headers: { Cookie: cookie } });
     assert.equal(proprio.status, 200);
     assert.deepEqual(await proprio.json(), []);
     assert.equal((await app.requisitar('/api/dashboard', { headers: { Cookie: cookie } })).status, 403);
@@ -130,12 +130,12 @@ test('senha inicial bloqueia empréstimos até ser trocada', async t => {
         body: JSON.stringify({ email: 'leitor@example.org', senha: app.senha })
     });
     const cookie = login.headers.get('set-cookie').split(';')[0];
-    assert.equal((await app.requisitar('/api/minhas-reservas', { headers: { Cookie: cookie } })).status, 403);
+    assert.equal((await app.requisitar('/api/meus-emprestimos', { headers: { Cookie: cookie } })).status, 403);
     const troca = await app.requisitar('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Cookie: cookie },
         body: JSON.stringify({ senhaAtual: app.senha, novaSenha: 'outra-senha-bem-segura-123' })
     });
     assert.equal(troca.status, 200);
-    assert.equal((await app.requisitar('/api/minhas-reservas', { headers: { Cookie: cookie } })).status, 200);
+    assert.equal((await app.requisitar('/api/meus-emprestimos', { headers: { Cookie: cookie } })).status, 200);
 });

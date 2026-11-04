@@ -15,14 +15,16 @@ async function carregarUsuario() {
     }
     const usuario = await resposta.json();
     window.usuarioAtual = usuario;
+    document.body.dataset.userRole = usuario.perfil;
     linksAnonimos.forEach(link => { link.hidden = true; });
+    document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     if (usuario.perfil === 'admin') linksAdmin.forEach(link => { link.hidden = false; });
     if (usuario.trocarSenha && pagina !== '/alterarSenha.html') {
         location.replace('/alterarSenha.html');
         return;
     }
-    if (perfilEsperado && perfilEsperado !== 'public' && usuario.perfil !== perfilEsperado) {
-        location.replace(usuario.perfil === 'admin' ? '/dashboard.html' : '/biblioteca.html');
+    if (perfilEsperado && perfilEsperado !== 'public' && !perfilEsperado.split(',').includes(usuario.perfil)) {
+        location.replace(usuario.perfil !== 'leitor' ? '/dashboard.html' : '/biblioteca.html');
         return;
     }
     const identificacao = document.querySelector('.user-info');
@@ -42,7 +44,7 @@ async function carregarUsuario() {
             identificacao.replaceChildren(avatar, detalhes);
         }
         nome.textContent = usuario.nome || usuario.email;
-        perfil.textContent = usuario.perfil === 'admin' ? 'Administrador' : 'Leitor';
+        perfil.textContent = ({ admin: 'Administrador', coordenador: 'Coordenador', leitor: 'Leitor' })[usuario.perfil];
         const alterar = document.createElement('a');
         alterar.href = '/alterarSenha.html';
         alterar.className = 'btn btn-secondary-custom btn-sm ms-2';

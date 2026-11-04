@@ -27,7 +27,7 @@ test('empréstimo aceita apenas IDs inteiros e não aceita prazo imposto pelo cl
     assert.deepEqual(validarRenovacao({ versao: 0 }), { versao: 0 });
 });
 
-test('criar empréstimo não depende de uma tabela de reservas inexistente', async () => {
+test('criar empréstimo conta reservas pendentes no limite de circulação', async () => {
     const consultas = [];
     const conexao = {
         async query(sql) {
@@ -35,7 +35,7 @@ test('criar empréstimo não depende de uma tabela de reservas inexistente', asy
             if (sql === 'BEGIN' || sql === 'COMMIT' || sql.startsWith('UPDATE exemplares')) return { rows: [] };
             if (sql.includes('FROM leitores WHERE id=$1 FOR UPDATE')) return { rows: [{ status: 'Ativo', centro_id: 1 }] };
             if (sql.includes('FROM exemplares WHERE id=$1')) return { rows: [{ status: 'Disponível', centro_id: 1 }] };
-            if (sql.includes('SELECT count(*)::integer AS total FROM emprestimos')) return { rows: [{ total: 0 }] };
+            if (sql.includes('AS total')) return { rows: [{ total: 0 }] };
             if (sql.includes('INSERT INTO emprestimos')) return { rows: [{ id: 12 }] };
             if (sql.includes('FROM emprestimos p JOIN leitores l')) {
                 return { rows: [{ id: 12, dataPrevistaDevolucao: somarDias(hojeCivil(), 30), dataDevolucao: null }] };
@@ -48,7 +48,7 @@ test('criar empréstimo não depende de uma tabela de reservas inexistente', asy
     const emprestimo = await repositorio.criar({ leitorId: 1, exemplarId: 2, observacao: null });
     assert.equal(emprestimo.id, 12);
     assert.equal(emprestimo.status, 'Emprestado');
-    assert.equal(consultas.some(sql => sql.includes('FROM reservas')), false);
+    assert.equal(consultas.some(sql => sql.includes('FROM reservas')), true);
 });
 
 test('devolução exige condição válida, versão e descrição dos danos', () => {
@@ -69,7 +69,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         banco = new pg.Pool({ ...config, options: `-c search_path=${schema}` });
-        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql']) {
+        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql', '007_perfis_reservas.sql']) {
             await banco.query(await readFile(new URL(`../database/${arquivo}`, import.meta.url), 'utf8'));
         }
         await criarRepositorioAutenticacao(banco).inicializarAdministrador('admin@example.org', 'admin-temporario-integration');
@@ -86,7 +86,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
             const r = await fetch(base + '/api' + path, { method: dados ? 'POST' : 'GET',
                 headers: { 'Content-Type': 'application/json', Cookie: cookieAdmin },
                 body: dados ? JSON.stringify(dados) : undefined });
-            return { status: r.status, body: await r.json() };
+            return { status: r.status, body: r.status === 204 ? null : await r.json() };
         };
         const leitores = [];
         for (const nome of ['Leitor A', 'Leitor B', 'Leitor C', 'Leitor D']) {
@@ -118,6 +118,8 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         assert.equal(reservaHttp.status, 201);
         const reserva = await reservaHttp.json();
         assert.equal(reserva.leitorId, leitorReservaId);
+        assert.equal(reserva.status, 'Pendente');
+        assert.equal((await enviar(`/reservas/${reserva.id}/retirar`, {})).status, 200);
         const historicoLeitor = await fetch(`${base}/api/minhas-reservas`, { headers: { Cookie: cookieLeitor } });
         assert.equal(historicoLeitor.status, 200);
         assert.deepEqual((await historicoLeitor.json()).map(item => item.id), [reserva.id]);

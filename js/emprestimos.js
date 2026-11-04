@@ -110,10 +110,10 @@ function preencherOpcoes() {
 function mostrarSaldo() {
     const leitor = opcoes?.leitores.find(l => l.id === Number(el('leitorEmprestimo').value));
     const exemplar = opcoes?.exemplares.find(e => e.id === Number(el('exemplarEmprestimo').value));
-    const abertos = leitor && exemplar ? (leitor.abertosPorCentro[exemplar.centroId] || 0) : 0;
+    const abertos = leitor?.abertos || 0;
     el('saldoLeitor').textContent = leitor && exemplar
-        ? `${exemplar.centro}: ${abertos}/${opcoes.limite} em aberto; pode retirar mais ${Math.max(0, opcoes.limite - abertos)} exemplar(es) neste centro.`
-        : 'Selecione leitor e exemplar para consultar o saldo por centro. Até 10 em aberto por leitor em cada centro, incluindo atrasados.';
+        ? `${exemplar.centro}: ${abertos}/${opcoes.limite} entre reservas e empréstimos; pode retirar mais ${Math.max(0, opcoes.limite - abertos)} exemplar(es) neste centro.`
+        : 'Selecione leitor e exemplar para consultar o saldo por centro. Até 10 exemplares por leitor, somando reservas pendentes e empréstimos abertos.';
     el('salvarEmprestimo').disabled = ocupado || !leitor || !exemplar || abertos >= opcoes.limite;
 }
 
@@ -242,3 +242,5 @@ el('leitorEmprestimo').addEventListener('change', mostrarSaldo);
 el('exemplarEmprestimo').addEventListener('change', mostrarSaldo);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderizar(); });
 carregar();
+
+document.addEventListener('reservas-atualizadas', carregar);

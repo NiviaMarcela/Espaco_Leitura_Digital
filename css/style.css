@@ -1876,3 +1876,26 @@ body {
     }
 
 }
+/* A consulta do administrador não oferece ações exclusivas da conta de leitor. */
+body[data-user-role="admin"] [data-leitor-only],
+body[data-user-role="coordenador"] [data-leitor-only] {
+    display: none !important;
+}
+
+/* O atributo hidden deve prevalecer sobre display:flex dos menus. */
+[hidden] { display: none !important; }
+
+/* Reservas: ações e situações com cores, texto e ícones complementares. */
+.reservas-painel { border-left: 4px solid #d99b14; }
+.reserva-acoes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.reserva-acoes .btn { white-space: nowrap; min-height: 38px; }
+.reserva-status {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .4rem .65rem; border-radius: 999px;
+    font-size: .8rem; font-weight: 600; line-height: 1.4;
+}
+.reserva-status-pendente { color: #754b00; background: #fff3cd; }
+.reserva-status-retirada { color: #14633c; background: #d1e7dd; }
+.reserva-status-cancelada { color: #8b2630; background: #f8d7da; }
+.reserva-status-neutra { color: #41464b; background: #e2e3e5; }
+#tabelaReservas td { vertical-align: middle; }

@@ -31,7 +31,7 @@
 </head>
 
 
-<body data-auth-role="admin">
+<body data-auth-role="admin,coordenador" data-reservas-gestao>
 
 
     <!-- =========================
@@ -64,6 +64,7 @@
 
 
         <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
             <a
                 href="dashboard.html"
@@ -72,6 +73,10 @@
                 <i class="bi bi-grid-1x2-fill"></i>
                 Dashboard
             </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
             <a
@@ -156,6 +161,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
                 <a
                     href="dashboard.html"
@@ -164,6 +170,10 @@
                     <i class="bi bi-grid-1x2-fill"></i>
                     Dashboard
                 </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
 
 
                 <a
@@ -247,7 +257,10 @@
             </div>
 
 
-            <div class="user-info" aria-live="polite">Conferindo sessão…</div></header>
+            <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+
+                <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+            </div></header>
 
 
 
@@ -259,7 +272,12 @@
     <div><span class="page-eyebrow">Biblioteca</span><h2>Empréstimos</h2><p>Acompanhe as retiradas, os prazos e as renovações dos leitores.</p></div>
     <button id="novoEmprestimo" class="btn btn-primary-custom" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Novo empréstimo</button>
 </section>
-<p class="text-secondary">Prazo de 30 dias corridos · Até 10 exemplares por leitor em cada centro · Renovações sem limite de quantidade, por 30 dias a partir do dia da renovação.</p>
+<p class="text-secondary">Prazo de 30 dias corridos · Até 10 exemplares por leitor, somando reservas e empréstimos · Renovações sem limite de quantidade, por 30 dias a partir do dia da renovação.</p>
+<section class="content-card reservas-painel mb-4" aria-labelledby="tituloReservas">
+    <div class="card-heading"><h3 id="tituloReservas"><i class="bi bi-bookmark-star me-2" aria-hidden="true"></i>Reservas aguardando retirada</h3><button id="atualizarReservas" class="btn btn-outline-primary" type="button"><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Atualizar reservas</button></div>
+    <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
+    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+</section>
 <p id="avisoEmprestimos" role="status">Carregando empréstimos…</p>
 <button id="atualizarEmprestimos" class="btn btn-secondary-custom mb-3">Atualizar lista</button>
 <section class="content-card mb-4" aria-label="Filtros de empréstimos"><div class="row g-3">
@@ -283,7 +301,7 @@
         <div class="row g-3">
             <div class="col-md-6"><label for="buscaLeitorEmprestimo" class="form-label">Localizar leitor</label><input id="buscaLeitorEmprestimo" class="form-control" type="search" placeholder="Nome ou matrícula"></div>
             <div class="col-md-6"><label for="buscaExemplarEmprestimo" class="form-label">Localizar livro ou exemplar</label><input id="buscaExemplarEmprestimo" class="form-control" type="search" placeholder="Título ou código"></div>
-            <div class="col-12"><label for="leitorEmprestimo" class="form-label">Leitor ativo *</label><select id="leitorEmprestimo" class="form-select" required><option value="">Selecione</option></select><div id="saldoLeitor" class="form-text">Até 5 empréstimos em aberto por leitor, incluindo atrasados.</div></div>
+            <div class="col-12"><label for="leitorEmprestimo" class="form-label">Leitor ativo *</label><select id="leitorEmprestimo" class="form-select" required><option value="">Selecione</option></select><div id="saldoLeitor" class="form-text">Até 10 exemplares entre reservas pendentes e empréstimos abertos.</div></div>
             <div class="col-12"><label for="exemplarEmprestimo" class="form-label">Exemplar disponível *</label><select id="exemplarEmprestimo" class="form-select" required><option value="">Selecione</option></select><div class="form-text">Confira o código da cópia física antes de registrar a retirada.</div></div>
             <div class="col-md-6"><label for="retiradaEmprestimo" class="form-label">Data da retirada</label><input id="retiradaEmprestimo" class="form-control" type="date" readonly></div>
             <div class="col-md-6"><label for="prazoEmprestimo" class="form-label">Previsão de devolução</label><input id="prazoEmprestimo" class="form-control" type="date" readonly><div class="form-text">Prazo calculado automaticamente no momento do registro.</div></div>
@@ -306,4 +324,5 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="js/emprestimos.js"></script>
 <script src="js/auth-ui.js"></script>
+<script type="module" src="js/reservas.js"></script>
 </body></html>

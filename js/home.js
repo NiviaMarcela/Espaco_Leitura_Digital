@@ -379,14 +379,16 @@ form.addEventListener('submit', async evento => {
         return;
     }
 
+    // FormData ignora campos desativados: recolha os valores antes de bloquear o formulário.
+    const dados = Object.fromEntries(new FormData(form));
+    dados.centroId = Number(dados.centroId);
+
     salvando = true;
     erro.textContent = '';
     modal.querySelectorAll('input, select, button').forEach(controle => { controle.disabled = true; });
     botaoEnviar.textContent = 'Enviando…';
 
     try {
-        const dados = Object.fromEntries(new FormData(form));
-        dados.centroId = Number(dados.centroId);
         const resposta = await fetch('/api/cadastro-leitor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
