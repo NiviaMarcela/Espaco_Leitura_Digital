@@ -62,6 +62,32 @@ test("destaques públicos exibem apenas dados básicos dos livros sem exigir ses
     assert.doesNotMatch(consultaDestaques, /exemplares|leitores|usuarios/i);
 });
 
+test("catálogo público lista os dados cadastrados sem exemplares ou sessão", async t => {
+    let consultaCatalogo;
+    const livros = [{
+        id: 8,
+        titulo: "Livro público",
+        autor: "Autora de teste",
+        isbn: "9780000000000",
+        editora: "Editora de teste",
+        ano: 2026,
+        categoria: "Conhecimento e descobertas",
+        faixaEtaria: "Livre",
+        capaUrl: "https://example.org/capa.jpg",
+        sinopse: "Uma leitura de teste."
+    }];
+    const get = await iniciar(t, async sql => {
+        consultaCatalogo = sql;
+        return { rows: livros };
+    });
+    const resposta = await get("/api/catalogo-publico");
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), livros);
+    assert.match(consultaCatalogo, /FROM livros ORDER BY id DESC/);
+    assert.match(consultaCatalogo, /isbn.*editora.*ano.*categoria/s);
+    assert.doesNotMatch(consultaCatalogo, /exemplares|leitores|usuarios/i);
+});
+
 test("cadastro público cria leitor ativo sem abrir a área administrativa", async t => {
     let dadosLeitor;
     let dadosUsuario;

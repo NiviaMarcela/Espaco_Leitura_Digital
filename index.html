@@ -35,10 +35,10 @@
                 <span class="home-eyebrow"><i class="bi bi-book-half" aria-hidden="true"></i> Instituto Janela para o Mundo</span>
                 <h1 id="tituloDestaque">Uma boa história pode abrir <span>novas janelas.</span></h1>
                 <p>Explore nosso espaço de leitura, descubra livros para todos os momentos e encontre sua próxima aventura.</p>
-                <a class="home-primary-action" href="/login.html?next=%2Fbiblioteca.html">
+                <a class="home-primary-action" href="#tituloCategorias">
                     Conheça o acervo <i class="bi bi-arrow-right" aria-hidden="true"></i>
                 </a>
-                <span class="home-note"><i class="bi bi-bookmark-heart" aria-hidden="true"></i> Entre para consultar o acervo e reservar livros.</span>
+                <span class="home-note"><i class="bi bi-bookmark-heart" aria-hidden="true"></i> Explore o acervo publicamente e cadastre-se para reservar livros.</span>
             </div>
 
             <div id="destaquesLeitura" class="carousel slide home-carousel" aria-label="Livros em destaque">
@@ -65,24 +65,24 @@
                     <span class="page-eyebrow">Encontre seu próximo livro</span>
                     <h2 id="tituloCategorias">Leituras para cada curiosidade</h2>
                 </div>
-                <p>Entre para ver os títulos disponíveis e solicitar seu empréstimo.</p>
+                <p>Selecione uma categoria para conhecer os livros e ler suas sinopses.</p>
             </div>
             <div class="home-category-grid">
-                <a class="home-category-card category-green" href="/login.html?next=%2Fbiblioteca.html">
+                <button class="home-category-card category-green" type="button" data-bs-toggle="modal" data-bs-target="#modalLivrosCategoria" data-category-group="stories">
                     <span class="home-category-icon"><i class="bi bi-chat-square-heart" aria-hidden="true"></i></span>
                     <span><strong>Contos e imaginação</strong><small>Histórias para sonhar e compartilhar</small></span>
                     <i class="bi bi-arrow-up-right home-category-arrow" aria-hidden="true"></i>
-                </a>
-                <a class="home-category-card category-purple" href="/login.html?next=%2Fbiblioteca.html">
+                </button>
+                <button class="home-category-card category-purple" type="button" data-bs-toggle="modal" data-bs-target="#modalLivrosCategoria" data-category-group="adventure">
                     <span class="home-category-icon"><i class="bi bi-compass" aria-hidden="true"></i></span>
                     <span><strong>Aventura e fantasia</strong><small>Novos caminhos a cada página</small></span>
                     <i class="bi bi-arrow-up-right home-category-arrow" aria-hidden="true"></i>
-                </a>
-                <a class="home-category-card category-yellow" href="/login.html?next=%2Fbiblioteca.html">
+                </button>
+                <button class="home-category-card category-yellow" type="button" data-bs-toggle="modal" data-bs-target="#modalLivrosCategoria" data-category-group="knowledge">
                     <span class="home-category-icon"><i class="bi bi-lightbulb" aria-hidden="true"></i></span>
                     <span><strong>Conhecimento e descobertas</strong><small>Aprender também pode ser uma aventura</small></span>
                     <i class="bi bi-arrow-up-right home-category-arrow" aria-hidden="true"></i>
-                </a>
+                </button>
             </div>
         </section>
 
@@ -94,6 +94,58 @@
             <a href="/login.html?next=%2Fbiblioteca.html">Entrar na biblioteca <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </section>
     </main>
+
+    <div class="modal fade" id="modalDetalhesLivroPublico" tabindex="-1" aria-labelledby="tituloDetalhesLivroPublico" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content custom-modal">
+                <div class="modal-header">
+                    <div>
+                        <span id="categoriaDetalhesLivroPublico" class="home-book-category"></span>
+                        <h2 class="modal-title fs-5" id="tituloDetalhesLivroPublico"></h2>
+                        <p id="autorDetalhesLivroPublico" class="mb-0"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="home-book-details">
+                        <div id="capaDetalhesLivroPublico" class="home-book-detail-cover"></div>
+                        <dl class="home-book-metadata">
+                            <div><dt>ISBN</dt><dd id="isbnDetalhesLivroPublico"></dd></div>
+                            <div><dt>Editora</dt><dd id="editoraDetalhesLivroPublico"></dd></div>
+                            <div><dt>Ano de publicação</dt><dd id="anoDetalhesLivroPublico"></dd></div>
+                            <div><dt>Faixa etária</dt><dd id="faixaDetalhesLivroPublico"></dd></div>
+                        </dl>
+                    </div>
+                    <section class="mt-4" aria-labelledby="tituloSinopsePublica">
+                        <h3 class="fs-6" id="tituloSinopsePublica">Sinopse</h3>
+                        <p id="sinopseDetalhesLivroPublico" class="home-book-synopsis"></p>
+                    </section>
+                </div>
+                <div class="modal-footer">
+                    <button id="cadastrarParaReservar" type="button" class="btn btn-primary-custom">Cadastre-se como leitor para reservar</button>
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalLivrosCategoria" tabindex="-1" aria-labelledby="tituloLivrosCategoria" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content custom-modal">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title fs-5" id="tituloLivrosCategoria">Livros da categoria</h2>
+                        <p id="descricaoLivrosCategoria" class="mb-0">Consulte os livros e suas sinopses.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div id="listaLivrosCategoria" class="modal-body home-category-books" aria-live="polite"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="modalCadastroLeitor" tabindex="-1" aria-labelledby="tituloCadastroLeitor" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -168,7 +220,7 @@
                             <i class="bi bi-check-circle" aria-hidden="true"></i>
                             <h3>Cadastro concluído!</h3>
                             <p>Sua conta de leitor já está ativa. Entre com o e-mail e a senha que você cadastrou.</p>
-                            <a id="linkLoginCadastroPublico" class="btn login-register-action mt-3" href="/login.html" hidden>Ir para login</a>
+                            <a id="linkLoginCadastroPublico" class="btn login-register-action mt-3" href="/login.html?next=%2Fbiblioteca.html" hidden>Ir para login</a>
                         </div>
                         <p id="erroCadastroPublico" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
                 </form>

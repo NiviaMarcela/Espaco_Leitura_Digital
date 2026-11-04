@@ -14,6 +14,18 @@ const carrosselDestaques = elemento('destaquesLeitura');
 const slidesDestaques = elemento('slidesDestaques');
 const indicadoresDestaques = elemento('indicadoresDestaques');
 const controlesDestaques = carrosselDestaques.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+const modalDetalhesLivro = elemento('modalDetalhesLivroPublico');
+const modalLivrosCategoria = elemento('modalLivrosCategoria');
+const listaLivrosCategoria = elemento('listaLivrosCategoria');
+const gruposCategoria = {
+    stories: { titulo: 'Contos e imaginação', categorias: ['Literatura', 'Infantojuvenil'] },
+    adventure: { titulo: 'Aventura e fantasia', categorias: ['Aventura', 'Fantasia'] },
+    knowledge: { titulo: 'Conhecimento e descobertas', categorias: ['Conhecimento e descobertas'] }
+};
+let livrosPublicos = [];
+let catalogoCarregado = false;
+let erroCatalogo = null;
+let grupoCategoriaAtual = null;
 
 function criarNo(tag, texto, classe) {
     const no = document.createElement(tag);
@@ -29,7 +41,7 @@ function mostrarEstadoDestaques(mensagem, falha = false) {
     if (falha) {
         const tentarNovamente = criarNo('button', 'Tentar novamente', 'home-slide-retry');
         tentarNovamente.type = 'button';
-        tentarNovamente.addEventListener('click', carregarDestaques);
+        tentarNovamente.addEventListener('click', carregarCatalogoPublico);
         conteudo.append(tentarNovamente);
     }
     slidesDestaques.replaceChildren(criarNo('article', undefined, 'carousel-item active'));
@@ -53,14 +65,15 @@ function criarSlideLivro(livro, indice, ordemCategoria, totalCategoria) {
     );
     const descricao = [autor, livro.sinopse].filter(Boolean).join('');
     texto.append(criarNo('p', descricao || 'Uma leitura esperando por você no nosso acervo.'));
-    const link = criarNo('a');
-    link.href = '/login.html?next=%2Fbiblioteca.html';
-    link.setAttribute('aria-label', `Entrar para conhecer ${titulo}`);
-    link.append(document.createTextNode('Conheça este livro '));
+    const link = criarNo('button', undefined, 'home-book-details-action');
+    link.type = 'button';
+    link.setAttribute('aria-label', `Ver informações de ${titulo}`);
+    link.append(document.createTextNode('Ver informações '));
     const iconeLink = criarNo('i');
     iconeLink.className = 'bi bi-arrow-up-right';
     iconeLink.setAttribute('aria-hidden', 'true');
     link.append(iconeLink);
+    link.addEventListener('click', () => abrirDetalhesLivro(livro));
     texto.append(link);
 
     const capa = criarNo('div', undefined, 'home-book-art home-featured-book-art');
@@ -89,25 +102,155 @@ function criarSlideLivro(livro, indice, ordemCategoria, totalCategoria) {
         capa.append(criarCapaFallback());
     }
 
-    slide.append(texto, capa);
+    const botaoCapa = criarNo('button', undefined, 'home-featured-book-trigger');
+    botaoCapa.type = 'button';
+    botaoCapa.setAttribute('aria-label', `Ver informações de ${titulo}`);
+    botaoCapa.append(capa);
+    botaoCapa.addEventListener('click', () => abrirDetalhesLivro(livro));
+    slide.append(texto, botaoCapa);
     artigo.append(slide);
     return artigo;
 }
 
-async function carregarDestaques() {
+function mostrarCapaDetalhe(livro) {
+    const capa = elemento('capaDetalhesLivroPublico');
+    const icone = criarNo('i');
+    icone.className = 'bi bi-book-half';
+    icone.setAttribute('aria-hidden', 'true');
+    const legenda = criarNo('span', 'Capa indisponível');
+    capa.replaceChildren(icone, legenda);
+
+    if (typeof livro.capaUrl !== 'string' || !/^https?:\/\//i.test(livro.capaUrl)) return;
+    const imagem = document.createElement('img');
+    imagem.src = livro.capaUrl;
+    imagem.alt = `Capa de ${livro.titulo || 'livro'}`;
+    imagem.loading = 'lazy';
+    imagem.referrerPolicy = 'no-referrer';
+    imagem.addEventListener('error', () => capa.replaceChildren(icone, legenda), { once: true });
+    capa.replaceChildren(imagem);
+}
+
+function preencherDetalhesLivro(livro) {
+    elemento('tituloDetalhesLivroPublico').textContent = livro.titulo || 'Livro sem título';
+    elemento('autorDetalhesLivroPublico').textContent = livro.autor ? `Por ${livro.autor}` : 'Autor não informado';
+    elemento('categoriaDetalhesLivroPublico').textContent = livro.categoria || 'Categoria não informada';
+    elemento('isbnDetalhesLivroPublico').textContent = livro.isbn || 'Não informado';
+    elemento('editoraDetalhesLivroPublico').textContent = livro.editora || 'Não informada';
+    elemento('anoDetalhesLivroPublico').textContent = livro.ano || 'Não informado';
+    elemento('faixaDetalhesLivroPublico').textContent = livro.faixaEtaria || 'Não informada';
+    elemento('sinopseDetalhesLivroPublico').textContent = livro.sinopse || 'Sinopse não informada.';
+    mostrarCapaDetalhe(livro);
+}
+
+function abrirDetalhesLivro(livro) {
+    preencherDetalhesLivro(livro);
+    const mostrarModal = () => bootstrap.Modal.getOrCreateInstance(modalDetalhesLivro).show();
+    if (modalLivrosCategoria.classList.contains('show')) {
+        modalLivrosCategoria.addEventListener('hidden.bs.modal', mostrarModal, { once: true });
+        bootstrap.Modal.getOrCreateInstance(modalLivrosCategoria).hide();
+        return;
+    }
+    mostrarModal();
+}
+
+function criarImagemLista(livro) {
+    const capa = criarNo('div', undefined, 'home-category-book-cover');
+    const icone = criarNo('i');
+    icone.className = 'bi bi-book-half';
+    icone.setAttribute('aria-hidden', 'true');
+    capa.append(icone);
+    if (typeof livro.capaUrl === 'string' && /^https?:\/\//i.test(livro.capaUrl)) {
+        const imagem = document.createElement('img');
+        imagem.src = livro.capaUrl;
+        imagem.alt = `Capa de ${livro.titulo || 'livro'}`;
+        imagem.loading = 'lazy';
+        imagem.referrerPolicy = 'no-referrer';
+        imagem.addEventListener('error', () => capa.replaceChildren(icone), { once: true });
+        capa.replaceChildren(imagem);
+    }
+    return capa;
+}
+
+function adicionarDadoLivro(lista, rotulo, valor) {
+    if (!valor) return;
+    const item = criarNo('div');
+    item.append(criarNo('dt', rotulo), criarNo('dd', String(valor)));
+    lista.append(item);
+}
+
+function mostrarLivrosCategoria(grupoId) {
+    grupoCategoriaAtual = grupoId;
+    const grupo = gruposCategoria[grupoId];
+    if (!grupo) return;
+    elemento('tituloLivrosCategoria').textContent = grupo.titulo;
+    elemento('descricaoLivrosCategoria').textContent = `Livros cadastrados em ${grupo.categorias.join(' e ')}.`;
+    listaLivrosCategoria.replaceChildren();
+
+    if (!catalogoCarregado) {
+        listaLivrosCategoria.append(criarNo('p', erroCatalogo || 'Carregando livros…', 'text-secondary mb-0'));
+        return;
+    }
+    if (erroCatalogo) {
+        const mensagem = criarNo('p', erroCatalogo, 'text-danger mb-0');
+        const tentarNovamente = criarNo('button', 'Tentar novamente', 'btn btn-secondary-custom mt-3');
+        tentarNovamente.type = 'button';
+        tentarNovamente.addEventListener('click', carregarCatalogoPublico);
+        listaLivrosCategoria.append(mensagem, tentarNovamente);
+        return;
+    }
+
+    const categorias = new Set(grupo.categorias);
+    const livros = livrosPublicos.filter(livro => categorias.has(livro.categoria));
+    if (!livros.length) {
+        listaLivrosCategoria.append(criarNo('p', 'Ainda não há livros cadastrados nesta categoria.', 'text-secondary mb-0'));
+        return;
+    }
+
+    livros.forEach(livro => {
+        const artigo = criarNo('article', undefined, 'home-category-book');
+        const botaoCapa = criarNo('button', undefined, 'home-category-book-trigger');
+        botaoCapa.type = 'button';
+        botaoCapa.setAttribute('aria-label', `Ver informações de ${livro.titulo || 'livro'}`);
+        botaoCapa.append(criarImagemLista(livro));
+        botaoCapa.addEventListener('click', () => abrirDetalhesLivro(livro));
+
+        const informacoes = criarNo('div', undefined, 'home-category-book-info');
+        const titulo = criarNo('button', livro.titulo || 'Livro sem título', 'home-category-book-title');
+        titulo.type = 'button';
+        titulo.addEventListener('click', () => abrirDetalhesLivro(livro));
+        const metadados = criarNo('dl', undefined, 'home-category-book-metadata');
+        adicionarDadoLivro(metadados, 'Autor', livro.autor);
+        adicionarDadoLivro(metadados, 'Categoria', livro.categoria);
+        adicionarDadoLivro(metadados, 'Editora', livro.editora);
+        adicionarDadoLivro(metadados, 'Ano', livro.ano);
+        adicionarDadoLivro(metadados, 'Faixa etária', livro.faixaEtaria);
+        adicionarDadoLivro(metadados, 'ISBN', livro.isbn);
+        informacoes.append(titulo, metadados, criarNo('p', livro.sinopse || 'Sinopse não informada.', 'home-category-book-synopsis'));
+        artigo.append(botaoCapa, informacoes);
+        listaLivrosCategoria.append(artigo);
+    });
+}
+
+async function carregarCatalogoPublico() {
     slidesDestaques.setAttribute('aria-busy', 'true');
+    catalogoCarregado = false;
+    erroCatalogo = null;
     try {
-        const resposta = await fetch('/api/destaques', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        const resposta = await fetch('/api/catalogo-publico', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
         if (!resposta.ok) throw new Error('Não foi possível carregar os livros do acervo.');
         const livros = await resposta.json();
         if (!Array.isArray(livros)) throw new Error('A resposta dos livros está em um formato inesperado.');
+        livrosPublicos = livros;
+        catalogoCarregado = true;
         if (livros.length === 0) {
             mostrarEstadoDestaques('Ainda não há livros cadastrados no acervo.');
+            if (grupoCategoriaAtual) mostrarLivrosCategoria(grupoCategoriaAtual);
             return;
         }
 
+        const destaquesRecentes = livros.slice(0, 12);
         const categorias = new Map();
-        livros.forEach(livro => {
+        destaquesRecentes.forEach(livro => {
             const categoria = livro.categoria || 'Outras leituras';
             if (!categorias.has(categoria)) categorias.set(categoria, []);
             categorias.get(categoria).push(livro);
@@ -140,14 +283,29 @@ async function carregarDestaques() {
         const carrossel = bootstrap.Carousel.getOrCreateInstance(carrosselDestaques, { interval: 6500 });
         if (destaques.length > 1) carrossel.cycle();
         else carrossel.pause();
+        if (grupoCategoriaAtual) mostrarLivrosCategoria(grupoCategoriaAtual);
     } catch (falha) {
-        mostrarEstadoDestaques(falha.name === 'TimeoutError'
+        erroCatalogo = falha.name === 'TimeoutError'
             ? 'A consulta aos livros demorou demais. Tente novamente.'
-            : falha.message || 'Não foi possível carregar os livros do acervo.', true);
+            : falha.message || 'Não foi possível carregar os livros do acervo.';
+        catalogoCarregado = true;
+        mostrarEstadoDestaques(erroCatalogo, true);
+        if (grupoCategoriaAtual) mostrarLivrosCategoria(grupoCategoriaAtual);
     }
 }
 
-carregarDestaques();
+carregarCatalogoPublico();
+
+modalLivrosCategoria.addEventListener('show.bs.modal', evento => {
+    mostrarLivrosCategoria(evento.relatedTarget?.dataset.categoryGroup);
+});
+
+elemento('cadastrarParaReservar').addEventListener('click', () => {
+    modalDetalhesLivro.addEventListener('hidden.bs.modal', () => {
+        bootstrap.Modal.getOrCreateInstance(modal).show();
+    }, { once: true });
+    bootstrap.Modal.getOrCreateInstance(modalDetalhesLivro).hide();
+});
 
 async function carregarCentros() {
     centro.disabled = true;

@@ -99,6 +99,12 @@ export function criarRepositorioAcervo(banco, centroId = null) {
                 capa_url AS "capaUrl", sinopse FROM livros ORDER BY id DESC LIMIT 12`);
             return resultado.rows;
         },
+        async listarCatalogoPublico() {
+            const resultado = await banco.query(`SELECT id, titulo, autor, isbn, editora, ano, categoria,
+                faixa_etaria AS "faixaEtaria", capa_url AS "capaUrl", sinopse
+                FROM livros ORDER BY id DESC`);
+            return resultado.rows;
+        },
         async buscarLivro(id) {
             // $1 recebe o valor separadamente do SQL, evitando concatenar entrada do usuário.
             const resultado = await banco.query(

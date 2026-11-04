@@ -136,6 +136,9 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/api/destaques", async (req, res) => {
         res.json(await acervo.listarDestaques());
     });
+    app.get("/api/catalogo-publico", async (req, res) => {
+        res.json(await acervo.listarCatalogoPublico());
+    });
     app.post('/api/cadastro-leitor', async (req, res) => {
         const chave = req.ip;
         const agora = Date.now();
