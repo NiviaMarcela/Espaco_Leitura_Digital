@@ -90,7 +90,8 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
         };
         const leitores = [];
         for (const nome of ['Leitor A', 'Leitor B', 'Leitor C', 'Leitor D']) {
-            const r = await enviar('/leitores', { nome, tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1 });
+            const r = await enviar('/leitores', { nome, tipo: 'Comunidade', dataNascimento: '2000-01-01',
+                centroId: 1, telefone: '85999999999', email: `${nome.replaceAll(' ', '').toLowerCase()}@example.org` });
             assert.equal(r.status, 201); leitores.push(r.body.id);
         }
         const obra = await enviar('/livros', { titulo: 'Livro de teste', autor: 'Autora', categoria: 'Literatura', quantidade: 20, centroId: 1 });

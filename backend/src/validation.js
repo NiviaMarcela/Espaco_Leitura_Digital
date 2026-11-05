@@ -49,11 +49,12 @@ export function validarLeitor(body) {
     }
     const status = body.status ?? 'Ativo';
     if (!['Ativo', 'Inativo'].includes(status)) throw erroHttp(400, 'Status do leitor inválido.');
-    const email = texto(body.email, 'E-mail', false, 254);
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw erroHttp(400, 'Informe um e-mail válido.');
+    const telefone = texto(body.telefone, 'Telefone', true, 30);
+    const email = texto(body.email, 'E-mail', true, 254);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw erroHttp(400, 'Informe um e-mail válido.');
     return { nome, tipo: body.tipo, dataNascimento: body.dataNascimento, centroId: body.centroId, status,
         matriculaCodigo: texto(body.matriculaCodigo, 'Matrícula/código', false, 80),
-        turma: texto(body.turma, 'Turma', false, 100), telefone: texto(body.telefone, 'Telefone', false, 30), email };
+        turma: texto(body.turma, 'Turma', false, 100), telefone, email };
 }
 
 export function validarCredenciais(body) {

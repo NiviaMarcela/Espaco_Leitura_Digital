@@ -43,7 +43,8 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
         const admin = await login('admin@teste.invalid');
         const coords = [], leitores = [], obras = [];
         await t.test('cadastro público aceita 8 caracteres, exige nascimento e Centro, e cria somente leitor', async () => {
-            const dados = { nome:'Leitor teste',tipo:'Comunidade',dataNascimento:'2000-01-01',centroId:1,email:'invalido@teste.invalid',senha:'1234567' };
+            const dados = { nome:'Leitor teste',tipo:'Comunidade',dataNascimento:'2000-01-01',centroId:1,
+                telefone:'85999999999',email:'invalido@teste.invalid',senha:'1234567' };
             assert.equal((await api('/api/cadastro-leitor',null,dados)).status,400);
             assert.equal((await api('/api/cadastro-leitor',null,{...dados,senha:'Senha123',dataNascimento:undefined})).status,400);
             for (let centroId=1;centroId<=3;centroId++) {

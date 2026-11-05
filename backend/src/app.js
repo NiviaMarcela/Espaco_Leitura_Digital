@@ -165,7 +165,6 @@ export function criarApp(banco, registrarErro = console.error) {
         recentes.push(agora);
         tentativasCadastro.set(chave, recentes);
         const dados = validarLeitor({ ...req.body, status: 'Ativo' });
-        if (!dados.email) throw erroHttp(400, 'Informe um e-mail para criar seu acesso.');
         const senha = validarSenha(req.body?.senha);
         await autenticacao.cadastrarLeitor(dados, senha);
         res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });

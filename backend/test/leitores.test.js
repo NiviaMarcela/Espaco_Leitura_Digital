@@ -22,7 +22,8 @@ test('datas civis rejeitam normalização silenciosa, formato incorreto e valore
 });
 
 test('validação exige nascimento e ignora idade/faixa enviadas pelo navegador', () => {
-    const base = { nome: ' Ana ', tipo: 'Aluno', dataNascimento: '2016-10-07', centroId: 1 };
+    const base = { nome: ' Ana ', tipo: 'Aluno', dataNascimento: '2016-10-07', centroId: 1,
+        telefone: '85999999999', email: 'ana@example.org' };
     const validado = validarLeitor({ ...base, idade: 99, faixaEtaria: '18+', matriculaCodigo: '  ' });
     assert.equal(validado.nome, 'Ana');
     assert.equal(validado.matriculaCodigo, null);
@@ -31,7 +32,10 @@ test('validação exige nascimento e ignora idade/faixa enviadas pelo navegador'
     assert.equal('faixaEtaria' in validado, false);
     for (const alteracao of [{ dataNascimento: '9999-01-01' }, { dataNascimento: '2025-02-29' },
         { dataNascimento: undefined }, { nome: ' ' }, { centroId: '1' }, { tipo: 'Outro' },
-        { status: 'Bloqueado' }, { email: 'invalido' }]) {
+        { status: 'Bloqueado' }, { email: 'invalido' }, { email: '' }, { telefone: '' }]) {
         assert.throws(() => validarLeitor({ ...base, ...alteracao }), { status: 400 });
     }
+    assert.throws(() => validarLeitor({ nome: 'Ana', tipo: 'Aluno', dataNascimento: '2016-10-07', centroId: 1 }), {
+        status: 400
+    });
 });

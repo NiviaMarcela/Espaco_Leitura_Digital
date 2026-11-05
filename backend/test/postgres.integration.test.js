@@ -45,7 +45,8 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         }
         const obra = { titulo: "Obra de teste", autor: "Autora", categoria: "Literatura", faixaEtaria: "Livre", quantidade: 2, centroId: 1 };
         const pessoa = { nome: 'Leitora de teste', tipo: 'Aluno', dataNascimento: '2016-10-07',
-            centroId: 1, matriculaCodigo: 'ABC-001', turma: 'Turma A' };
+            centroId: 1, matriculaCodigo: 'ABC-001', turma: 'Turma A', telefone: '85999999999',
+            email: 'leitora@example.org' };
         const cadastro = await enviar('/api/leitores', 'POST', pessoa);
         assert.equal(cadastro.status, 201);
         assert.equal(cadastro.body.dataNascimento, '2016-10-07');

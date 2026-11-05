@@ -122,7 +122,7 @@ test("cadastro público cria leitor ativo sem abrir a área administrativa", asy
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01',
-            centroId: 1, status: 'Inativo', email: '  LEITOR@example.org  ', senha })
+            centroId: 1, status: 'Inativo', telefone: '85999999999', email: '  LEITOR@example.org  ', senha })
     });
     assert.equal(resposta.status, 201);
     assert.deepEqual(await resposta.json(), { mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
@@ -150,7 +150,7 @@ test("cadastro público valida os dados antes de gravar", async t => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2999-01-01',
-            centroId: 1, email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
+            centroId: 1, telefone: '85999999999', email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
     });
     assert.equal(resposta.status, 400);
     assert.match((await resposta.json()).erro, /data de nascimento válida/);
@@ -158,9 +158,10 @@ test("cadastro público valida os dados antes de gravar", async t => {
 
 test("cadastro público exige e-mail e senha forte", async t => {
     const get = await iniciar(t, () => { throw new Error("Cadastro incompleto não deve consultar o banco"); });
-    const dados = { nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1 };
+    const dados = { nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01', centroId: 1,
+        telefone: '85999999999' };
     for (const [adicional, mensagem] of [
-        [{ senha: 'senha-bem-segura-123' }, /e-mail para criar seu acesso/],
+        [{ email: '', senha: 'senha-bem-segura-123' }, /E-mail/],
         [{ email: 'leitor@example.org', senha: 'curta' }, /8 a 128 caracteres/]
     ]) {
         const resposta = await get('/api/cadastro-leitor', {
@@ -190,7 +191,7 @@ test("cadastro público desfaz o leitor se o e-mail já pertence a uma conta", a
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: 'Pessoa de teste', tipo: 'Comunidade', dataNascimento: '2000-01-01',
-            centroId: 1, email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
+            centroId: 1, telefone: '85999999999', email: 'leitor@example.org', senha: 'senha-bem-segura-123' })
     });
     assert.equal(resposta.status, 409);
     assert.match((await resposta.json()).erro, /já possui uma conta/);
