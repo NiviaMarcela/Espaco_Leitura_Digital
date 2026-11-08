@@ -117,7 +117,7 @@ function aplicarFiltros() {
         botao.addEventListener("click", () => mostrarDetalhes(livro));
         const reservar = criar("button", "Reservar Livro", "btn btn-primary-custom btn-sm mt-2");
         reservar.type = "button";
-        reservar.setAttribute('data-leitor-only', '');
+
         reservar.disabled = quantidadeDisponivel(livro) === 0;
         reservar.setAttribute("aria-label", `Reservar ${livro.titulo}`);
         reservar.addEventListener("click", () => abrirReserva(livro));
@@ -141,8 +141,9 @@ async function abrirReserva(livro) {
         aviso.textContent = erro.message || 'Não foi possível conectar ao servidor.';
         return;
     }
-    if (sessao.perfil !== 'leitor') {
-        aviso.textContent = 'Entre com uma conta de leitor para pegar livros emprestados.';
+    if (!sessao.leitorId) {
+        try { await abrirCadastroPessoal(sessao, livro); }
+        catch (erro) { aviso.textContent = erro.message; }
         return;
     }
     if (sessao.trocarSenha) {
@@ -161,7 +162,7 @@ async function abrirReserva(livro) {
         `${exemplar.centro} · ${exemplar.codigo}${exemplar.localizacao ? ` · ${exemplar.localizacao}` : ''}`,
         String(exemplar.id)
     )));
-    elemento('avisoReserva').textContent = 'A cópia ficará reservada. O prazo de 30 dias começa quando o coordenador confirmar sua retirada.';
+    elemento('avisoReserva').textContent = 'Retire a cópia em até 7 dias. A devolução está prevista para 30 dias após a reserva.';
     bootstrap.Modal.getOrCreateInstance(modalReserva).show();
 }
 
@@ -260,3 +261,43 @@ limpar.addEventListener("click", () => {
 });
 repetir.addEventListener("click", carregarBiblioteca);
 carregarBiblioteca();
+
+let livroAposCadastro = null;
+async function abrirCadastroPessoal(sessao, livro) {
+    const resposta = await fetch('/api/centros', { signal: AbortSignal.timeout(10000) });
+    if (!resposta.ok) throw new Error('Não foi possível carregar os Centros. Tente novamente.');
+    const centros = await resposta.json();
+    elemento('formCadastroPessoal').reset();
+    elemento('pessoalNome').value = sessao.nome || '';
+    if (sessao.perfil === 'professor') elemento('pessoalTipo').value = 'Professor';
+    elemento('pessoalCentro').replaceChildren(...centros.map(c => new Option(c.nome, String(c.id))));
+    elemento('pessoalEscopo').textContent = sessao.perfil === 'admin'
+        ? 'O Centro de referência não limita suas reservas: você pode reservar nos três Centros.'
+        : 'Suas reservas são restritas ao seu Centro.';
+    elemento('erroCadastroPessoal').textContent = '';
+    livroAposCadastro = livro;
+    bootstrap.Modal.getOrCreateInstance(elemento('modalCadastroPessoal')).show();
+}
+elemento('formCadastroPessoal').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const botao = elemento('salvarCadastroPessoal');
+    if (botao.disabled || !evento.target.reportValidity()) return;
+    botao.disabled = true;
+    elemento('erroCadastroPessoal').textContent = '';
+    try {
+        const resposta = await fetch('/api/meu-cadastro-emprestimos', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome: elemento('pessoalNome').value, tipo: elemento('pessoalTipo').value,
+                dataNascimento: elemento('pessoalNascimento').value, telefone: elemento('pessoalTelefone').value,
+                centroId: Number(elemento('pessoalCentro').value) }), signal: AbortSignal.timeout(15000)
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível salvar seus dados.');
+        window.usuarioAtual = dados;
+        const modal = elemento('modalCadastroPessoal');
+        modal.addEventListener('hidden.bs.modal', () => abrirReserva(livroAposCadastro), { once: true });
+        bootstrap.Modal.getOrCreateInstance(modal).hide();
+    } catch (erro) {
+        elemento('erroCadastroPessoal').textContent = erro.message || 'Não foi possível salvar. Tente novamente.';
+    } finally { botao.disabled = false; }
+});

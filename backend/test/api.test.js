@@ -213,7 +213,7 @@ test("cadastro público limita envios inválidos por endereço IP", async t => {
     assert.equal(bloqueada.status, 429);
 });
 
-test("administradores e leitores consultam a Biblioteca; reservas continuam exclusivas dos leitores", async t => {
+test("administradores e leitores consultam a Biblioteca; conta sem vínculo deve completar dados antes de reservar", async t => {
     const cookie = `espaco_sessao=${'a'.repeat(43)}`;
     const admin = await iniciar(t, async () => ({ rows: [] }));
     const negada = { headers: { Cookie: cookie }, redirect: 'manual' };
@@ -224,7 +224,7 @@ test("administradores e leitores consultam a Biblioteca; reservas continuam excl
     assert.equal((await admin('/api/reservas', {
         method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' },
         body: JSON.stringify({ exemplarId: 1 })
-    })).status, 403);
+    })).status, 409);
 
     const leitor = await iniciar(t, async () => ({ rows: [] }), {
         id: 2, nome: 'Leitor teste', perfil: 'leitor', leitorId: 7, centroId: 1
@@ -254,7 +254,7 @@ test("links das sidebars administrativas abrem a Biblioteca e seus links de reto
         const biblioteca = await get(destino, opcoes);
         assert.equal(biblioteca.status, 200, `${pagina}: Biblioteca sem redirecionamento`);
         const conteudo = await biblioteca.text();
-        assert.match(conteudo, /data-auth-role="admin,coordenador,leitor"/);
+        assert.match(conteudo, /data-auth-role="admin,coordenador,professor,leitor"/);
         for (const link of conteudo.matchAll(/<a[^>]+href="([^"]+\.html)"[^>]*data-admin-only/g)) {
             assert.equal((await get(`/${link[1]}`, opcoes)).status, 200, `retorno: ${link[1]}`);
         }
@@ -373,4 +373,10 @@ test("erro inesperado de SQL retorna 500 com mensagem genérica", async t => {
     const resposta = await get("/api/biblioteca", { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } });
     assert.equal(resposta.status, 500);
     assert.deepEqual(await resposta.json(), { erro: "Não foi possível concluir a consulta." });
+});
+
+for (const tipo of ['Professor','Funcionário','Voluntário']) test('cadastro público recusa tipo '+tipo, async t => {
+    const api=await iniciar(t,()=>{throw new Error('Não deve consultar o banco');});
+    const r=await api('/api/cadastro-leitor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:'Pessoa',tipo,dataNascimento:'2000-01-01',centroId:1,telefone:'85999999999',email:'teste@teste.invalid',senha:'Senha123'})});
+    assert.equal(r.status,400);assert.match((await r.json()).erro,/Aluno ou Comunidade/);
 });

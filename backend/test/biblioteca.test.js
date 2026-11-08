@@ -20,6 +20,8 @@ class Elemento {
     setAttribute() {}
     addEventListener(evento, callback) { this.eventos[evento] = callback; }
     focus() {}
+    reset() {}
+    reportValidity() { return true; }
 }
 
 async function preparar(resposta, extras = {}) {
@@ -77,4 +79,33 @@ test('catálogo distingue banco indisponível de acervo vazio', async () => {
     const vazio = await preparar({ ok: true, json: async () => [] });
     assert.equal(vazio.get('buscaBiblioteca').disabled, false);
     assert.match(vazio.get('tabelaBiblioteca').children[0].children[0].textContent, /Nenhum livro cadastrado/);
+});
+
+test('equipe completa cadastro e retorna à reserva usando o mesmo login', async () => {
+    let vinculado = false;
+    const modais = [], pedidos = [];
+    const { get, executar } = await preparar(null, {
+        window: {},
+        bootstrap: { Modal: { getOrCreateInstance: no => ({
+            show: () => modais.push(no), hide: () => no.eventos['hidden.bs.modal']()
+        }) } },
+        fetch: async (url, opcoes) => {
+            if (url === '/api/biblioteca') return { ok:true,json:async()=>livros };
+            if (url === '/api/auth/me') return { ok:true,json:async()=>({perfil:'admin',leitorId:vinculado?10:null}) };
+            if (url === '/api/centros') return { ok:true,json:async()=>[{id:1,nome:'Maranhão'},{id:2,nome:'Piauí'},{id:3,nome:'Bahia'}] };
+            if (url === '/api/meu-cadastro-emprestimos') {
+                pedidos.push(JSON.parse(opcoes.body));vinculado=true;
+                return {ok:true,json:async()=>({perfil:'admin',leitorId:10})};
+            }
+            throw new Error('Requisição inesperada: '+url);
+        }
+    });
+    await executar('abrirReserva(livros[0])');
+    assert.equal(modais[0],get('modalCadastroPessoal'));
+    assert.equal(get('pessoalCentro').children.length,3);
+    get('pessoalNome').value='Pessoa';get('pessoalCentro').value='2';
+    await get('formCadastroPessoal').eventos.submit({preventDefault(){},target:get('formCadastroPessoal')});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(pedidos[0].centroId,2);assert.equal(pedidos[0].senha,undefined);
+    assert.equal(modais[1],get('modalReserva'));
 });

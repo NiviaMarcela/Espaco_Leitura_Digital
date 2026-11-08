@@ -1,11 +1,13 @@
 import { erroHttp } from '../validation.js';
 import { calcularIdade } from '../../../js/datas.mjs';
+import { hashSenha, validarSenha } from './autenticacao.js';
 
 const consulta = `SELECT l.id, l.nome, l.tipo, l.matricula_codigo AS "matriculaCodigo",
     l.turma, to_char(l.data_nascimento, 'YYYY-MM-DD') AS "dataNascimento",
     l.telefone, l.email, l.centro_id AS "centroId", c.nome AS centro,
     l.status, l.data_cadastro AS "dataCadastro",
-    EXISTS (SELECT 1 FROM usuarios u WHERE u.leitor_id=l.id) AS "temAcesso"
+    EXISTS (SELECT 1 FROM usuarios u WHERE u.leitor_id=l.id) AS "temAcesso",
+    (SELECT u.perfil FROM usuarios u WHERE u.leitor_id=l.id) AS "perfilConta"
     FROM leitores l JOIN centros c ON c.id = l.centro_id`;
 
 export function criarRepositorioLeitores(banco, centroId = null) {
@@ -15,8 +17,12 @@ export function criarRepositorioLeitores(banco, centroId = null) {
         const { rows } = await banco.query(`${consulta} WHERE l.id = $1 AND ($2::integer IS NULL OR l.centro_id=$2)`, [id,centroId]);
         return comIdade(rows[0]);
     }
-    async function salvar(dados, id = null) {
+    async function salvar(dados, id = null, senhaInicial) {
         if (centroId !== null && dados.centroId !== centroId) throw erroHttp(403, 'Use o seu centro.');
+        const criarAcesso = senhaInicial !== undefined && senhaInicial !== '';
+        if (criarAcesso && id !== null) throw erroHttp(400, 'Use a opção Redefinir senha para uma conta existente.');
+        if (criarAcesso && dados.status !== 'Ativo') throw erroHttp(400, 'O leitor precisa estar ativo para criar o acesso.');
+        const senhaHash = criarAcesso ? await hashSenha(validarSenha(senhaInicial, 'Senha inicial')) : null;
         const valores = [dados.nome, dados.tipo, dados.matriculaCodigo, dados.turma,
             dados.dataNascimento, dados.telefone, dados.email, dados.centroId, dados.status];
         const conexao = await banco.connect();
@@ -25,6 +31,8 @@ export function criarRepositorioLeitores(banco, centroId = null) {
             if (id !== null) {
                 const atual = (await conexao.query('SELECT centro_id FROM leitores WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE', [id, centroId])).rows[0];
                 if (!atual) throw erroHttp(404, 'Leitor não encontrado.');
+                const equipe = await conexao.query("SELECT id FROM usuarios WHERE leitor_id=$1 AND perfil<>'leitor'", [id]);
+                if (equipe.rowCount) throw erroHttp(403, 'O cadastro pessoal da equipe não pode ser alterado pela gestão de leitores.');
                 if (atual.centro_id !== dados.centroId) {
                     const ativos = await conexao.query(`SELECT 1 FROM emprestimos WHERE leitor_id=$1 AND data_devolucao IS NULL
                         UNION ALL SELECT 1 FROM reservas WHERE leitor_id=$1 AND status='Pendente' LIMIT 1`, [id]);
@@ -39,6 +47,11 @@ export function criarRepositorioLeitores(banco, centroId = null) {
                     turma=$4, data_nascimento=$5, telefone=$6, email=$7, centro_id=$8, status=$9
                     WHERE id=$10 RETURNING id`, [...valores, id]);
             if (!resultado.rowCount) throw erroHttp(404, 'Leitor não encontrado.');
+            if (criarAcesso) {
+                // Leitor e conta são gravados juntos: falhas no acesso também desfazem o cadastro.
+                await conexao.query(`INSERT INTO usuarios(email,senha_hash,perfil,leitor_id,trocar_senha)
+                    VALUES ($1,$2,'leitor',$3,true)`, [dados.email.toLowerCase(), senhaHash, resultado.rows[0].id]);
+            }
             if (id !== null) {
                 const conta = await conexao.query('SELECT id FROM usuarios WHERE leitor_id=$1 FOR UPDATE', [id]);
                 if (conta.rowCount) {

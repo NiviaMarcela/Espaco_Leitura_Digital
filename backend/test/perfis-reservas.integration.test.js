@@ -97,7 +97,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                 assert.equal((await api(`/api/leitores/${leitores[outro].id}/acesso`,coords[i],{senhaInicial:'Senha123'})).status,404);
                 assert.equal((await api(`/api/exemplares/${obras[outro].exemplares[0].id}/baixa`,coords[i],{motivo:'Perda'})).status,404);
                 assert.equal((await api(`/api/livros/${obras[outro].id}/exemplares`,coords[i],{centroId:i+1,quantidade:1})).status,404);
-                const dados={nome:'Invasão',tipo:'Comunidade',centroId:i+1,dataNascimento:'2000-01-01'};
+                const dados={nome:'Invasão',tipo:'Comunidade',centroId:i+1,dataNascimento:'2000-01-01',telefone:'85999999999',email:'invasao@teste.invalid'};
                 assert.equal((await api(`/api/leitores/${leitores[outro].id}`,coords[i],dados,'PUT')).status,404);
                 const catalogo=await api('/api/biblioteca',leitores[i].cookie);
                 assert.equal(catalogo.body.length,1);assert.ok(catalogo.body[0].exemplares.every(e=>e.centroId===i+1));
@@ -186,6 +186,215 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             assert.equal(atualizada.status,200,JSON.stringify(atualizada.body));assert.notEqual(atualizada.body.id,obras[0].id);
             assert.ok(atualizada.body.exemplares.every(e=>e.centroId===1));
             assert.equal((await api(`/api/livros/${obras[0].id}`,coords[1])).body.titulo,'Obra do Centro 1');
+        });
+        const pessoal={nome:'Pessoa da equipe',tipo:'Funcionário',dataNascimento:'1990-01-01',telefone:'85999999999',centroId:1};
+        let adminLeitor;
+        await t.test('cadastro pessoal é único, preserva perfil e impede Centro forjado pelo coordenador', async () => {
+            assert.deepEqual((await api('/api/minhas-reservas',admin)).body,[]);
+            assert.deepEqual((await api('/api/meus-emprestimos',admin)).body,[]);
+            assert.equal((await api('/api/reservas',admin,{exemplarId:obras[0].exemplares[30].id})).status,409);
+            assert.equal((await api('/api/meu-cadastro-emprestimos',coords[0],{...pessoal,centroId:2})).status,403);
+            const resultados=await Promise.all([api('/api/meu-cadastro-emprestimos',admin,pessoal),api('/api/meu-cadastro-emprestimos',admin,pessoal)]);
+            assert.deepEqual(resultados.map(r=>r.status).sort(),[201,409]);
+            const me=(await api('/api/auth/me',admin)).body;adminLeitor=me.leitorId;
+            assert.equal(me.perfil,'admin');assert.ok(adminLeitor);
+            assert.equal((await api('/api/meu-cadastro-emprestimos',coords[0],pessoal)).status,201);
+            assert.equal((await api('/api/auth/me',coords[0])).body.perfil,'coordenador');
+        });
+        await t.test('todos os perfis reservam; administrador usa três Centros e histórico pessoal isolado', async () => {
+            const minhas=[];
+            for(let i=0;i<3;i++) {
+                const r=await api('/api/reservas',admin,{exemplarId:obras[i].exemplares[30].id,leitorId:leitores[0].id});
+                assert.equal(r.status,201,JSON.stringify(r.body));assert.equal(r.body.leitorId,adminLeitor);minhas.push(r.body);
+            }
+            assert.equal((await api('/api/minhas-reservas',admin)).body.length,3);
+            assert.deepEqual((await api('/api/minhas-reservas',coords[0])).body,[]);
+            assert.equal((await api('/api/reservas',coords[0],{exemplarId:obras[1].exemplares[31].id})).status,404);
+            const propria=await api('/api/reservas',coords[0],{exemplarId:obras[0].exemplares[31].id});
+            assert.equal(propria.status,201,JSON.stringify(propria.body));
+            assert.equal((await api('/api/minhas-reservas',coords[0])).body.length,1);
+            assert.ok((await api('/api/reservas',coords[0])).body.length>1);
+            assert.equal((await api('/meusEmprestimos.html',admin)).status,200);
+            assert.equal((await api('/meusEmprestimos.html',coords[0])).status,200);
+            assert.equal((await api('/api/reservas/'+minhas[1].id+'/retirar',coords[0],{})).status,404);
+            assert.equal((await api('/api/reservas/'+minhas[1].id+'/retirar',coords[1],{})).status,200);
+            assert.equal((await api('/api/meus-emprestimos',admin)).body.length,1);
+            const extras=await Promise.all(obras[2].exemplares.slice(31,39).map(e=>api('/api/reservas',admin,{exemplarId:e.id})));
+            assert.equal(extras.filter(r=>r.status===201).length,7);assert.equal(extras.filter(r=>r.status===409).length,1);
+            assert.equal((await api('/api/reservas/'+minhas[0].id+'/cancelar',admin,{})).status,200);
+            assert.equal((await api('/api/reservas/'+propria.body.id+'/cancelar',coords[0],{})).status,200);
+        });
+        await t.test('gestão de leitores não permite alterar conta ou senha da equipe', async () => {
+            assert.equal((await api('/api/leitores/'+adminLeitor+'/acesso',coords[0],{senhaInicial:'Invasao123'})).status,403);
+            assert.equal((await api('/api/leitores/'+adminLeitor,coords[0],{...pessoal,status:'Ativo',email:'roubo@teste.invalid'},'PUT')).status,403);
+            assert.ok(await login('admin@teste.invalid'));
+        });
+        await t.test('cadastro administrativo com senha cria acesso atomicamente e exige troca inicial', async () => {
+            const dados={...pessoal,tipo:'Aluno',email:'novo@teste.invalid',status:'Ativo',senhaInicial:'Inicial123'};
+            const antes=Number((await banco.query('SELECT count(*) FROM leitores')).rows[0].count);
+            assert.equal((await api('/api/leitores',coords[0],{...dados,senhaInicial:'curta'})).status,400);
+            assert.equal((await api('/api/leitores',coords[0],{...dados,email:'admin@teste.invalid'})).status,409);
+            assert.equal(Number((await banco.query('SELECT count(*) FROM leitores')).rows[0].count),antes);
+            assert.equal((await api('/api/leitores',coords[0],{...dados,centroId:2})).status,403);
+            const r=await api('/api/leitores',coords[0],dados);assert.equal(r.status,201,JSON.stringify(r.body));assert.equal(r.body.temAcesso,true);
+            assert.equal(r.body.senhaInicial,undefined);assert.equal(r.body.senha_hash,undefined);
+            const cookie=await login(dados.email,dados.senhaInicial);
+            assert.equal((await api('/api/auth/me',cookie)).body.trocarSenha,true);
+            assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Inicial123',novaSenha:'Definitiva123'})).status,200);
+            assert.equal((await api('/api/minhas-reservas',cookie)).status,200);
+            const sem=await api('/api/leitores',coords[0],{...dados,email:'sem@teste.invalid',senhaInicial:''});
+            assert.equal(sem.status,201);assert.equal(sem.body.temAcesso,false);
+        });
+        await t.test('professores operam as cinco áreas somente no próprio Centro', async () => {
+            const baseProfessor={nome:'Professor teste',perfil:'professor',senha:'Senha123'};
+            assert.equal((await api('/api/usuarios',admin,{...baseProfessor,email:'semcentro@teste.invalid'})).status,400);
+            for(let centroId=1;centroId<=3;centroId++) {
+                const email='professor'+centroId+'@teste.invalid';
+                assert.equal((await api('/api/usuarios',admin,{...baseProfessor,email,centroId})).status,201);
+                const cookie=await login(email);
+                assert.equal((await api('/api/livros',cookie)).status,403);
+                assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Senha123',novaSenha:'Professor123'})).status,200);
+                const me=(await api('/api/auth/me',cookie)).body;
+                assert.equal(me.perfil,'professor');assert.equal(me.centroId,centroId);
+                for(const pagina of ['biblioteca','acervo','leitores','emprestimos','devolucoes','meusEmprestimos']) assert.equal((await api('/'+pagina+'.html',cookie)).status,200);
+                for(const path of ['/api/dashboard','/api/usuarios']) assert.equal((await api(path,cookie)).status,403);
+                for(const pagina of ['dashboard','usuarios']) {
+                    const r=await api('/'+pagina+'.html',cookie);assert.equal(r.status,302);assert.equal(r.headers.get('location'),'/biblioteca.html');
+                }
+                assert.equal((await api('/api/usuarios',cookie,{...baseProfessor,email:'negado@teste.invalid',centroId})).status,403);
+                assert.ok((await api('/api/leitores',cookie)).body.every(l=>l.centroId===centroId));
+                const outro=centroId%3;
+                assert.equal((await api('/api/leitores/'+leitores[outro].id,cookie)).status,404);
+                assert.equal((await api('/api/livros/'+obras[outro].id,cookie)).status,404);
+                assert.ok((await api('/api/biblioteca',cookie)).body.every(l=>l.exemplares.every(e=>e.centroId===centroId)));
+                assert.equal((await api('/api/meu-cadastro-emprestimos',cookie,{...pessoal,tipo:'Professor',centroId:outro+1})).status,403);
+                assert.equal((await api('/api/meu-cadastro-emprestimos',cookie,{...pessoal,tipo:'Professor',centroId})).status,201);
+                const obra=await api('/api/livros',cookie,{titulo:'Livro do professor',autor:'Autora',categoria:'Literatura',centroId,quantidade:2});
+                assert.equal(obra.status,201,JSON.stringify(obra.body));
+                assert.equal((await api('/api/livros',cookie,{titulo:'Fora',autor:'Autora',categoria:'Literatura',centroId:outro+1,quantidade:1})).status,403);
+                const leitor=await api('/api/leitores',cookie,{...pessoal,centroId,tipo:'Aluno',email:'alunoprof'+centroId+'@teste.invalid',status:'Ativo',senhaInicial:'Senha123'});
+                assert.equal(leitor.status,201,JSON.stringify(leitor.body));
+                const reserva=await api('/api/reservas',cookie,{exemplarId:obra.body.exemplares[0].id});
+                assert.equal(reserva.status,201,JSON.stringify(reserva.body));
+                assert.equal((await api('/api/minhas-reservas',cookie)).body.length,1);
+                assert.equal((await api('/api/reservas',cookie,{exemplarId:obras[outro].exemplares[39].id})).status,404);
+                const retirada=await api('/api/reservas/'+reserva.body.id+'/retirar',cookie,{});
+                assert.equal(retirada.status,200,JSON.stringify(retirada.body));
+                assert.equal((await api('/api/emprestimos/'+retirada.body.emprestimoId+'/devolucao',cookie,{versao:0,condicao:'Disponível'})).status,200);
+                const direto=await api('/api/emprestimos',cookie,{leitorId:leitor.body.id,exemplarId:obra.body.exemplares[1].id});
+                assert.equal(direto.status,201,JSON.stringify(direto.body));
+                assert.equal((await api('/api/emprestimos/'+direto.body.id+'/devolucao',coords[outro],{versao:0,condicao:'Disponível'})).status,404);
+                assert.equal((await api('/api/emprestimos/'+direto.body.id+'/devolucao',cookie,{versao:0,condicao:'Disponível'})).status,200);
+                assert.equal((await api('/api/leitores/'+adminLeitor+'/acesso',cookie,{senhaInicial:'Invasao123'})).status,centroId===1?403:404);
+            }
+        });
+        await t.test('administrador edita, inativa, reativa e redefine senha sem perder histórico', async () => {
+            const criado=await api('/api/usuarios',admin,{nome:'Conta editável',email:'editar@teste.invalid',senha:'Inicial123',perfil:'professor',centroId:1});
+            assert.equal(criado.status,201);const id=criado.body.id;
+            let cookie=await login('editar@teste.invalid','Inicial123');
+            assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Inicial123',novaSenha:'Atual1234'})).status,200);
+            const dados={nome:'Nome atualizado',email:'editado@teste.invalid',centroId:2};
+            for(const ator of [coords[0],cookie,leitores[0].cookie]) {
+                assert.equal((await api('/api/usuarios/'+id,ator,dados,'PUT')).status,403);
+                assert.equal((await api('/api/usuarios/'+id+'/status',ator,{ativo:false},'PATCH')).status,403);
+                assert.equal((await api('/api/usuarios/'+id+'/senha',ator,{senha:'Outra123'})).status,403);
+            }
+            assert.equal((await api('/api/usuarios/'+id,admin,{...dados,email:'admin@teste.invalid'},'PUT')).status,409);
+            assert.equal((await api('/api/auth/me',cookie)).status,200);
+            assert.equal((await api('/api/usuarios/'+id,admin,{...dados,perfil:'admin'},'PUT')).status,400);
+            assert.equal((await api('/api/usuarios/'+id,admin,dados,'PUT')).status,200);
+            assert.equal((await api('/api/auth/me',cookie)).status,401);
+            cookie=await login(dados.email,'Atual1234');
+            assert.equal((await api('/api/auth/me',cookie)).body.centroId,2);
+            assert.equal((await api('/api/meu-cadastro-emprestimos',cookie,{...pessoal,centroId:2})).status,201);
+            const vinculo=(await api('/api/auth/me',cookie)).body.leitorId;
+            const reserva=await api('/api/reservas',cookie,{exemplarId:obras[1].exemplares[39].id});assert.equal(reserva.status,201);
+            assert.equal((await api('/api/usuarios/'+id,admin,{...dados,centroId:3},'PUT')).status,409);
+            assert.equal((await api('/api/usuarios/'+id+'/status',admin,{ativo:'false'},'PATCH')).status,400);
+            assert.equal((await api('/api/usuarios/'+id+'/status',admin,{ativo:false},'PATCH')).status,200);
+            assert.equal((await api('/api/auth/me',cookie)).status,401);
+            assert.equal((await api('/api/auth/login',null,{email:dados.email,senha:'Atual1234'})).status,401);
+            assert.equal((await api('/api/usuarios/'+id+'/senha',admin,{senha:'curta'})).status,400);
+            assert.equal((await api('/api/usuarios/'+id+'/senha',admin,{senha:'Temporaria123'})).status,200);
+            assert.equal((await api('/api/auth/login',null,{email:dados.email,senha:'Temporaria123'})).status,401);
+            assert.equal((await banco.query('SELECT status FROM reservas WHERE id=$1',[reserva.body.id])).rows[0].status,'Pendente');
+            assert.equal((await api('/api/usuarios/'+id+'/status',admin,{ativo:true},'PATCH')).status,200);
+            assert.equal((await api('/api/auth/me',cookie)).status,401);
+            assert.equal((await api('/api/auth/login',null,{email:dados.email,senha:'Atual1234'})).status,401);
+            cookie=await login(dados.email,'Temporaria123');
+            assert.equal((await api('/api/auth/me',cookie)).body.trocarSenha,true);
+            assert.equal((await api('/api/leitores',cookie)).status,403);
+            assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Temporaria123',novaSenha:'Definitiva123'})).status,200);
+            assert.equal((await api('/api/minhas-reservas',cookie)).body[0].id,reserva.body.id);
+            assert.equal((await api('/api/reservas/'+reserva.body.id+'/cancelar',cookie,{})).status,200);
+            assert.equal((await api('/api/usuarios/'+id,admin,{...dados,nome:'Nome final',centroId:3},'PUT')).status,200);
+            const leitor=(await api('/api/leitores/'+vinculo,admin)).body;assert.equal(leitor.nome,'Nome final');assert.equal(leitor.centroId,3);assert.equal(leitor.email,dados.email);
+            const adminId=(await api('/api/auth/me',admin)).body.id;
+            assert.equal((await api('/api/usuarios/'+adminId+'/status',admin,{ativo:false},'PATCH')).status,409);
+            assert.equal((await api('/api/usuarios/999999/status',admin,{ativo:false},'PATCH')).status,404);
+            assert.equal((await api('/api/usuarios/0/senha',admin,{senha:'Temporaria123'})).status,400);
+            const contaLeitor=(await api('/api/auth/me',leitores[0].cookie)).body.id;
+            assert.equal((await api('/api/usuarios/'+contaLeitor+'/status',admin,{ativo:false},'PATCH')).status,200);
+            assert.equal((await api('/api/leitores/'+leitores[0].id+'/acesso',coords[0],{senhaInicial:'NovaLeitor123'})).status,204);
+            assert.equal((await banco.query('SELECT ativo FROM usuarios WHERE id=$1',[contaLeitor])).rows[0].ativo,false);
+            const listagem=(await api('/api/usuarios',admin)).body;
+            assert.ok(listagem.every(u=>u.senha_hash===undefined && u.senha===undefined));
+        });
+        await t.test('recuperação assistida não revela contas e exige administrador e identidade confirmada', async () => {
+            const email='recuperar@teste.invalid';
+            const novo=await api('/api/usuarios',admin,{nome:'Recuperação',email,senha:'Inicial123',perfil:'professor',centroId:1});assert.equal(novo.status,201);
+            const cookie=await login(email,'Inicial123');
+            await api('/api/auth/change-password',cookie,{senhaAtual:'Inicial123',novaSenha:'Original123'});
+            assert.equal((await api('/recuperarSenha.html')).status,200);
+            const solicitar=()=>api('/api/auth/recuperacao',null,{email});
+            const primeira=await solicitar();assert.equal(primeira.status,202);
+            const inexistente=await api('/api/auth/recuperacao',null,{email:'inexistente@teste.invalid'});
+            assert.deepEqual(inexistente.body,primeira.body);assert.equal(inexistente.status,202);
+            assert.deepEqual((await solicitar()).body,primeira.body);
+            assert.equal((await api('/api/auth/me',cookie)).status,200);
+            let fila=(await api('/api/recuperacoes',admin)).body;assert.equal(fila.length,1);
+            const id=fila[0].id;assert.equal(fila[0].email,email);assert.equal(fila[0].senha_hash,undefined);
+            for(const ator of [coords[0],cookie,leitores[1].cookie]) {
+                assert.equal((await api('/api/recuperacoes',ator)).status,403);
+                assert.equal((await api('/api/recuperacoes/'+id+'/concluir',ator,{acao:'atender',senha:'NovaSenha123',identidadeConfirmada:true})).status,403);
+            }
+            assert.equal((await api('/api/recuperacoes/'+id+'/concluir',null,{acao:'encerrar'})).status,401);
+            assert.equal((await api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'NovaSenha123'})).status,400);
+            assert.equal((await api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'curta',identidadeConfirmada:true})).status,400);
+            const respostas=await Promise.all([1,2].map(()=>api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'NovaSenha123',identidadeConfirmada:true})));
+            assert.deepEqual(respostas.map(r=>r.status).sort(),[200,409]);
+            assert.equal((await api('/api/auth/me',cookie)).status,401);
+            assert.equal((await api('/api/auth/login',null,{email,senha:'Original123'})).status,401);
+            const recuperado=await login(email,'NovaSenha123');assert.equal((await api('/api/auth/me',recuperado)).body.trocarSenha,true);
+            const auditoria=(await banco.query('SELECT status,atendido_por,encerrada_em FROM recuperacoes_acesso WHERE id=$1',[id])).rows[0];
+            assert.equal(auditoria.status,'Atendida');assert.ok(auditoria.atendido_por);assert.ok(auditoria.encerrada_em);
+            assert.equal((await solicitar()).status,202);
+            const pendente=(await api('/api/recuperacoes',admin)).body[0];
+            assert.equal((await api('/api/usuarios/'+novo.body.id+'/status',admin,{ativo:false},'PATCH')).status,200);
+            assert.deepEqual((await solicitar()).body,primeira.body);
+            assert.equal((await api('/api/recuperacoes/'+pendente.id+'/concluir',admin,{acao:'atender',senha:'OutraSenha123',identidadeConfirmada:true})).status,409);
+            assert.equal((await api('/api/recuperacoes/'+pendente.id+'/concluir',admin,{acao:'encerrar'})).status,200);
+            assert.equal((await solicitar()).status,429);
+            assert.equal((await banco.query('SELECT ativo FROM usuarios WHERE id=$1',[novo.body.id])).rows[0].ativo,false);
+            assert.deepEqual((await api('/api/recuperacoes',admin)).body,[]);
+        });
+        await t.test('senha temporária de professor e coordenador funciona após criação e redefinição',async()=>{
+            for(const perfil of ['professor','coordenador']) {
+                const email='troca-'+perfil+'@teste.invalid';
+                const inicial=' Temporária#123 ';
+                const criado=await api('/api/usuarios',admin,{nome:'Teste troca',email,senha:inicial,perfil,centroId:1});assert.equal(criado.status,201);
+                const id=criado.body.id;
+                let cookie=await login(email,inicial);
+                assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:inicial,novaSenha:'Nova#12345',usuarioId:id+1})).status,409);
+                assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:inicial,novaSenha:'Nova#12345',usuarioId:id})).status,200);
+                assert.ok(await login(email,'Nova#12345'));
+                assert.equal((await api('/api/usuarios/'+id+'/senha',admin,{senha:'Outra#12345'})).status,200);
+                assert.equal((await api('/api/auth/me',cookie)).status,401);
+                cookie=await login(email,'Outra#12345');
+                assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:inicial,novaSenha:'Final#12345',usuarioId:id})).status,400);
+                assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Outra#12345',novaSenha:'Final#12345',usuarioId:id})).status,200);
+                assert.ok(await login(email,'Final#12345'));
+            }
         });
         assert.deepEqual(erros,[], 'Nenhum erro SQL inesperado');
     } finally {

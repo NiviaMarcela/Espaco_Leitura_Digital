@@ -18,9 +18,10 @@ const consulta = `SELECT r.id, r.leitor_id AS "leitorId", l.nome AS leitor,
     JOIN centros c ON c.id=e.centro_id
     LEFT JOIN emprestimos p ON p.id=r.emprestimo_id`;
 
-export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil) {
+export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil, { pessoal = false } = {}) {
     const centroId = usuario.perfil === 'admin' ? null : usuario.centroId;
-    const leitorId = usuario.perfil === 'leitor' ? usuario.leitorId : null;
+    const somenteProprias = pessoal || usuario.perfil === 'leitor';
+    const leitorId = somenteProprias ? usuario.leitorId : null;
     if (usuario.perfil !== 'admin' && !Number.isInteger(centroId)) throw erroHttp(403, 'Conta sem Centro válido.');
     if (usuario.perfil === 'leitor' && !Number.isInteger(leitorId)) throw erroHttp(403, 'Conta sem leitor válido.');
     const escopo = `($2::integer IS NULL OR e.centro_id=$2) AND ($3::integer IS NULL OR r.leitor_id=$3)`;
@@ -80,20 +81,23 @@ export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil) {
             return transacao(c => expirarVencidas(c));
         },
         async listar() {
+            // Um administrador sem vínculo pessoal não deve receber a lista geral em Minhas reservas.
+            if (somenteProprias && !Number.isInteger(leitorId)) return [];
             await transacao(c => expirarVencidas(c));
             return (await banco.query(`${consulta} WHERE ($1::integer IS NULL OR e.centro_id=$1)
                 AND ($2::integer IS NULL OR r.leitor_id=$2)
-                ${usuario.perfil === 'leitor' ? '' : "AND r.status='Pendente'"}
+                ${somenteProprias ? '' : "AND r.status='Pendente'"}
                 ORDER BY r.criada_em DESC, r.id DESC`, [centroId, leitorId])).rows;
         },
         async criar(exemplarId) {
-            if (usuario.perfil !== 'leitor') throw erroHttp(403, 'Reservas são feitas pela conta do leitor.');
+            const leitorId = usuario.leitorId;
+            if (!Number.isInteger(leitorId)) throw erroHttp(409, 'Complete seu cadastro pessoal na Biblioteca antes de reservar.');
             return transacao(async c => {
                 await expirarVencidas(c);
                 const leitor = (await c.query('SELECT status, centro_id FROM leitores WHERE id=$1 FOR UPDATE', [leitorId])).rows[0];
                 if (!leitor || leitor.status !== 'Ativo') throw erroHttp(409, 'O leitor precisa estar ativo.');
                 const exemplar = (await c.query('SELECT status, centro_id FROM exemplares WHERE id=$1 FOR UPDATE', [exemplarId])).rows[0];
-                if (!exemplar || exemplar.centro_id !== leitor.centro_id) throw erroHttp(404, 'Exemplar não encontrado no seu Centro.');
+                if (!exemplar || (usuario.perfil !== 'admin' && (exemplar.centro_id !== leitor.centro_id || exemplar.centro_id !== centroId))) throw erroHttp(404, 'Exemplar não encontrado no seu Centro.');
                 if (exemplar.status !== 'Disponível') throw erroHttp(409, 'Este exemplar não está disponível.');
                 const { rows } = await c.query(`SELECT
                     (SELECT count(*) FROM reservas WHERE leitor_id=$1 AND status='Pendente') +
@@ -114,12 +118,15 @@ export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil) {
             });
         },
         async retirar(id) {
-            if (!['admin', 'coordenador'].includes(usuario.perfil)) throw erroHttp(403, 'Somente a gestão confirma a retirada.');
+            if (!['admin', 'coordenador', 'professor'].includes(usuario.perfil)) throw erroHttp(403, 'Somente a gestão confirma a retirada.');
             const resultado = await transacao(async c => {
                 const r = await bloquearReserva(c, id);
                 if (r.expirada) return { expirada: true };
                 if (r.leitor.status !== 'Ativo') throw erroHttp(409, 'Ative o leitor antes de confirmar a retirada.');
-                if (r.leitor.centro_id !== r.exemplar.centro_id) throw erroHttp(409, 'Leitor e exemplar precisam pertencer ao mesmo Centro.');
+                if (r.leitor.centro_id !== r.exemplar.centro_id) {
+                    const administrador = await c.query("SELECT id FROM usuarios WHERE leitor_id=$1 AND perfil='admin' AND ativo=true", [r.leitorId]);
+                    if (!administrador.rowCount) throw erroHttp(409, 'Leitor e exemplar precisam pertencer ao mesmo Centro.');
+                }
                 const data = hoje();
                 const prazo = somarDias(r.dataReserva, PRAZO_DIAS);
                 const p = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao)

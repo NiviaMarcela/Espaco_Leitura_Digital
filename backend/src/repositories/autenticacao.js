@@ -110,7 +110,7 @@ export function criarRepositorioAutenticacao(banco) {
                     u.leitor_id, u.trocar_senha, COALESCE(u.nome,l.nome) AS nome,
                     COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM usuarios u LEFT JOIN leitores l ON l.id=u.leitor_id
-                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador') OR l.status='Ativo')`,
+                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador','professor') OR l.status='Ativo')`,
             [normalizarEmail(email)]);
             const usuario = resultado.rows[0];
             if (!usuario) {
@@ -131,7 +131,7 @@ export function criarRepositorioAutenticacao(banco) {
                 FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE s.token_hash=$1 AND s.expira_em>now() AND u.ativo=true
-                    AND (u.perfil IN ('admin','coordenador') OR l.status='Ativo')`,
+                    AND (u.perfil IN ('admin','coordenador','professor') OR l.status='Ativo')`,
             [hashToken(token)]);
             return resultado.rows[0] ? usuarioPublico(resultado.rows[0]) : null;
         },
@@ -167,11 +167,13 @@ export function criarRepositorioAutenticacao(banco) {
                 throw erroHttp(400, 'Cadastre um e-mail válido no perfil do leitor antes de criar o acesso.');
             }
             try {
-                await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, leitor_id, trocar_senha)
+                const acesso = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, leitor_id, trocar_senha)
                     VALUES ($1,$2,'leitor',$3,true)
                     ON CONFLICT (leitor_id) DO UPDATE SET email=EXCLUDED.email,
-                        senha_hash=EXCLUDED.senha_hash, trocar_senha=true, ativo=true`,
+                        senha_hash=EXCLUDED.senha_hash, trocar_senha=true
+                    WHERE usuarios.perfil='leitor' RETURNING id`,
                 [email, await hashSenha(senhaInicial), leitorId]);
+                if (!acesso.rowCount) throw erroHttp(403, 'Não é permitido redefinir senhas da equipe pela gestão de leitores.');
             } catch (erro) {
                 if (erro.code === '23505') throw erroHttp(409, 'Este e-mail já está associado a outra conta.');
                 throw erro;

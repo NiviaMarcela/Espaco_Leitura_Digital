@@ -12,7 +12,7 @@ try {
         nome text PRIMARY KEY, aplicada_em timestamptz NOT NULL DEFAULT now()
     )`);
     let total = 0;
-    for (const nome of ["001_acervo.sql", "002_leitores.sql", "003_baixa_exemplares.sql", "004_emprestimos.sql", "005_devolucoes.sql", "006_autenticacao.sql", "007_perfis_reservas.sql"]) {
+    for (const nome of ["001_acervo.sql", "002_leitores.sql", "003_baixa_exemplares.sql", "004_emprestimos.sql", "005_devolucoes.sql", "006_autenticacao.sql", "007_perfis_reservas.sql", "008_emprestimos_todos_perfis.sql", "009_perfil_professor.sql", "010_recuperacao_assistida.sql"]) {
         const aplicada = await conexao.query("SELECT nome FROM schema_migrations WHERE nome = $1", [nome]);
         if (aplicada.rowCount === 0) {
             const sql = await readFile(new URL(`../database/${nome}`, import.meta.url), "utf8");

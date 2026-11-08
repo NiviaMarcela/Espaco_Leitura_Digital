@@ -1,3 +1,5 @@
+import { criarRepositorioRecuperacao, MENSAGEM_RECUPERACAO } from './repositories/recuperacao.js';
+import { setTimeout as aguardar } from 'node:timers/promises';
 import express from "express";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -11,6 +13,7 @@ import { criarRepositorioEmprestimos } from './repositories/emprestimos.js';
 import { criarRepositorioDashboard } from './repositories/dashboard.js';
 
 import { criarRepositorioReservas } from './repositories/reservas.js';
+import { completarCadastroPessoal } from './repositories/cadastro-pessoal.js';
 import { criarRepositorioUsuarios } from './repositories/usuarios.js';
 
 const COOKIE_SESSAO = 'espaco_sessao';
@@ -41,6 +44,8 @@ export function criarApp(banco, registrarErro = console.error) {
     const acervo = criarRepositorioAcervo(banco);
     const autenticacao = criarRepositorioAutenticacao(banco);
     const usuarios = criarRepositorioUsuarios(banco);
+    const recuperacao = criarRepositorioRecuperacao(banco);
+    const pedidosRecuperacao = new Map();
     const tentativasLogin = new Map();
     const tentativasCadastro = new Map();
     app.disable("x-powered-by");
@@ -98,9 +103,25 @@ export function criarApp(banco, registrarErro = console.error) {
     }
 
     const exigirAdmin = exigirPerfil('admin');
-    const exigirGestao = exigirPerfil('admin', 'coordenador');
-    const exigirLeitor = exigirPerfil('leitor');
+    const exigirGestao = exigirPerfil('admin', 'coordenador', 'professor');
+    const exigirConta = exigirPerfil('admin', 'coordenador', 'professor', 'leitor');
     const expirarReservas = usuario => criarRepositorioReservas(banco, usuario).expirarVencidas();
+
+    app.post('/api/auth/recuperacao', async (req, res) => {
+        const inicio=Date.now();
+        for (const [ip, entrada] of pedidosRecuperacao) if(entrada.ate<=inicio) pedidosRecuperacao.delete(ip);
+        const entrada=pedidosRecuperacao.get(req.ip) || {total:0,ate:inicio+15*60*1000};
+        if(entrada.total>=5 || (!pedidosRecuperacao.has(req.ip) && pedidosRecuperacao.size>=10000)) {
+            res.set('Retry-After','900');
+            return res.status(429).json({erro:'Muitas solicitações. Aguarde 15 minutos e tente novamente.'});
+        }
+        entrada.total++;pedidosRecuperacao.set(req.ip,entrada);
+        try { await recuperacao.solicitar(req.body); }
+        finally { await aguardar(Math.max(0,300-(Date.now()-inicio))); }
+        res.status(202).json({mensagem:MENSAGEM_RECUPERACAO});
+    });
+    app.get('/api/recuperacoes', exigirAdmin, async (req,res)=>res.json(await recuperacao.listar()));
+    app.post('/api/recuperacoes/:id/concluir', exigirAdmin, async (req,res)=>res.json(await recuperacao.concluir(Number(req.params.id),req.body,req.usuario.id)));
 
     app.post('/api/auth/login', async (req, res) => {
         const chave = req.ip;
@@ -130,7 +151,8 @@ export function criarApp(banco, registrarErro = console.error) {
         if (!usuario) return res.status(401).json({ erro: 'Sessão não encontrada.' });
         res.json(usuario);
     });
-    app.post('/api/auth/change-password', exigirPerfil('admin', 'coordenador', 'leitor'), async (req, res) => {
+    app.post('/api/auth/change-password', exigirPerfil('admin', 'coordenador', 'professor', 'leitor'), async (req, res) => {
+        if (req.body?.usuarioId !== undefined && req.body.usuarioId !== req.usuario.id) throw erroHttp(409, 'A conta conectada mudou. Saia e entre novamente com a conta desejada.');
         const { senhaAtual, novaSenha } = validarTrocaSenha(req.body);
         await autenticacao.alterarSenha(req.usuario.id, req.tokenSessao, senhaAtual, novaSenha);
         res.json({ ok: true });
@@ -164,12 +186,13 @@ export function criarApp(banco, registrarErro = console.error) {
         }
         recentes.push(agora);
         tentativasCadastro.set(chave, recentes);
+        if (!['Aluno', 'Comunidade'].includes(req.body?.tipo)) throw erroHttp(400, 'No cadastro inicial, selecione Aluno ou Comunidade.');
         const dados = validarLeitor({ ...req.body, status: 'Ativo' });
         const senha = validarSenha(req.body?.senha);
         await autenticacao.cadastrarLeitor(dados, senha);
         res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
     });
-    app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'leitor'), async (req, res) => {
+    app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'professor', 'leitor'), async (req, res) => {
         await expirarReservas(req.usuario);
         res.json((await req.repos.acervo.listarLivros()).map(catalogoPublico));
     });
@@ -205,7 +228,7 @@ export function criarApp(banco, registrarErro = console.error) {
         res.json(leitor);
     });
     app.post('/api/leitores', exigirGestao, async (req, res) => {
-        const leitor = await req.repos.leitores.salvar(validarLeitor(req.body));
+        const leitor = await req.repos.leitores.salvar(validarLeitor(req.body), null, req.body?.senhaInicial);
         res.status(201).location(`/api/leitores/${leitor.id}`).json(leitor);
     });
     app.put('/api/leitores/:id', exigirGestao, async (req, res) => {
@@ -217,7 +240,7 @@ export function criarApp(banco, registrarErro = console.error) {
         res.status(204).end();
     });
 
-    app.get('/api/dashboard', exigirGestao, async (req, res) => res.json(await req.repos.dashboard.consultar()));
+    app.get('/api/dashboard', exigirPerfil('admin', 'coordenador'), async (req, res) => res.json(await req.repos.dashboard.consultar()));
     app.get('/api/emprestimos/opcoes', exigirGestao, async (req, res) => {
         await expirarReservas(req.usuario);
         res.json(await req.repos.emprestimos.opcoes());
@@ -242,25 +265,34 @@ export function criarApp(banco, registrarErro = console.error) {
     app.post('/api/emprestimos/:id/devolucao', exigirGestao, async (req, res) => {
         res.json(await req.repos.emprestimos.devolver(Number(req.params.id), validarDevolucao(req.body)));
     });
-    app.get('/api/meus-emprestimos', exigirLeitor, async (req, res) => {
-        res.json(await req.repos.emprestimos.listarDoLeitor(req.usuario.leitorId));
+    app.post('/api/meu-cadastro-emprestimos', exigirGestao, async (req, res) => {
+        const dados = validarLeitor({ ...req.body, email: req.usuario.email, status: 'Ativo' });
+        await completarCadastroPessoal(banco, req.usuario, dados);
+        res.status(201).json(await autenticacao.autenticar(req.tokenSessao));
     });
-    app.get('/api/minhas-reservas', exigirLeitor, async (req, res) => {
-        res.json(await criarRepositorioReservas(banco, req.usuario).listar());
+    app.get('/api/meus-emprestimos', exigirConta, async (req, res) => {
+        res.json(req.usuario.leitorId ? await req.repos.emprestimos.listarDoLeitor(req.usuario.leitorId) : []);
+    });
+    app.get('/api/minhas-reservas', exigirConta, async (req, res) => {
+        res.json(await criarRepositorioReservas(banco, req.usuario, undefined, { pessoal: true }).listar());
     });
     app.get('/api/reservas', exigirGestao, async (req, res) => {
         res.json(await criarRepositorioReservas(banco, req.usuario).listar());
     });
-    app.post('/api/reservas', exigirLeitor, async (req, res) => {
+    app.post('/api/reservas', exigirConta, async (req, res) => {
+        if (!req.usuario.leitorId) throw erroHttp(409, 'Complete seu cadastro pessoal na Biblioteca antes de reservar.');
         const dados = validarEmprestimo({ leitorId: req.usuario.leitorId, exemplarId: req.body?.exemplarId });
         res.status(201).location('/api/minhas-reservas').json(await criarRepositorioReservas(banco, req.usuario).criar(dados.exemplarId));
     });
-    app.post('/api/reservas/:id/cancelar', exigirPerfil('admin','coordenador','leitor'), async (req, res) => {
+    app.post('/api/reservas/:id/cancelar', exigirPerfil('admin','coordenador','professor','leitor'), async (req, res) => {
         res.json(await criarRepositorioReservas(banco, req.usuario).cancelar(Number(req.params.id)));
     });
     app.post('/api/reservas/:id/retirar', exigirGestao, async (req, res) => {
         res.json(await criarRepositorioReservas(banco, req.usuario).retirar(Number(req.params.id)));
     });
+    app.put('/api/usuarios/:id', exigirAdmin, async (req, res) => res.json(await usuarios.editar(Number(req.params.id), req.body)));
+    app.patch('/api/usuarios/:id/status', exigirAdmin, async (req, res) => res.json(await usuarios.definirAtivo(Number(req.params.id), req.body?.ativo, req.usuario.id)));
+    app.post('/api/usuarios/:id/senha', exigirAdmin, async (req, res) => res.json(await usuarios.redefinirSenha(Number(req.params.id), req.body?.senha)));
     app.get('/api/usuarios', exigirAdmin, async (req, res) => res.json(await usuarios.listar()));
     app.post('/api/usuarios', exigirAdmin, async (req, res) => res.status(201).json(await usuarios.criar(req.body)));
 
@@ -273,20 +305,22 @@ export function criarApp(banco, registrarErro = console.error) {
             if (!usuario) return res.redirect(`/login.html?next=${encodeURIComponent(req.originalUrl)}`);
             if (usuario.trocarSenha && req.path !== '/alterarSenha.html') return res.redirect('/alterarSenha.html');
             if (usuario.trocarSenha && req.path === '/alterarSenha.html') return next();
-            if (perfil && ![perfil].flat().includes(usuario.perfil)) return res.redirect(usuario.perfil !== 'leitor' ? '/dashboard.html' : '/biblioteca.html');
+            if (perfil && ![perfil].flat().includes(usuario.perfil)) return res.redirect(['admin','coordenador'].includes(usuario.perfil) ? '/dashboard.html' : '/biblioteca.html');
             next();
         } catch (erro) { next(erro); }
     };
     app.get("/", arquivoPagina("index"));
     app.get("/index.html", arquivoPagina("index"));
     app.get("/login.html", arquivoPagina("login"));
-    app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'leitor']), arquivoPagina("biblioteca"));
+    app.get("/recuperarSenha.html", arquivoPagina("recuperarSenha"));
+    app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'professor', 'leitor']), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
-    for (const pagina of ["dashboard", "leitores", "acervo", "emprestimos", "devolucoes"]) {
-        app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador']), arquivoPagina(pagina));
+    app.get("/dashboard.html", paginaProtegida(['admin', 'coordenador']), arquivoPagina("dashboard"));
+    for (const pagina of ["leitores", "acervo", "emprestimos", "devolucoes"]) {
+        app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor']), arquivoPagina(pagina));
     }
     app.get('/usuarios.html', paginaProtegida('admin'), arquivoPagina('usuarios'));
-    app.get('/meusEmprestimos.html', paginaProtegida('leitor'), arquivoPagina('meusEmprestimos'));
+    app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {
         app.use(`/${pasta}`, express.static(path.join(raiz, pasta), { dotfiles: "deny" }));
     }

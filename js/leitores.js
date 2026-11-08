@@ -72,6 +72,10 @@ function renderizar() {
         acesso.textContent = leitor.temAcesso ? 'Redefinir senha' : 'Criar acesso';
         acesso.setAttribute('aria-label', `${leitor.temAcesso ? 'Redefinir senha de' : 'Criar acesso para'} ${leitor.nome}`);
         acesso.addEventListener('click', () => abrirAcesso(leitor));
+        if (leitor.perfilConta && leitor.perfilConta !== 'leitor') {
+            botao.disabled = true; acesso.disabled = true;
+            botao.title = acesso.title = 'Cadastro vinculado à equipe. A senha é alterada pela própria conta.';
+        }
         linha.insertCell().append(botao, acesso);
     }
 }
@@ -86,6 +90,9 @@ function mostrarIdade() {
 function abrirFormulario(leitor = null) {
     form.reset();
     idEditando = leitor?.id ?? null;
+    elemento('senhaCadastroLeitorGrupo').hidden = Boolean(leitor);
+    elemento('senhaCadastroLeitor').disabled = Boolean(leitor);
+    elemento('confirmarSenhaCadastroLeitor').disabled = Boolean(leitor);
     elemento('erroLeitor').textContent = '';
     elemento('nascimentoLeitor').max = hojeCivil();
     elemento('tituloFormularioLeitor').textContent = leitor ? 'Editar leitor' : 'Cadastrar leitor';
@@ -167,6 +174,14 @@ form.addEventListener('submit', async evento => {
     if (salvando || !form.reportValidity()) return;
     const dados = Object.fromEntries(Object.entries(campos).map(([chave, id]) => [chave, elemento(id).value.trim()]));
     dados.centroId = Number(dados.centroId);
+    if (idEditando === null) {
+        const senha = elemento('senhaCadastroLeitor').value;
+        if (senha !== elemento('confirmarSenhaCadastroLeitor').value) {
+            elemento('erroLeitor').textContent = 'As senhas não coincidem.';
+            return;
+        }
+        if (senha) dados.senhaInicial = senha;
+    }
     salvando = true;
     elemento('erroLeitor').textContent = '';
     modal.querySelectorAll('input, select, button').forEach(c => c.disabled = true);
@@ -178,7 +193,7 @@ form.addEventListener('submit', async evento => {
         const indice = leitores.findIndex(l => l.id === leitor.id);
         if (indice === -1) leitores.push(leitor); else leitores[indice] = leitor;
         renderizar();
-        elemento('avisoLeitores').textContent = 'Leitor salvo no banco de dados.';
+        elemento('avisoLeitores').textContent = dados.senhaInicial ? 'Leitor e acesso cadastrados. A senha deverá ser alterada no primeiro login.' : 'Leitor salvo no banco de dados.';
         sucesso = true;
     } catch (erro) {
         elemento('erroLeitor').textContent = erro.message;
