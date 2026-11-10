@@ -17,7 +17,7 @@ Os Centros são CE Maranhão, CE Piauí e CE Bahia. A sessão recupera o Centro 
 2. O leitor pode cadastrar-se na página inicial como Aluno ou Comunidade, informando Centro, nascimento e senha de 8 a 128 caracteres. Em **Leitores → Cadastrar leitor**, a gestão pode preencher a senha inicial opcional e sua confirmação. Ao preencher, leitor e acesso são criados juntos; a senha deve ter de 8 a 128 caracteres e ser trocada no primeiro login. Deixar em branco cria somente o cadastro; **Criar acesso** continua disponível depois. Em **Usuários**, o perfil Leitor vincula uma conta a um leitor ativo já cadastrado e ainda sem acesso, com o mesmo e-mail.
 3. Na Biblioteca, **Reservar Livro** está disponível para todos os perfis. Leitores e coordenadores escolhem uma cópia disponível do próprio Centro; administradores podem escolher nos três Centros. O servidor obtém o leitor pela sessão, nunca pelo ID enviado pelo navegador.
 4. Em **Minhas reservas e empréstimos**, a pessoa vê a reserva como Pendente e pode cancelá-la. Ainda não há empréstimo. A retirada deve ocorrer em até 7 dias; a data prevista de devolução já é calculada a partir da reserva.
-5. O coordenador abre **Empréstimos → Reservas aguardando retirada** e usa **Confirmar retirada** no momento da entrega física. O administrador também pode confirmar.
+5. O coordenador abre **Reservas → Reservas aguardando retirada** e usa **Confirmar retirada** no momento da entrega física. O administrador também pode confirmar.
 6. Nesse momento o empréstimo inicia, com devolução prevista para 30 dias corridos depois da reserva, conforme a regra atual do repositório. A reserva fica Retirada. Uma segunda confirmação é recusada.
 
 O limite de 10 soma reservas pendentes e empréstimos ainda não devolvidos, incluindo atrasados. Canceladas, retiradas e empréstimos devolvidos não são contados como reservas pendentes. Converter uma reserva em empréstimo não aumenta o total. A retirada direta por **Novo empréstimo** também respeita esse limite.
@@ -74,7 +74,7 @@ O perfil de acesso (administrador, coordenador ou leitor) é diferente do tipo d
 
 No primeiro clique em **Reservar livro**, uma conta administrativa sem vínculo pessoal informa nome, tipo, nascimento, telefone e Centro de referência. A aplicação usa o e-mail da conta autenticada e vincula o novo registro de circulação ao mesmo login. Não cria outra senha, não muda o perfil e não ocupa outra vaga de administrador. O Centro de referência do administrador não limita as reservas; o coordenador só pode selecionar o seu Centro.
 
-**Minhas reservas e empréstimos** mostra somente os registros da própria conta, inclusive para a equipe. **Empréstimos → Reservas aguardando retirada** continua sendo a lista de gestão. O coordenador do Centro do exemplar pode entregar a reserva de um administrador mesmo quando o Centro de referência dele é outro. O limite de 10 soma as reservas e empréstimos da pessoa nos três Centros, sem multiplicar a cota do administrador.
+**Minhas reservas e empréstimos** mostra somente os registros da própria conta, inclusive para a equipe. **Reservas → Reservas aguardando retirada** continua sendo a lista de gestão. O coordenador do Centro do exemplar pode entregar a reserva de um administrador mesmo quando o Centro de referência dele é outro. O limite de 10 soma as reservas e empréstimos da pessoa nos três Centros, sem multiplicar a cota do administrador.
 
 A senha opcional do novo leitor é armazenada como hash scrypt. Se o e-mail já pertence a outra conta, toda a transação é desfeita: não sobra um leitor incompleto. Cadastros pessoais vinculados à equipe têm edição e redefinição de senha bloqueadas em Leitores, impedindo que essa tela altere credenciais administrativas. A equipe pode usar **Alterar senha** para a própria conta.
 
@@ -119,3 +119,15 @@ Testes cobrem bloqueio de outros perfis, edição e sincronização, conflitos d
 ## Esqueceu a senha?
 
 A recuperação assistida pelo administrador está descrita em [GUIA-RECUPERACAO-ACESSO.md](GUIA-RECUPERACAO-ACESSO.md). A solicitação aparece em Usuários e só é atendida após a confirmação da identidade.
+
+## Página própria para Reservas (10/11/2026)
+
+A lista de reservas aguardando retirada saiu da tela de Empréstimos e agora fica em **Reservas**, na sidebar desktop e no menu do celular. O menu está disponível em Dashboard, Acervo, Leitores, Reservas, Empréstimos, Devoluções, Usuários e Biblioteca, conforme as permissões de cada perfil.
+
+A página `reservas.html` usa `js/reservas.js` para consultar as reservas pendentes e manter as ações Confirmar retirada e Cancelar, com suas cores e confirmações. Administradores visualizam os três Centros; coordenadores e professores continuam limitados ao próprio Centro. Leitores permanecem em Minhas reservas e empréstimos, com acesso apenas aos próprios registros.
+
+Empréstimos mantém empréstimos registrados, criação direta e renovações. Não carrega o painel nem o JavaScript de reservas. Ao confirmar uma retirada em Reservas e abrir Empréstimos, a consulta mostra o novo empréstimo. Se Empréstimos já estiver aberta em outra aba, use Atualizar lista.
+
+A rota de Reservas é protegida no servidor. Não há alteração de banco nem dos prazos, limites e regras de circulação. A tela de gestão continua exibindo as reservas pendentes; o histórico pessoal permanece em Minhas reservas e empréstimos.
+
+Validação: testes de rota protegida, acesso dos três perfis de gestão, bloqueio do leitor, links dos menus desktop/celular e ausência do painel em Empréstimos. A suíte de integração continua cobrindo confirmação, cancelamento e isolamento por Centro. Não houve inspeção visual em navegador.

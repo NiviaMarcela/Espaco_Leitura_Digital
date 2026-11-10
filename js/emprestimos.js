@@ -242,5 +242,3 @@ el('leitorEmprestimo').addEventListener('change', mostrarSaldo);
 el('exemplarEmprestimo').addEventListener('change', mostrarSaldo);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderizar(); });
 carregar();
-
-document.addEventListener('reservas-atualizadas', carregar);

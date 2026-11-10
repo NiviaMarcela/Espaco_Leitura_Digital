@@ -256,7 +256,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                 assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Senha123',novaSenha:'Professor123'})).status,200);
                 const me=(await api('/api/auth/me',cookie)).body;
                 assert.equal(me.perfil,'professor');assert.equal(me.centroId,centroId);
-                for(const pagina of ['biblioteca','acervo','leitores','emprestimos','devolucoes','meusEmprestimos']) assert.equal((await api('/'+pagina+'.html',cookie)).status,200);
+                for(const pagina of ['biblioteca','acervo','leitores','reservas','emprestimos','devolucoes','meusEmprestimos']) assert.equal((await api('/'+pagina+'.html',cookie)).status,200);
                 for(const path of ['/api/dashboard','/api/usuarios']) assert.equal((await api(path,cookie)).status,403);
                 for(const pagina of ['dashboard','usuarios']) {
                     const r=await api('/'+pagina+'.html',cookie);assert.equal(r.status,302);assert.equal(r.headers.get('location'),'/biblioteca.html');

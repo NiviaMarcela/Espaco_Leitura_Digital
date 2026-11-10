@@ -238,7 +238,7 @@ test("administradores e leitores consultam a Biblioteca; conta sem vínculo deve
 test("links das sidebars administrativas abrem a Biblioteca e seus links de retorno", async t => {
     const get = await iniciar(t, async () => ({ rows: [] }));
     const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
-    for (const pagina of ['dashboard', 'acervo', 'leitores', 'emprestimos', 'devolucoes', 'usuarios']) {
+    for (const pagina of ['dashboard', 'acervo', 'leitores', 'reservas', 'emprestimos', 'devolucoes', 'usuarios']) {
         const resposta = await get(`/${pagina}.html`, opcoes);
         assert.equal(resposta.status, 200, pagina);
         const html = await resposta.text();
@@ -379,4 +379,24 @@ for (const tipo of ['Professor','Funcionário','Voluntário']) test('cadastro p�
     const api=await iniciar(t,()=>{throw new Error('Não deve consultar o banco');});
     const r=await api('/api/cadastro-leitor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:'Pessoa',tipo,dataNascimento:'2000-01-01',centroId:1,telefone:'85999999999',email:'teste@teste.invalid',senha:'Senha123'})});
     assert.equal(r.status,400);assert.match((await r.json()).erro,/Aluno ou Comunidade/);
+});
+
+test('Reservas tem rota de gestão e menus próprios; Empréstimos não carrega o painel',async t=>{
+    const opcoes={headers:{Cookie:'espaco_sessao='+ 'a'.repeat(43)},redirect:'manual'};
+    for(const perfil of ['admin','coordenador','professor']) {
+        const api=await iniciar(t,async()=>({rows:[]}),{id:8,perfil,centroId:1});
+        const resposta=await api('/reservas.html',opcoes);assert.equal(resposta.status,200);
+        const html=await resposta.text();assert.match(html,/id="tabelaReservas"/);assert.match(html,/src="js\/reservas.js"/);
+        assert.doesNotMatch(html,/id="novoEmprestimo"|src="js\/emprestimos.js"/);
+        for(const pagina of ['acervo','leitores','emprestimos','devolucoes','biblioteca','reservas']) {
+            const conteudo=await (await api('/'+pagina+'.html',opcoes)).text();
+            const menus=[...conteudo.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)];
+            assert.equal(menus.length,2);
+            for(const menu of menus)assert.equal((menu[1].match(/href="\/reservas.html"/g)||[]).length,1);
+            if(pagina==='emprestimos')assert.doesNotMatch(conteudo,/data-reservas-gestao|id="tabelaReservas"|src="js\/reservas.js"/);
+        }
+    }
+    const api=await iniciar(t,async()=>({rows:[]}),{id:9,perfil:'leitor',centroId:1,leitorId:7});
+    const negada=await api('/reservas.html',opcoes);assert.equal(negada.status,302);assert.equal(negada.headers.get('location'),'/biblioteca.html');
+    const anonima=await api('/reservas.html');assert.equal(anonima.status,302);assert.match(anonima.headers.get('location'),/^\/login.html/);
 });

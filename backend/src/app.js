@@ -316,7 +316,7 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'professor', 'leitor']), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
     app.get("/dashboard.html", paginaProtegida(['admin', 'coordenador']), arquivoPagina("dashboard"));
-    for (const pagina of ["leitores", "acervo", "emprestimos", "devolucoes"]) {
+    for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor']), arquivoPagina(pagina));
     }
     app.get('/usuarios.html', paginaProtegida('admin'), arquivoPagina('usuarios'));

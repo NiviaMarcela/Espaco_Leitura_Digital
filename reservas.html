@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Reservas | Espaço de Leitura Digital</title>
+    <link rel="icon" type="image/svg+xml" sizes="any" href="/assets/favicon/favicon.svg?v=2">
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+</head>
+
+
+<body data-auth-role="admin,coordenador,professor" data-reservas-gestao>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar d-none d-lg-flex">
+
+        <div class="brand">
+
+            <img
+                src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
+                alt="Instituto Janela para o Mundo"
+                class="logo-instituto"
+            >
+
+            <div class="system-name">
+
+                <strong>
+                    Espaço de Leitura Digital
+                </strong>
+
+                <span>
+                    Gestão de acervo e empréstimos
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+
+            <a data-dashboard-only hidden
+                href="dashboard.html"
+                class="menu-item"
+            >
+                <i class="bi bi-grid-1x2-fill"></i>
+                Dashboard
+            </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
+
+
+            <a
+                href="acervo.html"
+                class="menu-item"
+            >
+                <i class="bi bi-book"></i>
+                Acervo
+            </a>
+
+
+            <a
+                href="leitores.html"
+                class="menu-item"
+            >
+                <i class="bi bi-people"></i>
+                Leitores
+            </a>
+
+
+            <a class="menu-item active" href="/reservas.html" aria-current="page"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+            <a
+                href="emprestimos.html"
+                class="menu-item"
+            >
+                <i class="bi bi-arrow-up-right-circle"></i>
+                Empréstimos
+            </a>
+
+
+            <a
+                href="devolucoes.html"
+                class="menu-item"
+            >
+                <i class="bi bi-arrow-down-left-circle"></i>
+                Devoluções
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <span>
+                Instituto Janela para o Mundo
+            </span>
+
+            <small>
+                Espaço de Leitura Digital
+            </small>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =========================
+         MENU MOBILE
+    ========================== -->
+
+    <div
+        class="offcanvas offcanvas-start sidebar-mobile"
+        tabindex="-1"
+        id="menuMobile"
+    >
+
+        <div class="offcanvas-header">
+
+            <h5>
+                Espaço de Leitura Digital
+            </h5>
+
+            <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="offcanvas"
+            ></button>
+
+        </div>
+
+
+        <div class="offcanvas-body">
+
+            <nav class="menu">
+            <a class="menu-item" href="usuarios.html" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+
+                <a data-dashboard-only hidden
+                    href="dashboard.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    Dashboard
+                </a>
+
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+
+
+
+
+                <a
+                    href="acervo.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-book"></i>
+                    Acervo
+                </a>
+
+
+                <a
+                    href="leitores.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-people"></i>
+                    Leitores
+                </a>
+
+
+                <a class="menu-item active" href="/reservas.html" aria-current="page"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+            <a
+                    href="emprestimos.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                    Empréstimos
+                </a>
+
+
+                <a
+                    href="devolucoes.html"
+                    class="menu-item"
+                >
+                    <i class="bi bi-arrow-down-left-circle"></i>
+                    Devoluções
+                </a>
+
+            </nav>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         CONTEÚDO PRINCIPAL
+    ========================== -->
+
+    <main class="main-content">
+
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div class="d-flex align-items-center gap-3">
+
+                <button
+                    class="btn btn-menu-mobile d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#menuMobile"
+                >
+                    <i class="bi bi-list"></i>
+                </button>
+
+
+                <div>
+
+                    <h1>
+                        Espaço de Leitura Digital
+                    </h1>
+
+                    <p>
+                        Reservas e confirmação de retirada de exemplares.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+
+                <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+            </div></header>
+
+
+
+        <!-- =========================
+             TÍTULO
+        ========================== -->
+
+        <section class="page-header"><div><span class="page-eyebrow">Biblioteca</span><h2>Reservas</h2><p>Confirme as retiradas e acompanhe as reservas pendentes do seu Centro.</p></div></section>
+<section class="content-card reservas-painel mb-4" aria-labelledby="tituloReservas">
+    <div class="card-heading"><h3 id="tituloReservas"><i class="bi bi-bookmark-star me-2" aria-hidden="true"></i>Reservas aguardando retirada</h3><button id="atualizarReservas" class="btn btn-outline-primary" type="button"><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Atualizar reservas</button></div>
+    <p class="text-secondary">Reservas não retiradas no prazo de 7 dias são canceladas e liberam o exemplar. A data limite de devolução é calculada a partir da reserva.</p>
+    <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
+    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Retirar até</th><th>Devolver até</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+</section>
+<footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/auth-ui.js"></script>
+<script type="module" src="js/reservas.js"></script>
+</body></html>
