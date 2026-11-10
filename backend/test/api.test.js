@@ -254,7 +254,7 @@ test("links das sidebars administrativas abrem a Biblioteca e seus links de reto
         const biblioteca = await get(destino, opcoes);
         assert.equal(biblioteca.status, 200, `${pagina}: Biblioteca sem redirecionamento`);
         const conteudo = await biblioteca.text();
-        assert.match(conteudo, /data-auth-role="admin,coordenador,professor,leitor"/);
+        assert.match(conteudo, /data-auth-role="admin,coordenador,professor,funcionario,leitor"/);
         for (const link of conteudo.matchAll(/<a[^>]+href="([^"]+\.html)"[^>]*data-admin-only/g)) {
             assert.equal((await get(`/${link[1]}`, opcoes)).status, 200, `retorno: ${link[1]}`);
         }
@@ -383,7 +383,7 @@ for (const tipo of ['Professor','Funcionário','Voluntário']) test('cadastro p�
 
 test('Reservas tem rota de gestão e menus próprios; Empréstimos não carrega o painel',async t=>{
     const opcoes={headers:{Cookie:'espaco_sessao='+ 'a'.repeat(43)},redirect:'manual'};
-    for(const perfil of ['admin','coordenador','professor']) {
+    for(const perfil of ['admin','coordenador','professor','funcionario']) {
         const api=await iniciar(t,async()=>({rows:[]}),{id:8,perfil,centroId:1});
         const resposta=await api('/reservas.html',opcoes);assert.equal(resposta.status,200);
         const html=await resposta.text();assert.match(html,/id="tabelaReservas"/);assert.match(html,/src="js\/reservas.js"/);

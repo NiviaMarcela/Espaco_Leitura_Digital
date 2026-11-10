@@ -6,6 +6,8 @@ export function criarRepositorioDashboard(banco, hoje = hojeCivil, centroId = nu
             // Uma consulta mantém os cards e a lista na mesma fotografia dos dados.
             // O dia vem do relógio de Fortaleza, como no módulo de empréstimos.
             const { rows } = await banco.query(`SELECT
+                $2::integer AS "centroId",
+                CASE WHEN $2::integer IS NULL THEN 'Todos os Centros' ELSE (SELECT nome FROM centros WHERE id=$2) END AS "centroNome",
                 (SELECT count(*)::integer FROM livros b WHERE $2::integer IS NULL OR EXISTS (SELECT 1 FROM exemplares e WHERE e.livro_id=b.id AND e.centro_id=$2)) AS "totalLivros",
                 (SELECT count(*)::integer FROM leitores WHERE status='Ativo' AND ($2::integer IS NULL OR centro_id=$2)) AS "leitoresAtivos",
                 (SELECT count(*)::integer FROM exemplares e WHERE e.status='Disponível' AND ($2::integer IS NULL OR e.centro_id=$2)

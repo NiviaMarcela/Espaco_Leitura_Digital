@@ -21,9 +21,9 @@ function atualizarPerfil() {
         el('grupoLeitorUsuario').hidden = true;
         return;
     }
-    el('centroUsuario').disabled = !['coordenador','professor'].includes(perfil);
-    el('centroUsuario').required = ['coordenador','professor'].includes(perfil);
-    el('grupoCentroUsuario').hidden = !['coordenador','professor'].includes(perfil);
+    el('centroUsuario').disabled = !['coordenador','professor','funcionario'].includes(perfil);
+    el('centroUsuario').required = ['coordenador','professor','funcionario'].includes(perfil);
+    el('grupoCentroUsuario').hidden = !['coordenador','professor','funcionario'].includes(perfil);
     el('leitorUsuario').disabled = perfil !== 'leitor';
     el('leitorUsuario').required = perfil === 'leitor';
     el('grupoLeitorUsuario').hidden = perfil !== 'leitor';
@@ -35,9 +35,10 @@ async function carregar() {
     for (const usuario of usuarios) {
         const linha = el('tabelaUsuarios').insertRow();
         for (const valor of [usuario.nome, usuario.email,
-            ({ admin:'Administrador', coordenador:'Coordenador', professor:'Professor', leitor:'Leitor' })[usuario.perfil],
+            ({ admin:'Administrador', coordenador:'Coordenador', professor:'Professor', funcionario:'Funcionário', leitor:'Leitor' })[usuario.perfil],
             usuario.centro || 'Todos os Centros', usuario.ativo ? 'Ativo' : 'Inativo']) linha.insertCell().textContent = valor;
         const acoes = linha.insertCell();
+
         for (const [texto, classe, acao] of [
             ['Editar','btn-primary',()=>editar(usuario)],
             ['Redefinir senha','btn-warning',()=>abrirSenha(usuario)],
@@ -49,7 +50,7 @@ async function carregar() {
             botao.addEventListener('click',acao);acoes.append(botao);
         }
     }
-    el('limiteAdministradores').textContent = `${usuarios.filter(u => u.perfil === 'admin').length}/4 contas de administrador. Coordenadores, professores e leitores não têm limite de contas.`;
+    el('limiteAdministradores').textContent = usuarioAtual?.perfil === 'coordenador' ? 'Equipe do seu Centro. Você pode cadastrar, editar, ativar/inativar e redefinir senhas da equipe deste Centro.' : `${usuarios.filter(u => u.perfil === 'admin').length}/4 contas de administrador. Coordenadores, professores, funcionários e leitores não têm limite de contas.`;
     leitores = await api('/leitores');
     el('leitorUsuario').replaceChildren(new Option('Selecione um leitor sem acesso', ''));
     leitores.filter(l => !l.temAcesso && l.status === 'Ativo' && l.email).forEach(l => el('leitorUsuario').add(new Option(`${l.nome} · ${l.centro}`,l.id)));
@@ -82,9 +83,12 @@ form.addEventListener('submit', async evento => {
 async function iniciar() {
     try {
         usuarioAtual = await api('/auth/me');
+        if (usuarioAtual.perfil === 'coordenador') {
+            el('perfilUsuario').replaceChildren(...['coordenador','professor','funcionario'].map(p => new Option(({coordenador:'Coordenador',professor:'Professor',funcionario:'Funcionário'})[p],p)));
+        }
         for (const c of await api('/centros')) el('centroUsuario').add(new Option(c.nome,c.id));
         await carregar(); atualizarPerfil(); el('salvarUsuario').disabled = false;
-        await carregarRecuperacoes();
+        if (usuarioAtual.perfil === 'admin') await carregarRecuperacoes();
     } catch (erro) { el('avisoUsuarios').textContent = erro.message; }
 }
 iniciar();

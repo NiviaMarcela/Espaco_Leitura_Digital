@@ -103,8 +103,8 @@ export function criarApp(banco, registrarErro = console.error) {
     }
 
     const exigirAdmin = exigirPerfil('admin');
-    const exigirGestao = exigirPerfil('admin', 'coordenador', 'professor');
-    const exigirConta = exigirPerfil('admin', 'coordenador', 'professor', 'leitor');
+    const exigirGestao = exigirPerfil('admin', 'coordenador', 'professor','funcionario');
+    const exigirConta = exigirPerfil('admin', 'coordenador', 'professor','funcionario', 'leitor');
     const expirarReservas = usuario => criarRepositorioReservas(banco, usuario).expirarVencidas();
 
     app.post('/api/auth/recuperacao', async (req, res) => {
@@ -151,7 +151,7 @@ export function criarApp(banco, registrarErro = console.error) {
         if (!usuario) return res.status(401).json({ erro: 'Sessão não encontrada.' });
         res.json(usuario);
     });
-    app.post('/api/auth/change-password', exigirPerfil('admin', 'coordenador', 'professor', 'leitor'), async (req, res) => {
+    app.post('/api/auth/change-password', exigirPerfil('admin', 'coordenador', 'professor','funcionario', 'leitor'), async (req, res) => {
         if (req.body?.usuarioId !== undefined && req.body.usuarioId !== req.usuario.id) throw erroHttp(409, 'A conta conectada mudou. Saia e entre novamente com a conta desejada.');
         const { senhaAtual, novaSenha } = validarTrocaSenha(req.body);
         await autenticacao.alterarSenha(req.usuario.id, req.tokenSessao, senhaAtual, novaSenha);
@@ -192,7 +192,7 @@ export function criarApp(banco, registrarErro = console.error) {
         await autenticacao.cadastrarLeitor(dados, senha);
         res.status(201).json({ mensagem: 'Cadastro concluído. Você já pode entrar com seu e-mail e senha.' });
     });
-    app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'professor', 'leitor'), async (req, res) => {
+    app.get("/api/biblioteca", exigirPerfil('admin', 'coordenador', 'professor','funcionario', 'leitor'), async (req, res) => {
         await expirarReservas(req.usuario);
         res.json((await req.repos.acervo.listarLivros()).map(catalogoPublico));
     });
@@ -284,17 +284,17 @@ export function criarApp(banco, registrarErro = console.error) {
         const dados = validarEmprestimo({ leitorId: req.usuario.leitorId, exemplarId: req.body?.exemplarId });
         res.status(201).location('/api/minhas-reservas').json(await criarRepositorioReservas(banco, req.usuario).criar(dados.exemplarId));
     });
-    app.post('/api/reservas/:id/cancelar', exigirPerfil('admin','coordenador','professor','leitor'), async (req, res) => {
+    app.post('/api/reservas/:id/cancelar', exigirPerfil('admin','coordenador','professor','funcionario','leitor'), async (req, res) => {
         res.json(await criarRepositorioReservas(banco, req.usuario).cancelar(Number(req.params.id)));
     });
     app.post('/api/reservas/:id/retirar', exigirGestao, async (req, res) => {
         res.json(await criarRepositorioReservas(banco, req.usuario).retirar(Number(req.params.id)));
     });
-    app.put('/api/usuarios/:id', exigirAdmin, async (req, res) => res.json(await usuarios.editar(Number(req.params.id), req.body)));
-    app.patch('/api/usuarios/:id/status', exigirAdmin, async (req, res) => res.json(await usuarios.definirAtivo(Number(req.params.id), req.body?.ativo, req.usuario.id)));
-    app.post('/api/usuarios/:id/senha', exigirAdmin, async (req, res) => res.json(await usuarios.redefinirSenha(Number(req.params.id), req.body?.senha)));
-    app.get('/api/usuarios', exigirAdmin, async (req, res) => res.json(await usuarios.listar()));
-    app.post('/api/usuarios', exigirAdmin, async (req, res) => res.status(201).json(await usuarios.criar(req.body)));
+    app.put('/api/usuarios/:id', exigirPerfil('admin','coordenador'), async (req, res) => res.json(await criarRepositorioUsuarios(banco, req.usuario).editar(Number(req.params.id), req.body)));
+    app.patch('/api/usuarios/:id/status', exigirPerfil('admin','coordenador'), async (req, res) => res.json(await criarRepositorioUsuarios(banco, req.usuario).definirAtivo(Number(req.params.id), req.body?.ativo, req.usuario.id)));
+    app.post('/api/usuarios/:id/senha', exigirPerfil('admin','coordenador'), async (req, res) => res.json(await criarRepositorioUsuarios(banco, req.usuario).redefinirSenha(Number(req.params.id), req.body?.senha)));
+    app.get('/api/usuarios', exigirPerfil('admin','coordenador'), async (req, res) => res.json(await usuarios.listar(req.usuario)));
+    app.post('/api/usuarios', exigirPerfil('admin','coordenador'), async (req, res) => res.status(201).json(await usuarios.criar(req.body, req.usuario)));
 
     // Public pages are open; protected pages are authorized on the server as well as in the UI.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -313,14 +313,14 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/index.html", arquivoPagina("index"));
     app.get("/login.html", arquivoPagina("login"));
     app.get("/recuperarSenha.html", arquivoPagina("recuperarSenha"));
-    app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'professor', 'leitor']), arquivoPagina("biblioteca"));
+    app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'professor','funcionario', 'leitor']), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
     app.get("/dashboard.html", paginaProtegida(['admin', 'coordenador']), arquivoPagina("dashboard"));
     for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
-        app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor']), arquivoPagina(pagina));
+        app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
-    app.get('/usuarios.html', paginaProtegida('admin'), arquivoPagina('usuarios'));
-    app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','leitor']), arquivoPagina('meusEmprestimos'));
+    app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
+    app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {
         app.use(`/${pasta}`, express.static(path.join(raiz, pasta), { dotfiles: "deny" }));
     }

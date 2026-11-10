@@ -20,7 +20,7 @@ test('PostgreSQL: Dashboard conta obras, cópias, leitores e atrasos e limita re
             await banco.query(await readFile(new URL(`../database/${nome}`, import.meta.url), 'utf8'));
         }
         const repo = criarRepositorioDashboard(banco, () => '2026-10-12');
-        assert.deepEqual(await repo.consultar(), { totalLivros: 0, leitoresAtivos: 0, exemplaresDisponiveis: 0,
+        assert.deepEqual(await repo.consultar(), { centroId:null, centroNome:'Todos os Centros', totalLivros: 0, leitoresAtivos: 0, exemplaresDisponiveis: 0,
             emprestimosAbertos: 0, emprestimosAtrasados: 0, recentes: [] });
         await banco.query(`INSERT INTO livros(titulo, autor, categoria) VALUES ('Obra A','Autora','Literatura'), ('Obra B','Autor','Literatura');
             INSERT INTO leitores(nome, tipo, data_nascimento, centro_id, status) VALUES
@@ -47,6 +47,12 @@ test('PostgreSQL: Dashboard conta obras, cópias, leitores e atrasos e limita re
         assert.equal(resultado.recentes[1].centro, 'CE Piauí');
         assert.equal(resultado.recentes[1].leitor, 'Inativo');
         assert.equal(resultado.recentes[1].dataPrevistaDevolucao, '2026-10-12');
+        for(const [centroId,esperado] of [[1,[1,1,2,2,1]],[2,[1,0,2,1,0]],[3,[0,0,0,0,0]]]) {
+            const local=await criarRepositorioDashboard(banco,()=> '2026-10-12',centroId).consultar();
+            assert.equal(local.centroId,centroId);
+            assert.deepEqual([local.totalLivros,local.leitoresAtivos,local.exemplaresDisponiveis,local.emprestimosAbertos,local.emprestimosAtrasados],esperado);
+            assert.ok(local.recentes.every(item=>item.centro===local.centroNome));
+        }
         // Renovar tira do atraso; devolver tira de abertos sem depender do status do leitor.
         await banco.query("UPDATE emprestimos SET data_prevista_devolucao='2026-11-11' WHERE id=5");
         assert.equal((await repo.consultar()).emprestimosAtrasados, 0);

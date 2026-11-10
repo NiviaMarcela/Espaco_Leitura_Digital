@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
 class Elemento {
-    constructor(){this.value='';this.children=[];this.eventos={};this.disabled=false;}
+    constructor(texto='',valor=''){this.textContent=texto;this.value=valor;this.children=[];this.eventos={};this.disabled=false;}
     addEventListener(e,f){this.eventos[e]=f;}
     append(e){this.children.push(e);}
     add(e){this.append(e);}
@@ -13,7 +13,7 @@ class Elemento {
     insertCell(){return this.insertRow();}
     reset(){} focus(){} scrollIntoView(){} reportValidity(){return true;}
 }
-async function preparar(){
+async function preparar(perfil='admin'){
     const elementos=new Map(),pedidos=[];const get=id=>{if(!elementos.has(id))elementos.set(id,new Elemento());return elementos.get(id);};
     const usuario={id:2,nome:'Professor',email:'prof@teste.invalid',perfil:'professor',centroId:1,ativo:true};
     const contexto=vm.createContext({
@@ -23,7 +23,7 @@ async function preparar(){
         bootstrap:{Modal:{getOrCreateInstance:()=>({show(){},hide(){}})}},
         fetch:async(url,opcoes)=>{
             pedidos.push({url,...opcoes});let body={};
-            if(url==='/api/auth/me')body={id:1,perfil:'admin'};
+            if(url==='/api/auth/me')body={id:1,perfil,centroId:1};
             if(url==='/api/usuarios' && opcoes.method==='GET')body=[usuario];
             if(url==='/api/centros')body=[{id:1,nome:'Maranhão'}];
             if(url==='/api/leitores')body=[];
@@ -69,4 +69,12 @@ test('atendimento exige confirmação da identidade e usa a solicitação corret
     get('confirmarIdentidade').checked=true;await get('formSenhaUsuario').eventos.submit(evento);
     const r=pedidos.find(p=>p.url.endsWith('/concluir'));assert.equal(r.url,'/api/recuperacoes/9/concluir');
     assert.equal(JSON.parse(r.body).identidadeConfirmada,true);
+});
+
+test('coordenador recebe perfis locais e ações de equipe sem consultar recuperação',async()=>{
+    const {get,pedidos}=await preparar('coordenador');
+    assert.deepEqual(get('perfilUsuario').children.map(o=>o.value),['coordenador','professor','funcionario']);
+    assert.equal(pedidos.some(p=>p.url==='/api/recuperacoes'),false);
+    const acoes=get('tabelaUsuarios').children[0].children[5];
+    assert.equal(acoes.children.length,3);assert.deepEqual(acoes.children.map(b=>b.textContent),['Editar','Redefinir senha','Inativar']);
 });

@@ -17,8 +17,9 @@ async function carregarUsuario() {
     window.usuarioAtual = usuario;
     document.body.dataset.userRole = usuario.perfil;
     linksAnonimos.forEach(link => { link.hidden = true; });
-    document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador','professor'].includes(usuario.perfil); });
+    document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     document.querySelectorAll('[data-dashboard-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
+    document.querySelectorAll('[data-usuarios-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     if (usuario.perfil === 'admin') linksAdmin.forEach(link => { link.hidden = false; });
     if (usuario.trocarSenha && pagina !== '/alterarSenha.html') {
         location.replace('/alterarSenha.html');
@@ -45,7 +46,7 @@ async function carregarUsuario() {
             identificacao.replaceChildren(avatar, detalhes);
         }
         nome.textContent = usuario.nome || usuario.email;
-        perfil.textContent = ({ admin: 'Administrador', coordenador: 'Coordenador', professor: 'Professor', leitor: 'Leitor' })[usuario.perfil];
+        perfil.textContent = ({ admin: 'Administrador', coordenador: 'Coordenador', professor: 'Professor', funcionario: 'Funcionário', leitor: 'Leitor' })[usuario.perfil];
         const alterar = document.createElement('a');
         alterar.href = '/alterarSenha.html';
         alterar.className = 'btn btn-secondary-custom btn-sm ms-2';

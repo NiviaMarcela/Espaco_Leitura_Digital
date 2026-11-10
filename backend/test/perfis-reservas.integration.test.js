@@ -66,7 +66,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                 assert.equal((await api('/api/livros',cookie)).status,403); // senha temporária
                 assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Senha123',novaSenha:'Nova1234'})).status,200);
                 coords.push(cookie);
-                assert.equal((await api('/api/usuarios',cookie)).status,403);
+                assert.equal((await api('/api/usuarios',cookie)).status,200);
                 assert.equal((await api('/api/usuarios',cookie,{nome:'Teste',email:'intruso@teste.invalid',senha:'Senha123',perfil:'admin'})).status,403);
             }
             // Mais de quatro coordenadores é permitido.
@@ -86,7 +86,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             for(let i=0;i<3;i++) {
                 const outro=(i+1)%3;
                 assert.equal((await api('/dashboard.html',coords[i])).status,200);
-                assert.equal((await api('/usuarios.html',coords[i])).status,302);
+                assert.equal((await api('/usuarios.html',coords[i])).status,200);
                 assert.equal((await api('/api/centros',coords[i])).body.length,1);
                 assert.deepEqual((await api('/api/leitores',coords[i])).body.map(l=>l.id),[leitores[i].id]);
                 assert.equal((await api('/api/dashboard',coords[i])).body.totalLivros,1);
@@ -294,7 +294,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             let cookie=await login('editar@teste.invalid','Inicial123');
             assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Inicial123',novaSenha:'Atual1234'})).status,200);
             const dados={nome:'Nome atualizado',email:'editado@teste.invalid',centroId:2};
-            for(const ator of [coords[0],cookie,leitores[0].cookie]) {
+            for(const ator of [cookie,leitores[0].cookie]) {
                 assert.equal((await api('/api/usuarios/'+id,ator,dados,'PUT')).status,403);
                 assert.equal((await api('/api/usuarios/'+id+'/status',ator,{ativo:false},'PATCH')).status,403);
                 assert.equal((await api('/api/usuarios/'+id+'/senha',ator,{senha:'Outra123'})).status,403);
@@ -395,6 +395,71 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                 assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Outra#12345',novaSenha:'Final#12345',usuarioId:id})).status,200);
                 assert.ok(await login(email,'Final#12345'));
             }
+        });
+        await t.test('coordenador cadastra equipe somente no seu Centro; funcionário tem acesso de professor',async()=>{
+            for(let i=0;i<3;i++) {
+                const centroId=i+1,coord=coords[i];
+                const dashboard=(await api('/api/dashboard?centroId='+((i+1)%3+1),coord)).body;
+                assert.equal(dashboard.centroId,centroId);assert.ok(dashboard.recentes.every(p=>p.centro===dashboard.centroNome));
+                for(const perfil of ['coordenador','professor','funcionario']) {
+                    const email='equipe-'+centroId+'-'+perfil+'@teste.invalid';
+                    const dados={nome:'Equipe local',email,senha:'Equipe123',perfil,centroId};
+                    assert.equal((await api('/api/usuarios',coord,{...dados,centroId:centroId%3+1})).status,403);
+                    assert.equal((await api('/api/usuarios',coord,dados)).status,201);
+                    if(perfil==='funcionario') {
+                        const cookie=await login(email,'Equipe123');
+                        assert.equal((await api('/api/auth/change-password',cookie,{senhaAtual:'Equipe123',novaSenha:'FinalEquipe123'})).status,200);
+                        for(const pagina of ['biblioteca','acervo','leitores','reservas','emprestimos','devolucoes','meusEmprestimos'])assert.equal((await api('/'+pagina+'.html',cookie)).status,200);
+                        for(const path of ['/api/dashboard','/api/usuarios','/api/recuperacoes'])assert.equal((await api(path,cookie)).status,403);
+                        assert.equal((await api('/api/usuarios',cookie,dados)).status,403);
+                        assert.ok((await api('/api/biblioteca',cookie)).body.every(l=>l.exemplares.every(e=>e.centroId===centroId)));
+                        assert.equal((await api('/api/meu-cadastro-emprestimos',cookie,{...pessoal,centroId})).status,201);
+                        const obra=await api('/api/livros',cookie,{titulo:'Livro funcionário',autor:'Autora',categoria:'Literatura',centroId,quantidade:1});assert.equal(obra.status,201);
+                        const reserva=await api('/api/reservas',cookie,{exemplarId:obra.body.exemplares[0].id});assert.equal(reserva.status,201);
+                        const retirada=await api('/api/reservas/'+reserva.body.id+'/retirar',cookie,{});assert.equal(retirada.status,200);
+                        assert.equal((await api('/api/emprestimos/'+retirada.body.emprestimoId+'/devolucao',cookie,{versao:0,condicao:'Disponível'})).status,200);
+                    }
+                }
+                for(const perfil of ['admin','leitor']) assert.equal((await api('/api/usuarios',coord,{nome:'Negado',email:'negado@teste.invalid',senha:'Negado123',perfil,centroId,leitorId:leitores[i].id})).status,403);
+                const lista=(await api('/api/usuarios?centroId=99',coord)).body;
+                assert.ok(lista.length>=3);assert.ok(lista.every(u=>u.centroId===centroId && ['coordenador','professor','funcionario'].includes(u.perfil)));
+
+                assert.equal((await api('/api/recuperacoes',coord)).status,403);
+            }
+            assert.equal((await api('/api/dashboard',admin)).body.centroId,null);
+        });
+        await t.test('coordenador gerencia contas da equipe sem ultrapassar seu Centro',async()=>{
+            const adminId=(await api('/api/auth/me',admin)).body.id;
+            for(let i=0;i<3;i++) {
+                const coord=coords[i],centroId=i+1;
+                const coordId=(await api('/api/auth/me',coord)).body.id;
+                const outroId=(await api('/api/auth/me',coords[(i+1)%3])).body.id;
+                for(const alvo of [adminId,outroId]) {
+                    assert.equal((await api('/api/usuarios/'+alvo,coord,{nome:'Negado',email:'negado@teste.invalid',centroId},'PUT')).status,404);
+                    assert.equal((await api('/api/usuarios/'+alvo+'/status',coord,{ativo:false},'PATCH')).status,404);
+                    assert.equal((await api('/api/usuarios/'+alvo+'/senha',coord,{senha:'Negado123'})).status,404);
+                }
+                assert.equal((await api('/api/usuarios/'+coordId+'/status',coord,{ativo:false},'PATCH')).status,409);
+                for(const perfil of ['coordenador','professor','funcionario']) {
+                    const email='gestao-'+centroId+'-'+perfil+'@teste.invalid';
+                    const r=await api('/api/usuarios',coord,{nome:'Equipe',email,senha:'Inicial123',perfil,centroId});assert.equal(r.status,201);const id=r.body.id;
+                    const cookie=await login(email,'Inicial123');
+                    const dados={nome:'Equipe editada',email,centroId};
+                    assert.equal((await api('/api/usuarios/'+id,coord,{...dados,centroId:centroId%3+1},'PUT')).status,403);
+                    assert.equal((await api('/api/usuarios/'+id,coord,{...dados,perfil:'admin'},'PUT')).status,400);
+                    assert.equal((await api('/api/usuarios/'+id,coord,dados,'PUT')).status,200);
+                    assert.equal((await api('/api/auth/me',cookie)).status,401);
+                    assert.equal((await api('/api/usuarios/'+id+'/status',coord,{ativo:false},'PATCH')).status,200);
+                    assert.equal((await api('/api/usuarios/'+id+'/senha',coord,{senha:'Temporaria123'})).status,200);
+                    assert.equal((await banco.query('SELECT ativo FROM usuarios WHERE id=$1',[id])).rows[0].ativo,false);
+                    assert.equal((await api('/api/usuarios/'+id+'/status',coord,{ativo:true},'PATCH')).status,200);
+                    const novaSessao=await login(email,'Temporaria123');
+                    const me=(await api('/api/auth/me',novaSessao)).body;
+                    assert.equal(me.trocarSenha,true);assert.equal(me.perfil,perfil);assert.equal(me.centroId,centroId);
+                }
+                assert.equal((await api('/api/recuperacoes',coord)).status,403);
+            }
+            assert.equal((await api('/api/auth/me',admin)).status,200);
         });
         assert.deepEqual(erros,[], 'Nenhum erro SQL inesperado');
     } finally {

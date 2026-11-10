@@ -118,7 +118,7 @@ export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil, { pes
             });
         },
         async retirar(id) {
-            if (!['admin', 'coordenador', 'professor'].includes(usuario.perfil)) throw erroHttp(403, 'Somente a gestão confirma a retirada.');
+            if (!['admin', 'coordenador', 'professor','funcionario'].includes(usuario.perfil)) throw erroHttp(403, 'Somente a gestão confirma a retirada.');
             const resultado = await transacao(async c => {
                 const r = await bloquearReserva(c, id);
                 if (r.expirada) return { expirada: true };

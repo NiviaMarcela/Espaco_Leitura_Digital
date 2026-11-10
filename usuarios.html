@@ -31,7 +31,7 @@
     >
 </head>
 
-<body data-auth-role="admin">
+<body data-auth-role="admin,coordenador">
 
     <!-- =========================
          SIDEBAR DESKTOP
@@ -63,7 +63,7 @@
 
 
         <nav class="menu">
-            <a class="menu-item active" href="usuarios.html" aria-current="page" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
             <a
                 href="dashboard.html"
@@ -161,7 +161,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
-            <a class="menu-item active" href="usuarios.html" aria-current="page" data-admin-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
 
                 <a
                     href="dashboard.html"
@@ -228,14 +228,14 @@
 <section class="content-card mb-4"><h2 class="h4" id="tituloFormUsuario">Cadastrar usuário</h2><p id="avisoEdicaoUsuario" hidden>A edição mantém o perfil de acesso. Alterações encerram as sessões da conta; ao editar seus próprios dados, você deverá entrar novamente.</p>
 <form id="formUsuario" class="row g-3">
 <div class="col-md-6"><label class="form-label" for="nomeUsuario">Nome</label><input class="form-control" id="nomeUsuario" name="nome" maxlength="200" required></div>
-<div class="col-md-6"><label class="form-label" for="perfilUsuario">Perfil</label><select class="form-select" id="perfilUsuario" name="perfil"><option value="coordenador">Coordenador</option><option value="professor">Professor</option><option value="admin">Administrador</option><option value="leitor">Leitor</option></select></div>
+<div class="col-md-6"><label class="form-label" for="perfilUsuario">Perfil</label><select class="form-select" id="perfilUsuario" name="perfil"><option value="coordenador">Coordenador</option><option value="professor">Professor</option><option value="funcionario">Funcionário</option><option value="admin">Administrador</option><option value="leitor">Leitor</option></select></div>
 <div class="col-md-6" id="grupoCentroUsuario"><label class="form-label" for="centroUsuario">Centro do usuário</label><select class="form-select" id="centroUsuario" name="centroId"><option value="">Selecione</option></select></div>
 <div class="col-md-6" id="grupoLeitorUsuario" hidden><label class="form-label" for="leitorUsuario">Leitor cadastrado</label><select class="form-select" id="leitorUsuario" name="leitorId" disabled><option value="">Selecione</option></select><p>Para um novo leitor, faça primeiro o cadastro em <a href="leitores.html">Leitores</a>.</p></div>
 <div class="col-md-6"><label class="form-label" for="emailUsuario">E-mail</label><input class="form-control" type="email" id="emailUsuario" name="email" maxlength="254" required></div>
 <div class="col-md-6" id="grupoSenhaUsuario"><label class="form-label" for="senhaUsuario">Senha temporária (8 a 128 caracteres)</label><input class="form-control" type="password" id="senhaUsuario" name="senha" minlength="8" maxlength="128" autocomplete="new-password" required></div>
 <div class="col-12"><button class="btn btn-primary-custom" id="salvarUsuario" disabled>Cadastrar usuário</button> <button type="button" id="cancelarEdicaoUsuario" class="btn btn-secondary-custom" hidden>Cancelar edição</button></div>
 </form></section>
-<section class="content-card mb-4"><h2 class="h4">Solicitações de recuperação</h2><p>Uma solicitação não comprova identidade. Confirme presencialmente ou por um contato já conhecido antes de redefinir a senha. Entregue a senha temporária de forma privada.</p><button id="atualizarRecuperacoes" type="button" class="btn btn-secondary-custom mb-3">Atualizar solicitações</button><p id="avisoFilaRecuperacao" role="status"></p><div class="table-responsive"><table class="table custom-table"><thead><tr><th>Solicitada em</th><th>Nome</th><th>E-mail</th><th>Perfil / Centro</th><th>Ações</th></tr></thead><tbody id="tabelaRecuperacoes"></tbody></table></div></section>
+<section class="content-card mb-4" id="painelRecuperacoes" data-admin-only hidden><h2 class="h4">Solicitações de recuperação</h2><p>Uma solicitação não comprova identidade. Confirme presencialmente ou por um contato já conhecido antes de redefinir a senha. Entregue a senha temporária de forma privada.</p><button id="atualizarRecuperacoes" type="button" class="btn btn-secondary-custom mb-3">Atualizar solicitações</button><p id="avisoFilaRecuperacao" role="status"></p><div class="table-responsive"><table class="table custom-table"><thead><tr><th>Solicitada em</th><th>Nome</th><th>E-mail</th><th>Perfil / Centro</th><th>Ações</th></tr></thead><tbody id="tabelaRecuperacoes"></tbody></table></div></section>
 <section class="content-card"><h2 class="h4">Contas cadastradas</h2><div class="table-responsive"><table class="table custom-table"><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Centro</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaUsuarios"></tbody></table></div></section>
 </main>
 <div class="modal fade" id="modalSenhaUsuario" tabindex="-1" aria-labelledby="nomeSenhaUsuario" aria-hidden="true"><div class="modal-dialog"><div class="modal-content custom-modal">

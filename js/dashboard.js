@@ -13,6 +13,7 @@ function mensagemTabela(texto) {
 }
 
 function renderizar(dados) {
+    el('escopoDashboard').textContent = dados.centroId === null ? 'Visão geral · Todos os Centros' : `Visão do Centro · ${dados.centroNome}`;
     for (const id of indicadores) el(id).textContent = numero.format(dados[id]);
     mensagemTabela('Nenhum empréstimo registrado.');
     if (!dados.recentes.length) return;
@@ -40,6 +41,7 @@ async function carregar() {
     el('avisoDashboard').textContent = 'Consultando os dados do Dashboard…';
     // Não apresentar números antigos como se estivessem atualizados em caso de falha.
     for (const id of indicadores) el(id).textContent = '—';
+    el('escopoDashboard').textContent = 'Verificando o Centro da conta…';
     mensagemTabela('Carregando empréstimos…');
     try {
         const resposta = await fetch('/api/dashboard', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
@@ -50,6 +52,7 @@ async function carregar() {
         el('avisoDashboard').textContent = `Indicadores disponíveis para sua conta · Atualizado às ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Fortaleza' }).format(new Date())} (Fortaleza).`;
     } catch (erro) {
         for (const id of indicadores) el(id).textContent = '—';
+        el('escopoDashboard').textContent = 'Não foi possível identificar os dados do Centro.';
         mensagemTabela('Dados indisponíveis. Use Atualizar para tentar novamente.');
         el('avisoDashboard').textContent = erro instanceof TypeError || erro.name === 'TimeoutError'
             ? 'Não foi possível conectar. Confira o backend e abra esta página pelo endereço http://127.0.0.1:3001/dashboard.html.'

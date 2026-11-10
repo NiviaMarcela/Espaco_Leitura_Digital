@@ -46,7 +46,7 @@ form.addEventListener('submit', async evento => {
         form.reset();
         for(const id of ['senhaAtual','novaSenha','confirmarSenha'])document.getElementById(id).type='password';
         erro.textContent='Senha alterada com sucesso. Abrindo sua área…';
-        location.assign(['admin','coordenador'].includes(conta.perfil)?'/dashboard.html':conta.perfil==='professor'?'/biblioteca.html':'/meusEmprestimos.html');
+        location.assign(['admin','coordenador'].includes(conta.perfil)?'/dashboard.html':['professor','funcionario'].includes(conta.perfil)?'/biblioteca.html':'/meusEmprestimos.html');
     } catch(falha) {
         erro.textContent=falha.name==='TimeoutError' || falha instanceof TypeError
             ? 'Não foi possível confirmar a alteração. Saia e tente entrar com a nova senha antes de repetir a troca.'

@@ -5,8 +5,9 @@
 | Perfil | Acesso |
 | --- | --- |
 | Administrador (`admin`) | Todos os Centros, reservas pessoais nos três Centros e gestão de usuários. Até quatro contas, contando também contas inativas. |
-| Coordenador (`coordenador`) | Dashboard, acervo, leitores, reservas, empréstimos e devoluções somente do Centro vinculado, incluindo suas reservas pessoais. Sem limite de contas. |
+| Coordenador (`coordenador`) | Dashboard, acervo, leitores, reservas, empréstimos e devoluções somente do Centro vinculado, incluindo suas reservas pessoais. Sem limite de contas. Pode cadastrar coordenadores, professores e funcionários do próprio Centro. |
 | Professor (`professor`) | Biblioteca, acervo, leitores, empréstimos e devoluções do próprio Centro. Sem Dashboard nem gestão de usuários. |
+| Funcionário (`funcionario`) | Mesmos acessos do Professor: Biblioteca, Acervo, Leitores, Reservas, Empréstimos e Devoluções do próprio Centro. |
 | Leitor (`leitor`) | Biblioteca do próprio Centro, suas reservas e seu histórico de empréstimos. Sem menus de gestão. |
 
 Os Centros são CE Maranhão, CE Piauí e CE Bahia. A sessão recupera o Centro do coordenador ou do cadastro do leitor em cada requisição. Um ID digitado manualmente não concede acesso a outro Centro.
@@ -25,7 +26,7 @@ O limite de 10 soma reservas pendentes e empréstimos ainda não devolvidos, inc
 ## Como o código funciona
 
 - `database/007_perfis_reservas.sql`: acrescenta os campos de perfil e Centro, substitui a regra de administrador único por quatro vagas únicas e cria a tabela `reservas`. Não apaga os registros anteriores.
-- `src/app.js`: verifica o perfil e constrói repositórios limitados ao Centro da requisição. Usuários é exclusivo do administrador. Contas sem Centro válido são recusadas.
+- `src/app.js`: verifica o perfil e constrói repositórios limitados ao Centro da requisição. Usuários permite cadastro de equipe pelo coordenador do próprio Centro; edição, situação e senha também são permitidas ao coordenador para a equipe do próprio Centro. Contas sem Centro válido são recusadas.
 - `src/repositories/usuarios.js`: cadastra acessos e escolhe uma vaga de administrador dentro de uma transação. A restrição única no PostgreSQL impede ultrapassar quatro mesmo sob concorrência.
 - `src/repositories/reservas.js`: cria, lista, cancela e confirma reservas. Bloqueia primeiro o leitor, depois o exemplar e a reserva; a transação impede cópias duplicadas e ultrapassagem do limite em pedidos simultâneos.
 - `src/repositories/emprestimos.js`: conta também as reservas pendentes antes da retirada direta. Usa o calendário de Fortaleza e soma 30 dias à data efetiva da retirada.
@@ -70,7 +71,7 @@ A função `seloReserva(status)` em `js/reservas.js` monta um selo com texto e �
 
 ## Reservas pessoais da equipe e senha no cadastro (07/11/2026)
 
-O perfil de acesso (administrador, coordenador ou leitor) é diferente do tipo de leitor (Aluno, Professor, Funcionário, Voluntário ou Comunidade). O formulário público oferece somente Aluno e Comunidade, com a mesma restrição no servidor. A área administrativa mantém os cinco tipos.
+O perfil de acesso (administrador, coordenador, professor, funcionário ou leitor) é diferente do tipo de leitor (Aluno, Professor, Funcionário, Voluntário ou Comunidade). O formulário público oferece somente Aluno e Comunidade, com a mesma restrição no servidor. A área administrativa mantém os cinco tipos.
 
 No primeiro clique em **Reservar livro**, uma conta administrativa sem vínculo pessoal informa nome, tipo, nascimento, telefone e Centro de referência. A aplicação usa o e-mail da conta autenticada e vincula o novo registro de circulação ao mesmo login. Não cria outra senha, não muda o perfil e não ocupa outra vaga de administrador. O Centro de referência do administrador não limita as reservas; o coordenador só pode selecionar o seu Centro.
 
@@ -96,7 +97,7 @@ O professor pode consultar e cadastrar acervo e leitores, criar acessos de leito
 
 Dashboard e Usuários não aparecem nos menus do professor e suas APIs são bloqueadas no servidor. As páginas restritas redirecionam para a Biblioteca. IDs de livros, leitores, exemplares e empréstimos de outros Centros não concedem acesso, mesmo enviados diretamente à API. A gestão de leitores também não permite redefinir senhas da equipe.
 
-**Professor como perfil de acesso** é diferente de **Professor como tipo de leitor**: selecionar o tipo no cadastro de leitores não concede permissões administrativas. O acesso de professor é criado exclusivamente por um administrador na tela Usuários. O cadastro público continua restrito aos tipos Aluno e Comunidade.
+**Professor como perfil de acesso** é diferente de **Professor como tipo de leitor**: selecionar o tipo no cadastro de leitores não concede permissões administrativas. O acesso de professor é criado pelo administrador ou pelo coordenador do próprio Centro na tela Usuários. O cadastro público continua restrito aos tipos Aluno e Comunidade.
 
 A migração `009_perfil_professor.sql` inclui o perfil e exige seu Centro no PostgreSQL, mantendo o limite de quatro administradores. As verificações estão em `src/app.js`, nos repositórios de autenticação, usuários, cadastro pessoal e reservas. Os menus e destinos de login foram atualizados em `js/auth-ui.js`, `js/login.js`, `js/alterarSenha.js` e nas páginas correspondentes.
 
@@ -104,7 +105,7 @@ Testes: o fluxo de professor é exercitado nos três Centros, incluindo login, t
 
 ## Gestão de contas: edição, situação e senha (08/11/2026)
 
-A tabela de **Usuários** oferece **Editar**, **Inativar/Ativar** e **Redefinir senha**, exclusivamente para administradores.
+A tabela de **Usuários** oferece **Editar**, **Inativar/Ativar** e **Redefinir senha**, para administradores e, no caso da equipe do próprio Centro, coordenadores.
 
 - **Editar:** altera nome, e-mail e Centro (para contas com Centro). Mantém o perfil, o vínculo pessoal e o histórico. Nome e e-mail são sincronizados com o leitor vinculado; mudar o Centro também atualiza esse cadastro e exige encerrar reservas pendentes e empréstimos abertos. O administrador continua com acesso aos três Centros.
 - **Inativar:** impede novos logins e encerra sessões abertas, sem excluir reservas, empréstimos ou leitores. **Ativar** permite entrar novamente, sem restaurar sessões antigas. A conta de administrador inativa continua ocupando uma das quatro vagas. Não é permitido inativar a própria conta nem deixar o sistema sem administrador ativo.
@@ -131,3 +132,25 @@ Empréstimos mantém empréstimos registrados, criação direta e renovações. 
 A rota de Reservas é protegida no servidor. Não há alteração de banco nem dos prazos, limites e regras de circulação. A tela de gestão continua exibindo as reservas pendentes; o histórico pessoal permanece em Minhas reservas e empréstimos.
 
 Validação: testes de rota protegida, acesso dos três perfis de gestão, bloqueio do leitor, links dos menus desktop/celular e ausência do painel em Empréstimos. A suíte de integração continua cobrindo confirmação, cancelamento e isolamento por Centro. Não houve inspeção visual em navegador.
+
+## Dashboard por Centro e cadastro de equipe (10/11/2026)
+
+O Dashboard identifica o escopo no título: Todos os Centros para administrador e o nome do Centro para coordenador. O backend já possuía filtro pelo Centro da sessão; a validação foi ampliada para conferir livros, leitores ativos, exemplares disponíveis, empréstimos abertos/atrasados e empréstimos recentes nos três Centros. Parâmetros enviados pelo navegador não escolhem nem ampliam o Centro do coordenador.
+
+O coordenador agora acessa **Usuários** para listar e cadastrar a equipe do próprio Centro. Pode criar Coordenador, Professor e Funcionário, com senha temporária e troca obrigatória no primeiro login. Não cria administradores, não consulta equipe de outro Centro e não muda de Centro pelo formulário. Criação de acesso de leitores continua disponível na tela Leitores. O coordenador também edita, ativa/inativa e redefine senhas da equipe do próprio Centro. O atendimento da fila de recuperação permanece exclusivo do administrador.
+
+O perfil Funcionário tem os mesmos acessos de Professor, inclusive reservas pessoais e confirmação de retirada no próprio Centro. Não acessa Dashboard nem Usuários. O tipo Funcionário no cadastro de leitor não concede essas permissões; o perfil de acesso precisa ser cadastrado em Usuários.
+
+A migração `011_perfil_funcionario.sql` adiciona o perfil e exige Centro vinculado, sem alterar as quatro vagas de administrador. `src/repositories/usuarios.js` aplica as restrições ao cadastro e à listagem do coordenador; `src/app.js` separa acesso ao cadastro de equipe das operações com escopo por Centro e do atendimento de recuperação exclusivo do administrador. `js/usuarios.js` ajusta os campos e ações conforme a sessão. O Dashboard recebe o ID e nome do Centro junto dos indicadores, evitando um rótulo genérico na tela.
+
+Testes PostgreSQL verificam valores distintos por Centro, acesso global do administrador, tentativas de cadastro em outro Centro, bloqueio de promoção para administrador, listagem local e ciclo de reserva/retirada/devolução do funcionário. Testes com DOM simulado verificam os menus e o formulário do coordenador; não substituem conferência visual no navegador.
+
+## Coordenador: edição, situação e senha da equipe (10/11/2026)
+
+Em **Usuários**, o coordenador pode editar nome e e-mail, ativar/inativar e redefinir senhas de coordenadores, professores e funcionários do próprio Centro. Não pode transferir uma conta para outro Centro, mudar seu perfil, alterar o vínculo pessoal, modificar administradores ou acessar contas de outros Centros. A listagem continua limitada à equipe local; os leitores seguem sendo tratados na tela Leitores.
+
+As três rotas de alteração agora autorizam administrador e coordenador. Dentro da transação, o repositório de usuários consulta novamente a situação, o perfil e o Centro do responsável e verifica a conta de destino antes de modificar qualquer dado. Os scripts técnicos locais continuam usando seu fluxo autorizado de manutenção.
+
+Inativação e edição encerram sessões abertas; redefinição também exige troca da senha temporária no próximo login e não reativa conta inativa. O coordenador não pode inativar a própria conta. Ao editar a própria conta ou redefinir sua senha, precisa entrar novamente. A fila de solicitações de recuperação continua restrita ao administrador.
+
+Testes exercitam as três ações para os três perfis de equipe em cada Centro, além dos bloqueios de outro Centro, administrador, mudança de Centro/perfil e inativação da própria conta. Não foi necessária migração de banco.

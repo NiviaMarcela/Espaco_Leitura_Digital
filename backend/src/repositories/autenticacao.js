@@ -110,7 +110,7 @@ export function criarRepositorioAutenticacao(banco) {
                     u.leitor_id, u.trocar_senha, COALESCE(u.nome,l.nome) AS nome,
                     COALESCE(u.centro_id,l.centro_id) AS centro_id
                 FROM usuarios u LEFT JOIN leitores l ON l.id=u.leitor_id
-                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador','professor') OR l.status='Ativo')`,
+                WHERE lower(u.email)=$1 AND u.ativo=true AND (u.perfil IN ('admin','coordenador','professor','funcionario') OR l.status='Ativo')`,
             [normalizarEmail(email)]);
             const usuario = resultado.rows[0];
             if (!usuario) {
@@ -131,7 +131,7 @@ export function criarRepositorioAutenticacao(banco) {
                 FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE s.token_hash=$1 AND s.expira_em>now() AND u.ativo=true
-                    AND (u.perfil IN ('admin','coordenador','professor') OR l.status='Ativo')`,
+                    AND (u.perfil IN ('admin','coordenador','professor','funcionario') OR l.status='Ativo')`,
             [hashToken(token)]);
             return resultado.rows[0] ? usuarioPublico(resultado.rows[0]) : null;
         },
