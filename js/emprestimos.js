@@ -177,7 +177,7 @@ async function abrirRenovacao(id) {
     ocupado = true;
     selecionado = null;
     el('erroRenovacao').textContent = '';
-    ['identificacaoRenovacao', 'observacaoRenovacao', 'prazoRenovacao', 'novoPrazoRenovacao'].forEach(i => el(i).textContent = '');
+    ['identificacaoRenovacao', 'aprovadorRenovacao', 'observacaoRenovacao', 'prazoRenovacao', 'novoPrazoRenovacao'].forEach(i => el(i).textContent = '');
     el('historicoRenovacoes').replaceChildren();
     el('avisoRenovacao').textContent = 'Carregando dados atuais…';
     bloquearModal('modalRenovacao', true);
@@ -190,6 +190,7 @@ async function abrirRenovacao(id) {
         const novaData = somarDias(hojeCivil(), p.prazoDias);
         permitido = !p.dataDevolucao && p.statusLeitor === 'Ativo' && novaData > p.dataPrevistaDevolucao;
         el('identificacaoRenovacao').textContent = `${p.leitor} · ${p.livro} · ${p.codigo}`;
+        el('aprovadorRenovacao').textContent = `Empréstimo aprovado por: ${p.aprovador || 'Não informado (registro anterior ao controle de aprovadores).'}`;
         el('observacaoRenovacao').textContent = p.observacao || 'Sem observação.';
         if (p.devolucao) el('observacaoRenovacao').textContent += ` Devolução: ${p.devolucao.condicao}; ${p.devolucao.diasAtraso} dia(s) de atraso. ${p.devolucao.observacao || ''}`;
         el('prazoRenovacao').textContent = `Retirada: ${formatarData(p.dataEmprestimo)} · Prazo atual: ${formatarData(p.dataPrevistaDevolucao)} · ${p.status}`;
