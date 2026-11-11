@@ -129,8 +129,8 @@ export function criarRepositorioReservas(banco, usuario, hoje = hojeCivil, { pes
                 }
                 const data = hoje();
                 const prazo = somarDias(r.dataReserva, PRAZO_DIAS);
-                const p = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao)
-                    VALUES ($1,$2,$3,$4) RETURNING id`, [r.leitorId, r.exemplarId, data, prazo]);
+                const p = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, aprovado_por)
+                    VALUES ($1,$2,$3,$4,$5) RETURNING id`, [r.leitorId, r.exemplarId, data, prazo, usuario.id]);
                 await c.query("UPDATE reservas SET status='Retirada', encerrada_em=now(), emprestimo_id=$2 WHERE id=$1", [id, p.rows[0].id]);
                 await c.query("UPDATE exemplares SET status='Emprestado' WHERE id=$1", [r.exemplarId]);
                 return await buscar(c, id);

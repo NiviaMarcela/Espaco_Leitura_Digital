@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios | Espaço de Leitura Digital</title>
+    <link rel="icon" type="image/svg+xml" sizes="any" href="/assets/favicon/favicon.svg?v=2">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        @media print {
+            @page { size: landscape; margin: 12mm; }
+            body { background: #fff !important; color: #000 !important; }
+            .sidebar, .sidebar-mobile, .topbar, .report-filters, .report-actions, .footer { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .page-header, .content-card { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+            .page-header { margin-bottom: 12px !important; }
+            .table-responsive { overflow: visible !important; }
+            .custom-table { width: 100% !important; font-size: 9pt !important; }
+            .custom-table th, .custom-table td { padding: 5px !important; }
+            .report-print-heading { display: block !important; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .report-print-heading { display: none; }
+    </style>
+</head>
+<body data-auth-role="admin,coordenador,professor,funcionario">
+    <aside class="sidebar d-none d-lg-flex">
+        <div class="brand">
+            <img src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg" alt="Instituto Janela para o Mundo" class="logo-instituto">
+            <div class="system-name"><strong>Espaço de Leitura Digital</strong><span>Gestão de acervo e empréstimos</span></div>
+        </div>
+        <nav class="menu" aria-label="Menu principal">
+            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item" href="dashboard.html" data-dashboard-only hidden><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard</a>
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+            <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
+            <a class="menu-item" href="leitores.html"><i class="bi bi-people" aria-hidden="true"></i>Leitores</a>
+            <a class="menu-item" href="reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+            <a class="menu-item" href="emprestimos.html"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Empréstimos</a>
+            <a class="menu-item" href="devolucoes.html"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>Devoluções</a>
+            <a class="menu-item active" href="Relatorios.html" aria-current="page"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>Relatórios</a>
+        </nav>
+        <div class="sidebar-footer"><span>Instituto Janela para o Mundo</span><small>Espaço de Leitura Digital</small></div>
+    </aside>
+
+    <div class="offcanvas offcanvas-start sidebar-mobile" tabindex="-1" id="menuMobile" aria-labelledby="menuMobileTitulo">
+        <div class="offcanvas-header">
+            <h2 class="offcanvas-title fs-6" id="menuMobileTitulo">Espaço de Leitura Digital</h2>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="menu" aria-label="Menu principal">
+                <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+                <a class="menu-item" href="dashboard.html" data-dashboard-only hidden><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard</a>
+                <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+                <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
+                <a class="menu-item" href="leitores.html"><i class="bi bi-people" aria-hidden="true"></i>Leitores</a>
+                <a class="menu-item" href="reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+                <a class="menu-item" href="emprestimos.html"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Empréstimos</a>
+                <a class="menu-item" href="devolucoes.html"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>Devoluções</a>
+                <a class="menu-item active" href="Relatorios.html" aria-current="page"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>Relatórios</a>
+            </nav>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-menu-mobile d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-label="Abrir menu"><i class="bi bi-list"></i></button>
+                <div><h1>Espaço de Leitura Digital</h1><p>Relatórios de circulação do acervo.</p></div>
+            </div>
+            <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+        </header>
+
+        <section class="page-header">
+            <div><span class="page-eyebrow">Biblioteca</span><h2>Relatórios de empréstimos</h2><p>Consulte retiradas, devoluções e empréstimos em atraso por leitor e período.</p></div>
+        </section>
+        <p id="avisoRelatorios" role="status" aria-live="polite">Carregando empréstimos…</p>
+
+        <section class="content-card report-filters mb-4" aria-label="Filtros do relatório">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                    <label class="form-label" for="buscaRelatorio">Leitor, livro ou aprovador</label>
+                    <input class="form-control" id="buscaRelatorio" type="search" placeholder="Digite para filtrar" disabled>
+                </div>
+                <div class="col-sm-6 col-lg-2">
+                    <label class="form-label" for="dataInicial">Retirada a partir de</label>
+                    <input class="form-control" id="dataInicial" type="date" disabled>
+                </div>
+                <div class="col-sm-6 col-lg-2">
+                    <label class="form-label" for="dataFinal">Retirada até</label>
+                    <input class="form-control" id="dataFinal" type="date" disabled>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label" for="filtroSituacao">Situação</label>
+                    <select class="form-select" id="filtroSituacao" disabled>
+                        <option value="todos">Todas</option>
+                        <option value="atrasados">Inadimplentes</option>
+                        <option value="abertos">Em aberto no prazo</option>
+                        <option value="devolvidos">Devolvidos</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 d-flex gap-2">
+                    <button class="btn btn-secondary-custom flex-fill" id="limparFiltros" type="button" disabled>Limpar</button>
+                    <button class="btn btn-primary-custom flex-fill" id="gerarPdf" type="button" disabled><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-card">
+            <div class="card-heading">
+                <div><h3>Histórico de empréstimos</h3><p id="resumoRelatorios">Aguardando conexão.</p></div>
+                <button class="btn btn-secondary-custom report-actions" id="atualizarRelatorios" type="button">Atualizar lista</button>
+            </div>
+            <div class="report-print-heading">
+                <h1>Relatório de empréstimos — Espaço de Leitura Digital</h1>
+                <p id="filtrosImpressao"></p>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table align-middle">
+                    <caption class="visually-hidden">Empréstimos com leitor, livro, datas, aprovador e situação</caption>
+                    <thead><tr>
+                        <th scope="col">Leitor</th><th scope="col">Livro / exemplar</th><th scope="col">Retirada</th>
+                        <th scope="col">Prazo de devolução</th><th scope="col">Data de devolução</th>
+                        <th scope="col">Aprovado por</th><th scope="col">Situação</th>
+                    </tr></thead>
+                    <tbody id="tabelaRelatorios"><tr><td colspan="7">Carregando…</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+        <footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/relatorios.js"></script>
+    <script src="js/auth-ui.js"></script>
+</body>
+</html>

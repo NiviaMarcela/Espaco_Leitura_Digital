@@ -10,6 +10,7 @@ const consulta = `SELECT p.id, p.leitor_id AS "leitorId", l.nome AS leitor,
     to_char(p.data_emprestimo, 'YYYY-MM-DD') AS "dataEmprestimo",
     to_char(p.data_prevista_devolucao, 'YYYY-MM-DD') AS "dataPrevistaDevolucao",
     to_char(p.data_devolucao, 'YYYY-MM-DD') AS "dataDevolucao", p.observacao, p.versao,
+    COALESCE(u.nome, u.email) AS aprovador,
     CASE WHEN d.id IS NULL THEN NULL ELSE jsonb_build_object('condicao', d.condicao,
         'observacao', d.observacao, 'diasAtraso', d.dias_atraso, 'registradoEm', d.registrado_em) END AS devolucao,
     COALESCE((SELECT jsonb_agg(jsonb_build_object('dataAnterior', to_char(r.data_anterior, 'YYYY-MM-DD'),
@@ -18,6 +19,7 @@ const consulta = `SELECT p.id, p.leitor_id AS "leitorId", l.nome AS leitor,
     FROM emprestimos p JOIN leitores l ON l.id=p.leitor_id
     JOIN exemplares e ON e.id=p.exemplar_id JOIN livros b ON b.id=e.livro_id
     JOIN centros c ON c.id=e.centro_id
+    LEFT JOIN usuarios u ON u.id=p.aprovado_por
     LEFT JOIN devolucoes d ON d.emprestimo_id=p.id`;
 
 // Receber um relógio permite testar viradas de mês e atrasos sem alterar a data do computador.
@@ -93,7 +95,7 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil, centroId = 
             return { leitores, exemplares, hoje: dataHoje, prazoDias: PRAZO_DIAS, limite: LIMITE_EXEMPLARES,
                 dataPrevistaDevolucao: somarDias(dataHoje, PRAZO_DIAS) };
         },
-        async criar(dados) {
+        async criar(dados, aprovadoPor = null) {
             return transacao(async c => {
                 // Serializa retiradas do mesmo leitor, inclusive de cópias diferentes.
                 const leitor = (await c.query('SELECT status, centro_id FROM leitores WHERE id=$1 FOR UPDATE', [dados.leitorId])).rows[0];
@@ -109,8 +111,8 @@ export function criarRepositorioEmprestimos(banco, hoje = hojeCivil, centroId = 
                     (SELECT count(*) FROM reservas WHERE leitor_id=$1 AND status='Pendente') AS total`, [dados.leitorId]);
                 if (Number(rows[0].total) >= LIMITE_EXEMPLARES) throw erroHttp(409, `Limite de ${LIMITE_EXEMPLARES} exemplares entre reservas e empréstimos atingido.`);
                 const dataHoje = hoje();
-                const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao)
-                    VALUES ($1,$2,$3,$4,$5) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao]);
+                const inserido = await c.query(`INSERT INTO emprestimos(leitor_id, exemplar_id, data_emprestimo, data_prevista_devolucao, observacao, aprovado_por)
+                    VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, [dados.leitorId, dados.exemplarId, dataHoje, somarDias(dataHoje, PRAZO_DIAS), dados.observacao, aprovadoPor]);
                 await c.query("UPDATE exemplares SET status='Emprestado' WHERE id=$1", [dados.exemplarId]);
                 return buscar(inserido.rows[0].id, c, dataHoje);
             });

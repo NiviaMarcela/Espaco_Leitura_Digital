@@ -29,14 +29,18 @@ test('empréstimo aceita apenas IDs inteiros e não aceita prazo imposto pelo cl
 
 test('criar empréstimo conta reservas pendentes no limite de circulação', async () => {
     const consultas = [];
+    let parametrosInsercao;
     const conexao = {
-        async query(sql) {
+        async query(sql, parametros) {
             consultas.push(sql);
             if (sql === 'BEGIN' || sql === 'COMMIT' || sql.startsWith('UPDATE exemplares')) return { rows: [] };
             if (sql.includes('FROM leitores WHERE id=$1 FOR UPDATE')) return { rows: [{ status: 'Ativo', centro_id: 1 }] };
             if (sql.includes('FROM exemplares WHERE id=$1')) return { rows: [{ status: 'Disponível', centro_id: 1 }] };
             if (sql.includes('AS total')) return { rows: [{ total: 0 }] };
-            if (sql.includes('INSERT INTO emprestimos')) return { rows: [{ id: 12 }] };
+            if (sql.includes('INSERT INTO emprestimos')) {
+                parametrosInsercao = parametros;
+                return { rows: [{ id: 12 }] };
+            }
             if (sql.includes('FROM emprestimos p JOIN leitores l')) {
                 return { rows: [{ id: 12, dataPrevistaDevolucao: somarDias(hojeCivil(), 30), dataDevolucao: null }] };
             }
@@ -45,9 +49,10 @@ test('criar empréstimo conta reservas pendentes no limite de circulação', asy
         release() {}
     };
     const repositorio = criarRepositorioEmprestimos({ connect: async () => conexao });
-    const emprestimo = await repositorio.criar({ leitorId: 1, exemplarId: 2, observacao: null });
+    const emprestimo = await repositorio.criar({ leitorId: 1, exemplarId: 2, observacao: null }, 9);
     assert.equal(emprestimo.id, 12);
     assert.equal(emprestimo.status, 'Emprestado');
+    assert.equal(parametrosInsercao[5], 9);
     assert.equal(consultas.some(sql => sql.includes('FROM reservas')), true);
 });
 
@@ -69,7 +74,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         banco = new pg.Pool({ ...config, options: `-c search_path=${schema}` });
-        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql', '007_perfis_reservas.sql']) {
+        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql', '007_perfis_reservas.sql', '008_emprestimos_todos_perfis.sql', '009_perfil_professor.sql', '010_recuperacao_assistida.sql', '011_perfil_funcionario.sql', '012_aprovacao_emprestimos.sql']) {
             await banco.query(await readFile(new URL(`../database/${arquivo}`, import.meta.url), 'utf8'));
         }
         await criarRepositorioAutenticacao(banco).inicializarAdministrador('admin@example.org', 'admin-temporario-integration');

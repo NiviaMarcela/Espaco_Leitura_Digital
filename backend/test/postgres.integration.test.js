@@ -22,7 +22,7 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         await banco.query(await readFile(new URL("../database/002_leitores.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/003_baixa_exemplares.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/006_autenticacao.sql", import.meta.url), "utf8"));
-        for (const nome of ['004_emprestimos.sql', '005_devolucoes.sql', '007_perfis_reservas.sql']) {
+        for (const nome of ['004_emprestimos.sql', '005_devolucoes.sql', '007_perfis_reservas.sql', '012_aprovacao_emprestimos.sql']) {
             await banco.query(await readFile(new URL('../database/' + nome, import.meta.url), 'utf8'));
         }
         const auth = criarRepositorioAutenticacao(banco);

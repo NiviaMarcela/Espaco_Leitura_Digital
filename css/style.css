@@ -86,6 +86,8 @@ body {
 
     height: 100vh;
 
+    overflow-y: auto;
+
     background-color:
         var(--ijm-blue);
 

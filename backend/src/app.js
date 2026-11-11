@@ -256,7 +256,7 @@ export function criarApp(banco, registrarErro = console.error) {
     });
     app.post('/api/emprestimos', exigirGestao, async (req, res) => {
         await expirarReservas(req.usuario);
-        const emprestimo = await req.repos.emprestimos.criar(validarEmprestimo(req.body));
+        const emprestimo = await req.repos.emprestimos.criar(validarEmprestimo(req.body), req.usuario.id);
         res.status(201).location(`/api/emprestimos/${emprestimo.id}`).json(emprestimo);
     });
     app.post('/api/emprestimos/:id/renovacoes', exigirGestao, async (req, res) => {
@@ -319,6 +319,7 @@ export function criarApp(banco, registrarErro = console.error) {
     for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
+    app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina('Relatorios'));
     app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {

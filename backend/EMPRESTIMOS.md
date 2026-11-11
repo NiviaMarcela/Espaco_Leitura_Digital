@@ -1,7 +1,7 @@
 # Empréstimos e renovações — guia didático
 
 Abra http://127.0.0.1:3001/emprestimos.html com o backend ligado.
-A migração `004_emprestimos.sql` cria as tabelas desta etapa sem alterar livros ou leitores existentes.
+A migração `004_emprestimos.sql` cria as tabelas desta etapa; `012_aprovacao_emprestimos.sql` passa a registrar o usuário que confirmou cada nova retirada. Empréstimos antigos permanecem sem aprovador identificado.
 
 ## Regras implementadas
 
@@ -55,7 +55,7 @@ a versão vista na tela para detectar uma alteração feita por outra sessão.
 1. Bloqueia a linha do leitor e confere se ele está ativo.
 2. Bloqueia a linha do exemplar e confere sua disponibilidade e centro.
 3. Conta os empréstimos abertos do leitor nesse centro e rejeita o décimo primeiro.
-4. Insere o empréstimo e muda a cópia para Emprestado.
+4. Insere o empréstimo com o usuário autenticado como aprovador e muda a cópia para Emprestado.
 5. Confirma tudo com COMMIT. Se qualquer etapa falhar, ROLLBACK desfaz a operação.
 
 O bloqueio do leitor faz uma segunda retirada aguardar a primeira, mesmo sendo de
@@ -91,11 +91,12 @@ node --env-file=.env --test
 A página de devoluções está disponível em `/devolucoes.html`. Ela encerra o empréstimo
 e atualiza o exemplar na mesma transação; veja `DEVOLUCOES.md`. Não altere status ou
 datas diretamente no banco para simular uma devolução real. Perdas durante empréstimos
-precisarão de um encerramento específico. Autenticação e identificação do funcionário
-responsável continuam em etapa futura.
+precisarão de um encerramento específico. O relatório em `/Relatorios.html` permite
+filtrar por leitor, livro, período de retirada ou situação, identifica o aprovador das
+novas retiradas e pode ser impresso ou salvo como PDF pelo navegador.
 
 ## Atualização das regras
 
 O centro considerado é o do exemplar, não o do cadastro do leitor. O formulário mostra o saldo desse centro após selecionar leitor e exemplar; a API confere o limite novamente dentro da transação. Devolver libera uma vaga somente nesse centro.
 
-O prazo de 30 dias se aplica às novas retiradas e renovações. Nenhuma data já registrada é alterada automaticamente, e esta mudança não exige migração do banco. A prévia de renovação recebe o prazo da API.
+O prazo de 30 dias se aplica às novas retiradas e renovações. Nenhuma data já registrada é alterada automaticamente. A identificação do aprovador exige a migração `012_aprovacao_emprestimos.sql`, que é aplicada pelo comando normal `npm run db:migrate`.

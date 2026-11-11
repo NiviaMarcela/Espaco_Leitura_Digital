@@ -33,7 +33,7 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
         assert.match(html, /id="modalCadastroLeitor"/);
         assert.match(html, /js\/home\.js/);
     }
-    for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "meusEmprestimos"]) {
+    for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "Relatorios", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);
         assert.equal(resposta.status, 302);
         assert.match(resposta.headers.get('location'), /^\/login\.html\?next=/);
@@ -238,10 +238,17 @@ test("administradores e leitores consultam a Biblioteca; conta sem vínculo deve
 test("links das sidebars administrativas abrem a Biblioteca e seus links de retorno", async t => {
     const get = await iniciar(t, async () => ({ rows: [] }));
     const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
-    for (const pagina of ['dashboard', 'acervo', 'leitores', 'reservas', 'emprestimos', 'devolucoes', 'usuarios']) {
+    for (const pagina of ['dashboard', 'acervo', 'leitores', 'reservas', 'emprestimos', 'devolucoes', 'usuarios', 'Relatorios']) {
         const resposta = await get(`/${pagina}.html`, opcoes);
         assert.equal(resposta.status, 200, pagina);
         const html = await resposta.text();
+        if (pagina === 'Relatorios') {
+            assert.match(html, /id="buscaRelatorio"/);
+            assert.match(html, /id="dataInicial"/);
+            assert.match(html, /id="dataFinal"/);
+            assert.match(html, /id="filtroSituacao"/);
+            assert.match(html, /id="gerarPdf"/);
+        }
         const topo = html.match(/<header class="topbar">([\s\S]*?)<\/header>/)?.[1];
         assert.ok(topo, `${pagina}: cabeçalho presente`);
         assert.doesNotMatch(topo, /href="\/?biblioteca\.html"/, `${pagina}: sem Biblioteca no topo`);
@@ -250,6 +257,7 @@ test("links das sidebars administrativas abrem a Biblioteca e seus links de reto
         const destino = '/biblioteca.html';
         for (const menu of menus) {
             assert.equal((menu[1].match(/href="\/biblioteca\.html"/g) || []).length, 1, `${pagina}: Biblioteca uma vez em cada sidebar`);
+            assert.equal((menu[1].match(/href="Relatorios\.html"/g) || []).length, 1, `${pagina}: Relatórios uma vez em cada sidebar`);
         }
         const biblioteca = await get(destino, opcoes);
         assert.equal(biblioteca.status, 200, `${pagina}: Biblioteca sem redirecionamento`);
