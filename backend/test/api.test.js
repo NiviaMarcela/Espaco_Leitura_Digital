@@ -63,6 +63,31 @@ test("Relatórios só podem ser acessados por administrador, coordenador e profe
     }
 });
 
+test("contagem de pedidos de senha é disponibilizada à equipe sem expor a fila ao coordenador", async t => {
+    for (const perfil of ['admin', 'coordenador', 'professor', 'funcionario']) {
+        let parametrosContagem;
+        const get = await iniciar(t, async (sql, valores) => {
+            if (sql.includes('FROM recuperacoes_acesso r JOIN usuarios u')) {
+                parametrosContagem = valores;
+                return { rows: [{ quantidade: 3 }] };
+            }
+            return { rows: [] };
+        }, { id: 1, nome: 'Equipe teste', perfil, centroId: 7 });
+        const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
+        const resposta = await get('/api/recuperacoes/contagem', opcoes);
+        if (perfil === 'admin' || perfil === 'coordenador') {
+            assert.equal(resposta.status, 200);
+            assert.deepEqual(await resposta.json(), { quantidade: 3 });
+            assert.deepEqual(parametrosContagem, [perfil === 'admin' ? null : 7]);
+            if (perfil === 'coordenador') {
+                assert.equal((await get('/api/recuperacoes', opcoes)).status, 403);
+            }
+        } else {
+            assert.equal(resposta.status, 403);
+        }
+    }
+});
+
 test("destaques públicos exibem apenas dados básicos dos livros sem exigir sessão", async t => {
     let consultaDestaques;
     const livros = [{
@@ -268,6 +293,8 @@ test("links das sidebars administrativas abrem a Biblioteca e seus links de reto
             assert.match(html, /id="filtroSituacao"/);
             assert.match(html, /id="gerarPdf"/);
         }
+        if (pagina === 'devolucoes') assert.match(html, /id="avisoVencimentos"/);
+        if (pagina === 'usuarios') assert.match(html, /id="avisoSolicitacoesSenha"/);
         const topo = html.match(/<header class="topbar">([\s\S]*?)<\/header>/)?.[1];
         assert.ok(topo, `${pagina}: cabeçalho presente`);
         assert.doesNotMatch(topo, /href="\/?biblioteca\.html"/, `${pagina}: sem Biblioteca no topo`);
@@ -277,6 +304,9 @@ test("links das sidebars administrativas abrem a Biblioteca e seus links de reto
         for (const menu of menus) {
             assert.equal((menu[1].match(/href="\/biblioteca\.html"/g) || []).length, 1, `${pagina}: Biblioteca uma vez em cada sidebar`);
             assert.equal((menu[1].match(/href="Relatorios\.html"/g) || []).length, 1, `${pagina}: Relatórios uma vez em cada sidebar`);
+            assert.equal((menu[1].match(/data-reservas-count/g) || []).length, 1, `${pagina}: contador de reservas uma vez em cada sidebar`);
+            assert.equal((menu[1].match(/data-solicitacoes-senha-count/g) || []).length, 1, `${pagina}: contador de pedidos de senha uma vez em cada sidebar`);
+            assert.equal((menu[1].match(/data-devolucoes-count/g) || []).length, 1, `${pagina}: contador de devoluções uma vez em cada sidebar`);
         }
         const biblioteca = await get(destino, opcoes);
         assert.equal(biblioteca.status, 200, `${pagina}: Biblioteca sem redirecionamento`);

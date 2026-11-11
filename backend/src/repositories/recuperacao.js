@@ -20,6 +20,14 @@ export function criarRepositorioRecuperacao(banco) {
                 LEFT JOIN centros c ON c.id=COALESCE(u.centro_id,l.centro_id)
                 WHERE r.status='Pendente' ORDER BY r.criada_em,r.id`)).rows;
         },
+        async contarPendentes(centroId = null) {
+            const { rows } = await banco.query(`SELECT count(*)::integer AS quantidade
+                FROM recuperacoes_acesso r JOIN usuarios u ON u.id=r.usuario_id
+                LEFT JOIN leitores l ON l.id=u.leitor_id
+                WHERE r.status='Pendente'
+                    AND ($1::integer IS NULL OR COALESCE(u.centro_id,l.centro_id)=$1)`, [centroId]);
+            return rows[0].quantidade;
+        },
         async concluir(id, dados, autorId) {
             if (!Number.isInteger(id) || id<1) throw erroHttp(400,'Solicitação inválida.');
             if (!['atender','encerrar'].includes(dados?.acao)) throw erroHttp(400,'Selecione a ação.');

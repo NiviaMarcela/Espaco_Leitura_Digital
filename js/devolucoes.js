@@ -1,4 +1,4 @@
-import { hojeCivil } from './datas.mjs';
+import { hojeCivil, somarDias } from './datas.mjs';
 
 const el = id => document.getElementById(id);
 const data = valor => valor ? valor.split('-').reverse().join('/') : '—';
@@ -26,6 +26,14 @@ async function api(caminho, dados) {
 }
 
 function renderizar() {
+    const hoje = hojeCivil();
+    const limiteVencimento = somarDias(hoje, 7);
+    const vencendo = registros.filter(p => !p.dataDevolucao
+        && p.dataPrevistaDevolucao >= hoje && p.dataPrevistaDevolucao <= limiteVencimento);
+    el('avisoVencimentos').textContent = vencendo.length
+        ? `${vencendo.length} empréstimo(s) vencem nos próximos 7 dias (até ${data(limiteVencimento)}).`
+        : 'Nenhum empréstimo vence nos próximos 7 dias.';
+    el('avisoVencimentos').hidden = false;
     const filtro = el('filtroDevolucao').value;
     const busca = normalizar(el('buscaDevolucao').value.trim());
     const lista = registros.filter(p => normalizar(`${p.leitor} ${p.matriculaCodigo || ''} ${p.livro} ${p.codigo}`).includes(busca)

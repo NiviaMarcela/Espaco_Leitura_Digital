@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
 class Elemento {
-    constructor(texto='',valor=''){this.textContent=texto;this.value=valor;this.children=[];this.eventos={};this.disabled=false;}
+    constructor(texto='',valor=''){this.textContent=texto;this.value=valor;this.children=[];this.eventos={};this.disabled=false;this.hidden=false;}
     addEventListener(e,f){this.eventos[e]=f;}
     append(e){this.children.push(e);}
     add(e){this.append(e);}
@@ -13,11 +13,12 @@ class Elemento {
     insertCell(){return this.insertRow();}
     reset(){} focus(){} scrollIntoView(){} reportValidity(){return true;}
 }
-async function preparar(perfil='admin'){
+async function preparar(perfil='admin',solicitacoes=[]){
     const elementos=new Map(),pedidos=[];const get=id=>{if(!elementos.has(id))elementos.set(id,new Elemento());return elementos.get(id);};
+    get('avisoSolicitacoesSenha').hidden=true;
     const usuario={id:2,nome:'Professor',email:'prof@teste.invalid',perfil:'professor',centroId:1,ativo:true};
     const contexto=vm.createContext({
-        document:{getElementById:get,createElement:()=>new Elemento()},Option:Elemento,AbortSignal,
+        document:{getElementById:get,createElement:()=>new Elemento(),dispatchEvent(){}},Option:Elemento,AbortSignal,Event,
         FormData:class{constructor(){return [['nome',get('nomeUsuario').value],['email',get('emailUsuario').value],['centroId',get('centroUsuario').value]];}},
         location:{assign:p=>pedidos.push({redirect:p})},confirm:()=>true,
         bootstrap:{Modal:{getOrCreateInstance:()=>({show(){},hide(){}})}},
@@ -27,6 +28,7 @@ async function preparar(perfil='admin'){
             if(url==='/api/usuarios' && opcoes.method==='GET')body=[usuario];
             if(url==='/api/centros')body=[{id:1,nome:'Maranhão'}];
             if(url==='/api/leitores')body=[];
+            if(url==='/api/recuperacoes')body=solicitacoes;
             return {ok:true,json:async()=>body};
         }
     });
@@ -34,6 +36,18 @@ async function preparar(perfil='admin'){
     await new Promise(r=>setImmediate(r));
     return {get,pedidos,usuario,executar:s=>vm.runInContext(s,contexto)};
 }
+test('avisa o administrador quando há pedidos pendentes de redefinição de senha',async()=>{
+    const {get}=await preparar('admin',[{id:9,usuarioId:3,nome:'Leitor teste',email:'leitor@teste.invalid',perfil:'leitor',criadaEm:'2026-11-11T12:00:00Z'}]);
+    assert.equal(get('avisoSolicitacoesSenha').hidden,false);
+    assert.match(get('avisoSolicitacoesSenha').textContent,/Há 1 pedido.*aguardando análise/);
+    assert.equal(get('tabelaRecuperacoes').children.length,1);
+});
+test('mantém oculto o aviso quando não há pedidos pendentes ou o perfil não é administrador',async()=>{
+    const admin=await preparar('admin');
+    const coordenador=await preparar('coordenador',[{id:9,nome:'Leitor teste'}]);
+    assert.equal(admin.get('avisoSolicitacoesSenha').hidden,true);
+    assert.equal(coordenador.get('avisoSolicitacoesSenha').hidden,true);
+});
 test('editar usuário envia PUT sem senha nem troca de perfil',async()=>{
     const {get,pedidos,executar}=await preparar();
     executar("editar({id:2,nome:'Professor',email:'prof@teste.invalid',perfil:'professor',centroId:1})");

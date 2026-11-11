@@ -65,7 +65,7 @@
 
 
         <nav class="menu">
-            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
 
             <a data-dashboard-only hidden
                 href="dashboard.html"
@@ -98,7 +98,7 @@
             </a>
 
 
-            <a class="menu-item" href="/reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+            <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
             <a
                 href="emprestimos.html"
                 class="menu-item"
@@ -113,7 +113,7 @@
                 class="menu-item active"
             >
                 <i class="bi bi-arrow-down-left-circle"></i>
-                Devoluções
+                Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
             </a>
             <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
 
@@ -164,7 +164,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
-            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
 
                 <a data-dashboard-only hidden
                     href="dashboard.html"
@@ -197,7 +197,7 @@
                 </a>
 
 
-                <a class="menu-item" href="/reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+                <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
             <a
                     href="emprestimos.html"
                     class="menu-item"
@@ -212,7 +212,7 @@
                     class="menu-item active"
                 >
                     <i class="bi bi-arrow-down-left-circle"></i>
-                    Devoluções
+                    Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
                 </a>
                 <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
 
@@ -275,7 +275,8 @@
 
         <section class="page-header"><div><span class="page-eyebrow">Biblioteca</span><h2>Devoluções</h2><p>Localize o empréstimo e confira o exemplar antes de registrar o recebimento.</p></div></section>
 <p id="avisoDevolucoes" role="status">Carregando empréstimos…</p>
-<button id="atualizarDevolucoes" class="btn btn-secondary-custom mb-3">Atualizar lista</button>
+        <div id="avisoVencimentos" class="alert alert-warning" role="status" aria-live="polite" hidden></div>
+        <button id="atualizarDevolucoes" class="btn btn-secondary-custom mb-3">Atualizar lista</button>
 <section class="content-card mb-4" aria-label="Filtros de devoluções"><div class="row g-3">
 <div class="col-md-8"><label for="buscaDevolucao" class="form-label">Buscar código do exemplar, livro, leitor ou matrícula</label><input id="buscaDevolucao" class="form-control" type="search" disabled></div>
 <div class="col-md-4"><label for="filtroDevolucao" class="form-label">Exibir</label><select id="filtroDevolucao" class="form-select" disabled><option value="pendentes">Aguardando devolução</option><option value="atrasados">Atrasados</option><option value="devolvidos">Histórico de devoluções</option><option value="todos">Todos</option></select></div>

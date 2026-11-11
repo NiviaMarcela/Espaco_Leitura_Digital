@@ -155,6 +155,12 @@ async function carregarRecuperacoes() {
     try {
         const pedidos=await api('/recuperacoes');el('tabelaRecuperacoes').replaceChildren();
         el('avisoFilaRecuperacao').textContent=pedidos.length?pedidos.length+' solicitação(ões) pendente(s).':'Nenhuma solicitação pendente.';
+        const aviso = el('avisoSolicitacoesSenha');
+        aviso.hidden = pedidos.length === 0;
+        aviso.className = 'alert alert-warning';
+        aviso.textContent = pedidos.length
+            ? `Há ${pedidos.length} pedido(s) de redefinição de senha aguardando análise. Consulte a fila de solicitações abaixo.`
+            : '';
         for(const pedido of pedidos) {
             const linha=el('tabelaRecuperacoes').insertRow();
             for(const texto of [new Date(pedido.criadaEm).toLocaleString('pt-BR'),pedido.nome,pedido.email,pedido.perfil+' / '+(pedido.centro || 'Todos os Centros')])linha.insertCell().textContent=texto;
@@ -170,7 +176,14 @@ async function carregarRecuperacoes() {
                 finally{operando=false;}
             });acoes.append(encerrar);
         }
-    }catch(erro){el('avisoFilaRecuperacao').textContent=erro.message;}
+        document.dispatchEvent(new Event('solicitacoes-senha-atualizadas'));
+    }catch(erro){
+        el('avisoFilaRecuperacao').textContent=erro.message;
+        const aviso = el('avisoSolicitacoesSenha');
+        aviso.hidden = false;
+        aviso.className = 'alert alert-danger';
+        aviso.textContent = `Não foi possível consultar os pedidos de redefinição de senha: ${erro.message}`;
+    }
     finally{el('atualizarRecuperacoes').disabled=false;}
 }
 el('atualizarRecuperacoes').addEventListener('click',carregarRecuperacoes);

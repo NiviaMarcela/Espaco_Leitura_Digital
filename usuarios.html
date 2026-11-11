@@ -63,7 +63,7 @@
 
 
         <nav class="menu">
-            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
 
             <a
                 href="dashboard.html"
@@ -96,7 +96,7 @@
             </a>
 
 
-            <a class="menu-item" href="/reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+            <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
             <a
                 href="emprestimos.html"
                 class="menu-item"
@@ -111,7 +111,7 @@
                 class="menu-item"
             >
                 <i class="bi bi-arrow-down-left-circle"></i>
-                Devoluções
+                Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
             </a>
             <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
 
@@ -162,7 +162,7 @@
         <div class="offcanvas-body">
 
             <nav class="menu">
-            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários</a>
+            <a class="menu-item active" href="usuarios.html" aria-current="page" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
 
                 <a
                     href="dashboard.html"
@@ -192,7 +192,7 @@
                     Leitores
                 </a>
 
-                <a class="menu-item" href="/reservas.html"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas</a>
+                <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
             <a
                     href="emprestimos.html"
                     class="menu-item"
@@ -206,7 +206,7 @@
                     class="menu-item"
                 >
                     <i class="bi bi-arrow-down-left-circle"></i>
-                    Devoluções
+                    Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
                 </a>
                 <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
 
@@ -226,7 +226,8 @@
 <button class="btn btn-secondary-custom d-lg-none mt-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-controls="menuMobile" aria-label="Abrir menu">Menu</button>
 <header class="topbar"><div><h1>Usuários do sistema</h1><p>Cadastre os acessos e seus Centros.</p></div><div class="user-info" aria-live="polite">Conferindo sessão…</div></header>
 <section class="page-header"><a class="btn btn-secondary-custom" href="dashboard.html">Voltar ao Dashboard</a></section>
-<p id="avisoUsuarios" role="status" aria-live="polite"></p><p id="limiteAdministradores"></p>
+    <div id="avisoSolicitacoesSenha" class="alert alert-warning" hidden role="status" aria-live="polite"></div>
+    <p id="avisoUsuarios" role="status" aria-live="polite"></p><p id="limiteAdministradores"></p>
 <section class="content-card mb-4"><h2 class="h4" id="tituloFormUsuario">Cadastrar usuário</h2><p id="avisoEdicaoUsuario" hidden>A edição mantém o perfil de acesso. Alterações encerram as sessões da conta; ao editar seus próprios dados, você deverá entrar novamente.</p>
 <form id="formUsuario" class="row g-3">
 <div class="col-md-6"><label class="form-label" for="nomeUsuario">Nome</label><input class="form-control" id="nomeUsuario" name="nome" maxlength="200" required></div>

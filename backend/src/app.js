@@ -121,6 +121,9 @@ export function criarApp(banco, registrarErro = console.error) {
         res.status(202).json({mensagem:MENSAGEM_RECUPERACAO});
     });
     app.get('/api/recuperacoes', exigirAdmin, async (req,res)=>res.json(await recuperacao.listar()));
+    app.get('/api/recuperacoes/contagem', exigirPerfil('admin', 'coordenador'), async (req,res) => {
+        res.json({ quantidade: await recuperacao.contarPendentes(req.usuario.perfil === 'admin' ? null : req.usuario.centroId) });
+    });
     app.post('/api/recuperacoes/:id/concluir', exigirAdmin, async (req,res)=>res.json(await recuperacao.concluir(Number(req.params.id),req.body,req.usuario.id)));
 
     app.post('/api/auth/login', async (req, res) => {
