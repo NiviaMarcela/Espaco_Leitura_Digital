@@ -20,6 +20,7 @@ async function carregarUsuario() {
     document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     document.querySelectorAll('[data-dashboard-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     document.querySelectorAll('[data-usuarios-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
+    document.querySelectorAll('[data-relatorios-only]').forEach(link => { link.hidden = !['admin','coordenador','professor'].includes(usuario.perfil); });
     if (usuario.perfil === 'admin') linksAdmin.forEach(link => { link.hidden = false; });
     if (usuario.trocarSenha && pagina !== '/alterarSenha.html') {
         location.replace('/alterarSenha.html');

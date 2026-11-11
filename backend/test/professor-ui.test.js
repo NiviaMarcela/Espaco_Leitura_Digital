@@ -4,8 +4,8 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
 for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' recebe os menus permitidos',async()=>{
-    const admin={hidden:false},dashboard={hidden:false},gestao={hidden:true},usuarios={hidden:true};
-    const grupos={'[data-usuarios-only]':[usuarios],'[data-admin-only]':[admin],'[data-dashboard-only]':[dashboard],'[data-gestao-only]':[gestao],'[data-anonymous-only]':[]};
+    const admin={hidden:false},dashboard={hidden:false},gestao={hidden:true},usuarios={hidden:true},relatorios={hidden:true};
+    const grupos={'[data-usuarios-only]':[usuarios],'[data-admin-only]':[admin],'[data-dashboard-only]':[dashboard],'[data-gestao-only]':[gestao],'[data-relatorios-only]':[relatorios],'[data-anonymous-only]':[]};
     const redirecionamentos=[];
     const contexto=vm.createContext({
         document:{body:{dataset:{authRole:'admin,coordenador,professor,funcionario,leitor'}},querySelectorAll:s=>grupos[s]||[],querySelector:()=>null},
@@ -14,7 +14,7 @@ for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' rec
     });
     vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
     await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(admin.hidden,true);assert.equal(dashboard.hidden,perfil!=='coordenador');assert.equal(usuarios.hidden,perfil!=='coordenador');assert.equal(gestao.hidden,false);
+    assert.equal(admin.hidden,true);assert.equal(dashboard.hidden,perfil!=='coordenador');assert.equal(usuarios.hidden,perfil!=='coordenador');assert.equal(gestao.hidden,false);assert.equal(relatorios.hidden,!['professor','coordenador'].includes(perfil));
     assert.deepEqual(redirecionamentos,[]);
 });
 

@@ -44,6 +44,25 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
     assert.equal((await get('/api/biblioteca')).status, 401);
 });
 
+test("Relatórios só podem ser acessados por administrador, coordenador e professor", async t => {
+    for (const perfil of ['admin', 'coordenador', 'professor', 'funcionario']) {
+        const get = await iniciar(t, async () => ({ rows: [] }), { id: 1, nome: 'Equipe teste', perfil, centroId: 1 });
+        const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
+        const pagina = await get('/Relatorios.html', opcoes);
+        const dados = await get('/api/relatorios/emprestimos', opcoes);
+        if (perfil === 'funcionario') {
+            assert.equal(pagina.status, 302);
+            assert.equal(pagina.headers.get('location'), '/biblioteca.html');
+            assert.equal(dados.status, 403);
+        } else {
+            assert.equal(pagina.status, 200);
+            assert.match(await pagina.text(), /data-auth-role="admin,coordenador,professor"/);
+            assert.equal(dados.status, 200);
+            assert.deepEqual(await dados.json(), []);
+        }
+    }
+});
+
 test("destaques públicos exibem apenas dados básicos dos livros sem exigir sessão", async t => {
     let consultaDestaques;
     const livros = [{

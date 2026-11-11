@@ -241,6 +241,10 @@ export function criarApp(banco, registrarErro = console.error) {
     });
 
     app.get('/api/dashboard', exigirPerfil('admin', 'coordenador'), async (req, res) => res.json(await req.repos.dashboard.consultar()));
+    app.get('/api/relatorios/emprestimos', exigirPerfil('admin', 'coordenador', 'professor'), async (req, res) => {
+        await expirarReservas(req.usuario);
+        res.json(await req.repos.emprestimos.listar());
+    });
     app.get('/api/emprestimos/opcoes', exigirGestao, async (req, res) => {
         await expirarReservas(req.usuario);
         res.json(await req.repos.emprestimos.opcoes());
@@ -319,7 +323,7 @@ export function criarApp(banco, registrarErro = console.error) {
     for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
-    app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina('Relatorios'));
+    app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor']), arquivoPagina('Relatorios'));
     app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {

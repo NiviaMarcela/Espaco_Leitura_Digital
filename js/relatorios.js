@@ -10,7 +10,7 @@ async function carregar() {
     el('avisoRelatorios').textContent = 'Carregando empréstimos…';
     el('atualizarRelatorios').disabled = true;
     try {
-        const resposta = await fetch('/api/emprestimos', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+        const resposta = await fetch('/api/relatorios/emprestimos', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
         let dados;
         try { dados = await resposta.json(); }
         catch { throw new Error('O servidor retornou uma resposta inválida ao carregar os empréstimos.'); }
