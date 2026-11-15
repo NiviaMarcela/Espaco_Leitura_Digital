@@ -3,14 +3,14 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { criarApp } from "../src/app.js";
 
-async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }, connect) {
+async function iniciar(t, query, usuario = { id: 1, nome: 'Admin teste', perfil: 'admin', centroId: null }, connect, registrarErro = () => {}) {
     const banco = { query: (sql, valores) => sql.includes('FROM sessoes s')
         ? Promise.resolve({ rows: [{ ...usuario, centro_id: usuario.centroId ?? 1, leitor_id: usuario.leitorId ?? 7 }] }) : query(sql,valores) };
     banco.connect = connect || (async () => ({
         async query() { return { rows: [], rowCount: 0 }; },
         release() {}
     }));
-    const servidor = criarApp(banco, () => {}).listen(0, "127.0.0.1");
+    const servidor = criarApp(banco, registrarErro).listen(0, "127.0.0.1");
     await once(servidor, "listening");
     t.after(() => new Promise(resolve => {
         servidor.close(resolve);
@@ -456,4 +456,12 @@ test('Reservas tem rota de gestão e menus próprios; Empréstimos não carrega 
     const api=await iniciar(t,async()=>({rows:[]}),{id:9,perfil:'leitor',centroId:1,leitorId:7});
     const negada=await api('/reservas.html',opcoes);assert.equal(negada.status,302);assert.equal(negada.headers.get('location'),'/biblioteca.html');
     const anonima=await api('/reservas.html');assert.equal(anonima.status,302);assert.match(anonima.headers.get('location'),/^\/login.html/);
+});
+
+test('timeout é identificado no terminal sem expor parâmetros ou credenciais',async t=>{
+    const logs=[];
+    const api=await iniciar(t,async()=>{throw new Error('Connection terminated due to connection timeout');},undefined,undefined,(...args)=>logs.push(args));
+    const resposta=await api('/api/health/db');assert.equal(resposta.status,503);
+    assert.match(logs[0][1],/BANCO_TIMEOUT/);assert.doesNotMatch(logs[0][1],/SEM_CODIGO/);
+    assert.deepEqual(await resposta.json(),{erro:'Banco de dados indisponível.'});
 });

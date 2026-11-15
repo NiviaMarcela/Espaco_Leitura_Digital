@@ -145,3 +145,11 @@ Remove-Item Env:RUN_POSTGRES_TESTS
 ```
 
 O teste cria e remove somente um schema aleatório com prefixo `teste_acervo_`; o usuário do banco precisa ter permissão para isso. Os testes normais com `pnpm test` ignoram essa integração quando a variável não está habilitada.
+
+### Diagnóstico: SEM_CODIGO e PostgreSQL sem resposta (12/11/2026)
+
+O driver pode emitir um erro de tempo de conexão sem o campo code. A API agora identifica as duas mensagens conhecidas de timeout como BANCO_TIMEOUT no terminal, mantém HTTP 503 e não expõe credenciais ou detalhes internos ao navegador.
+
+Na investigação local, localhost, 127.0.0.1 e ::1 excederam o tempo de conexão. O cliente pg_isready também informou ausência de resposta. O serviço inicialmente aparecia em execução, mas o processo antigo não terminou durante o reinício normal nem na tentativa de parada controlada com pg_ctl. O log do Windows registrou postmaster.pid existente com um processo postgres ainda ativo, impedindo uma nova inicialização. Não remover esse arquivo enquanto o processo existir.
+
+Nesse estado, salvar os trabalhos e reiniciar o Windows é o próximo passo. O serviço está configurado como automático. Depois, verificar pg_isready e /api/health/db e executar npm run db:migrate no diretório backend para conferir as migrações recebidas do grupo. A atualização inclui 012_aprovacao_emprestimos.sql; não foi possível confirmar sua aplicação enquanto o banco não respondia. Não foram alterados livros, contas ou senhas durante a investigação, e não foi possível consultar a contagem de registros.

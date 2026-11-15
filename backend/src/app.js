@@ -340,10 +340,13 @@ export function criarApp(banco, registrarErro = console.error) {
         if ([400, 401, 403, 404, 409].includes(erro.status)) return res.status(erro.status).json({ erro: erro.message });
         if (erro.status === 429) return res.status(429).json({ erro: erro.message });
         if (erro.code === "23503") return res.status(400).json({ erro: "Livro ou Centro não encontrado." });
-        registrarErro("Falha ao consultar o banco:", erro.code || "SEM_CODIGO");
+        const timeoutConexao = ["Connection terminated due to connection timeout", "timeout exceeded when trying to connect"].includes(erro.message);
+        registrarErro("Falha ao consultar o banco:", timeoutConexao
+            ? "BANCO_TIMEOUT: tempo de conexão esgotado; verifique o serviço PostgreSQL e a conexão configurada."
+            : erro.code || "SEM_CODIGO");
         const indisponivel = ["BANCO_NAO_CONFIGURADO", "ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "57P03"].includes(erro.code)
             || erro.code?.startsWith("08")
-            || ["Connection terminated due to connection timeout", "timeout exceeded when trying to connect"].includes(erro.message);
+            || timeoutConexao;
         res.status(indisponivel ? 503 : 500).json({
             erro: indisponivel ? "Banco de dados indisponível." : "Não foi possível concluir a consulta."
         });
