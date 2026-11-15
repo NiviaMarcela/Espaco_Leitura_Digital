@@ -1,8 +1,15 @@
 import { erroHttp, validarCredenciais } from '../validation.js';
 import { hashSenha, validarSenha } from './autenticacao.js';
 
-export const MENSAGEM_RECUPERACAO = 'Se houver uma conta ativa com este e-mail, a solicitação ficará disponível para o administrador. Procure a equipe do seu Centro para confirmar sua identidade. Nenhum e-mail será enviado.';
+export const MENSAGEM_RECUPERACAO = 'Se houver uma conta ativa com este e-mail, a solicitação ficará disponível para a equipe responsável. Procure a equipe do seu Centro para confirmar sua identidade. Nenhum e-mail será enviado.';
 
+// Administradores nunca entram na fila do coordenador, mesmo com vínculo de leitor local.
+function centroPermitido(autor) {
+    if (autor?.perfil === 'admin') return null;
+    if (autor?.perfil === 'coordenador' && Number.isInteger(autor.centroId)) return autor.centroId;
+    throw erroHttp(403, 'Sua conta não permite atender solicitações.');
+}
+const escopoFila = "($1::integer IS NULL OR (u.perfil<>'admin' AND COALESCE(u.centro_id,l.centro_id)=$1))";
 export function criarRepositorioRecuperacao(banco) {
     return {
         async solicitar(dados) {
@@ -12,20 +19,22 @@ export function criarRepositorioRecuperacao(banco) {
                 SELECT id FROM usuarios WHERE lower(email)=$1 AND ativo=true
                 ON CONFLICT (usuario_id) WHERE status='Pendente' DO NOTHING`, [email]);
         },
-        async listar() {
+        async listar(autor) {
+            const centroId = centroPermitido(autor);
             return (await banco.query(`SELECT r.id,r.criada_em AS "criadaEm",u.id AS "usuarioId",
                 COALESCE(u.nome,l.nome,'Administrador') AS nome,u.email,u.perfil,u.ativo,c.nome AS centro
                 FROM recuperacoes_acesso r JOIN usuarios u ON u.id=r.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 LEFT JOIN centros c ON c.id=COALESCE(u.centro_id,l.centro_id)
-                WHERE r.status='Pendente' ORDER BY r.criada_em,r.id`)).rows;
+                WHERE r.status='Pendente' AND ${escopoFila} ORDER BY r.criada_em,r.id`, [centroId])).rows;
         },
-        async contarPendentes(centroId = null) {
+        async contarPendentes(autor) {
+            const centroId = centroPermitido(autor);
             const { rows } = await banco.query(`SELECT count(*)::integer AS quantidade
                 FROM recuperacoes_acesso r JOIN usuarios u ON u.id=r.usuario_id
                 LEFT JOIN leitores l ON l.id=u.leitor_id
                 WHERE r.status='Pendente'
-                    AND ($1::integer IS NULL OR COALESCE(u.centro_id,l.centro_id)=$1)`, [centroId]);
+                    AND ${escopoFila}`, [centroId]);
             return rows[0].quantidade;
         },
         async concluir(id, dados, autorId) {
@@ -38,9 +47,13 @@ export function criarRepositorioRecuperacao(banco) {
             try {
                 await c.query('BEGIN');
                 await c.query('SELECT pg_advisory_xact_lock(20261102)');
+                const autor=(await c.query('SELECT perfil,centro_id AS "centroId",ativo FROM usuarios WHERE id=$1 FOR UPDATE',[autorId])).rows[0];
+                if (!autor?.ativo) throw erroHttp(403,'Conta responsável inativa ou inexistente.');
+                const centroId=centroPermitido(autor);
                 const pedido=(await c.query('SELECT usuario_id FROM recuperacoes_acesso WHERE id=$1',[id])).rows[0];
                 if(!pedido) throw erroHttp(404,'Solicitação não encontrada.');
-                const u=(await c.query('SELECT id,ativo FROM usuarios WHERE id=$1 FOR UPDATE',[pedido.usuario_id])).rows[0];
+                const u=(await c.query(`SELECT u.id,u.ativo FROM usuarios u LEFT JOIN leitores l ON l.id=u.leitor_id WHERE u.id=$2 AND ${escopoFila} FOR UPDATE OF u`,[centroId,pedido.usuario_id])).rows[0];
+                if(!u) throw erroHttp(404,'Solicitação não encontrada no seu Centro.');
                 const r=(await c.query('SELECT status FROM recuperacoes_acesso WHERE id=$1 FOR UPDATE',[id])).rows[0];
                 if(r.status!=='Pendente') throw erroHttp(409,'Esta solicitação já foi encerrada. Atualize a lista.');
                 if(atender) {

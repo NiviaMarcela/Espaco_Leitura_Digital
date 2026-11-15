@@ -44,26 +44,26 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
     assert.equal((await get('/api/biblioteca')).status, 401);
 });
 
-test("Relatórios só podem ser acessados por administrador, coordenador e professor", async t => {
-    for (const perfil of ['admin', 'coordenador', 'professor', 'funcionario']) {
+test("Relatórios só podem ser acessados por administrador, coordenador, professor e Outro", async t => {
+    for (const perfil of ['admin', 'coordenador', 'professor', 'funcionario', 'leitor']) {
         const get = await iniciar(t, async () => ({ rows: [] }), { id: 1, nome: 'Equipe teste', perfil, centroId: 1 });
         const opcoes = { headers: { Cookie: `espaco_sessao=${'a'.repeat(43)}` } };
         const pagina = await get('/Relatorios.html', opcoes);
         const dados = await get('/api/relatorios/emprestimos', opcoes);
-        if (perfil === 'funcionario') {
+        if (perfil === 'leitor') {
             assert.equal(pagina.status, 302);
             assert.equal(pagina.headers.get('location'), '/biblioteca.html');
             assert.equal(dados.status, 403);
         } else {
             assert.equal(pagina.status, 200);
-            assert.match(await pagina.text(), /data-auth-role="admin,coordenador,professor"/);
+            assert.match(await pagina.text(), /data-auth-role="admin,coordenador,professor,funcionario"/);
             assert.equal(dados.status, 200);
             assert.deepEqual(await dados.json(), []);
         }
     }
 });
 
-test("contagem de pedidos de senha é disponibilizada à equipe sem expor a fila ao coordenador", async t => {
+test("contagem de pedidos de senha é disponibilizada à equipe com fila acessível ao coordenador", async t => {
     for (const perfil of ['admin', 'coordenador', 'professor', 'funcionario']) {
         let parametrosContagem;
         const get = await iniciar(t, async (sql, valores) => {
@@ -80,7 +80,7 @@ test("contagem de pedidos de senha é disponibilizada à equipe sem expor a fila
             assert.deepEqual(await resposta.json(), { quantidade: 3 });
             assert.deepEqual(parametrosContagem, [perfil === 'admin' ? null : 7]);
             if (perfil === 'coordenador') {
-                assert.equal((await get('/api/recuperacoes', opcoes)).status, 403);
+                assert.equal((await get('/api/recuperacoes', opcoes)).status, 200);
             }
         } else {
             assert.equal(resposta.status, 403);

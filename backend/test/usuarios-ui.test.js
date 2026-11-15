@@ -42,11 +42,11 @@ test('avisa o administrador quando há pedidos pendentes de redefinição de sen
     assert.match(get('avisoSolicitacoesSenha').textContent,/Há 1 pedido.*aguardando análise/);
     assert.equal(get('tabelaRecuperacoes').children.length,1);
 });
-test('mantém oculto o aviso quando não há pedidos pendentes ou o perfil não é administrador',async()=>{
+test('oculta aviso de fila vazia e mostra pedidos ao coordenador',async()=>{
     const admin=await preparar('admin');
     const coordenador=await preparar('coordenador',[{id:9,nome:'Leitor teste'}]);
     assert.equal(admin.get('avisoSolicitacoesSenha').hidden,true);
-    assert.equal(coordenador.get('avisoSolicitacoesSenha').hidden,true);
+    assert.equal(coordenador.get('avisoSolicitacoesSenha').hidden,false);
 });
 test('editar usuário envia PUT sem senha nem troca de perfil',async()=>{
     const {get,pedidos,executar}=await preparar();
@@ -85,10 +85,10 @@ test('atendimento exige confirmação da identidade e usa a solicitação corret
     assert.equal(JSON.parse(r.body).identidadeConfirmada,true);
 });
 
-test('coordenador recebe perfis locais e ações de equipe sem consultar recuperação',async()=>{
+test('coordenador recebe perfis locais e ações de equipe e consulta recuperação',async()=>{
     const {get,pedidos}=await preparar('coordenador');
     assert.deepEqual(get('perfilUsuario').children.map(o=>o.value),['coordenador','professor','funcionario']);
-    assert.equal(pedidos.some(p=>p.url==='/api/recuperacoes'),false);
+    assert.equal(pedidos.some(p=>p.url==='/api/recuperacoes'),true);
     const acoes=get('tabelaUsuarios').children[0].children[5];
     assert.equal(acoes.children.length,3);assert.deepEqual(acoes.children.map(b=>b.textContent),['Editar','Redefinir senha','Inativar']);
 });

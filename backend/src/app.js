@@ -102,7 +102,7 @@ export function criarApp(banco, registrarErro = console.error) {
         };
     }
 
-    const exigirAdmin = exigirPerfil('admin');
+    const exigirResponsavel = exigirPerfil('admin', 'coordenador');
     const exigirGestao = exigirPerfil('admin', 'coordenador', 'professor','funcionario');
     const exigirConta = exigirPerfil('admin', 'coordenador', 'professor','funcionario', 'leitor');
     const expirarReservas = usuario => criarRepositorioReservas(banco, usuario).expirarVencidas();
@@ -120,11 +120,11 @@ export function criarApp(banco, registrarErro = console.error) {
         finally { await aguardar(Math.max(0,300-(Date.now()-inicio))); }
         res.status(202).json({mensagem:MENSAGEM_RECUPERACAO});
     });
-    app.get('/api/recuperacoes', exigirAdmin, async (req,res)=>res.json(await recuperacao.listar()));
+    app.get('/api/recuperacoes', exigirResponsavel, async (req,res)=>res.json(await recuperacao.listar(req.usuario)));
     app.get('/api/recuperacoes/contagem', exigirPerfil('admin', 'coordenador'), async (req,res) => {
-        res.json({ quantidade: await recuperacao.contarPendentes(req.usuario.perfil === 'admin' ? null : req.usuario.centroId) });
+        res.json({ quantidade: await recuperacao.contarPendentes(req.usuario) });
     });
-    app.post('/api/recuperacoes/:id/concluir', exigirAdmin, async (req,res)=>res.json(await recuperacao.concluir(Number(req.params.id),req.body,req.usuario.id)));
+    app.post('/api/recuperacoes/:id/concluir', exigirResponsavel, async (req,res)=>res.json(await recuperacao.concluir(Number(req.params.id),req.body,req.usuario.id)));
 
     app.post('/api/auth/login', async (req, res) => {
         const chave = req.ip;
@@ -244,7 +244,7 @@ export function criarApp(banco, registrarErro = console.error) {
     });
 
     app.get('/api/dashboard', exigirPerfil('admin', 'coordenador'), async (req, res) => res.json(await req.repos.dashboard.consultar()));
-    app.get('/api/relatorios/emprestimos', exigirPerfil('admin', 'coordenador', 'professor'), async (req, res) => {
+    app.get('/api/relatorios/emprestimos', exigirPerfil('admin', 'coordenador', 'professor', 'funcionario'), async (req, res) => {
         await expirarReservas(req.usuario);
         res.json(await req.repos.emprestimos.listar());
     });
@@ -326,7 +326,7 @@ export function criarApp(banco, registrarErro = console.error) {
     for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
-    app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor']), arquivoPagina('Relatorios'));
+    app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor', 'funcionario']), arquivoPagina('Relatorios'));
     app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {

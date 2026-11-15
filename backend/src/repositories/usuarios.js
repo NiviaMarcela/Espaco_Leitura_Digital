@@ -77,7 +77,7 @@ export function criarRepositorioUsuarios(banco, autor = null) {
                 LEFT JOIN centros c ON c.id=COALESCE(u.centro_id,l.centro_id) WHERE ($1::integer IS NULL OR (u.centro_id=$1 AND u.perfil IN ('coordenador','professor','funcionario'))) ORDER BY u.id`, [centro])).rows;
         },
         async criar(dados, autor = null) {
-            if (autor?.perfil === 'coordenador' && (!['coordenador','professor','funcionario'].includes(dados?.perfil) || !Number.isInteger(autor.centroId) || dados.centroId !== autor.centroId)) throw erroHttp(403, 'Cadastre coordenadores, professores ou funcionários somente no seu Centro.');
+            if (autor?.perfil === 'coordenador' && (!['coordenador','professor','funcionario'].includes(dados?.perfil) || !Number.isInteger(autor.centroId) || dados.centroId !== autor.centroId)) throw erroHttp(403, 'Cadastre coordenadores, professores ou usuários do perfil Outro somente no seu Centro.');
             const { email, senha } = validarCredenciais(dados);
             validarSenha(senha);
             if (!['admin','coordenador','professor','funcionario','leitor'].includes(dados.perfil)) throw erroHttp(400, 'Perfil inválido.');

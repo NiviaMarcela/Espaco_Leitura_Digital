@@ -20,7 +20,7 @@ async function carregarUsuario() {
     document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     document.querySelectorAll('[data-dashboard-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     document.querySelectorAll('[data-usuarios-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
-    document.querySelectorAll('[data-relatorios-only]').forEach(link => { link.hidden = !['admin','coordenador','professor'].includes(usuario.perfil); });
+    document.querySelectorAll('[data-relatorios-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     if (['admin', 'coordenador', 'professor', 'funcionario'].includes(usuario.perfil)) {
         atualizarContadorReservas();
         atualizarContadorDevolucoes();
@@ -54,7 +54,7 @@ async function carregarUsuario() {
             identificacao.replaceChildren(avatar, detalhes);
         }
         nome.textContent = usuario.nome || usuario.email;
-        perfil.textContent = ({ admin: 'Administrador', coordenador: 'Coordenador', professor: 'Professor', funcionario: 'Funcionário', leitor: 'Leitor' })[usuario.perfil];
+        perfil.textContent = ({ admin: 'Administrador', coordenador: 'Coordenador', professor: 'Professor', funcionario: 'Outro', leitor: 'Leitor' })[usuario.perfil];
         const alterar = document.createElement('a');
         alterar.href = '/alterarSenha.html';
         alterar.className = 'btn btn-secondary-custom btn-sm ms-2';

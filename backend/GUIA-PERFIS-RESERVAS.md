@@ -7,7 +7,7 @@
 | Administrador (`admin`) | Todos os Centros, reservas pessoais nos três Centros e gestão de usuários. Até quatro contas, contando também contas inativas. |
 | Coordenador (`coordenador`) | Dashboard, acervo, leitores, reservas, empréstimos e devoluções somente do Centro vinculado, incluindo suas reservas pessoais. Sem limite de contas. Pode cadastrar coordenadores, professores e funcionários do próprio Centro. |
 | Professor (`professor`) | Biblioteca, acervo, leitores, empréstimos e devoluções do próprio Centro. Sem Dashboard nem gestão de usuários. |
-| Funcionário (`funcionario`) | Mesmos acessos do Professor: Biblioteca, Acervo, Leitores, Reservas, Empréstimos e Devoluções do próprio Centro. |
+| Outro (`funcionario`) | Mesmos acessos do Professor: Biblioteca, Acervo, Leitores, Reservas, Empréstimos, Devoluções e Relatórios do próprio Centro. |
 | Leitor (`leitor`) | Biblioteca do próprio Centro, suas reservas e seu histórico de empréstimos. Sem menus de gestão. |
 
 Os Centros são CE Maranhão, CE Piauí e CE Bahia. A sessão recupera o Centro do coordenador ou do cadastro do leitor em cada requisição. Um ID digitado manualmente não concede acesso a outro Centro.
@@ -137,9 +137,9 @@ Validação: testes de rota protegida, acesso dos três perfis de gestão, bloqu
 
 O Dashboard identifica o escopo no título: Todos os Centros para administrador e o nome do Centro para coordenador. O backend já possuía filtro pelo Centro da sessão; a validação foi ampliada para conferir livros, leitores ativos, exemplares disponíveis, empréstimos abertos/atrasados e empréstimos recentes nos três Centros. Parâmetros enviados pelo navegador não escolhem nem ampliam o Centro do coordenador.
 
-O coordenador agora acessa **Usuários** para listar e cadastrar a equipe do próprio Centro. Pode criar Coordenador, Professor e Funcionário, com senha temporária e troca obrigatória no primeiro login. Não cria administradores, não consulta equipe de outro Centro e não muda de Centro pelo formulário. Criação de acesso de leitores continua disponível na tela Leitores. O coordenador também edita, ativa/inativa e redefine senhas da equipe do próprio Centro. O atendimento da fila de recuperação permanece exclusivo do administrador.
+O coordenador agora acessa **Usuários** para listar e cadastrar a equipe do próprio Centro. Pode criar Coordenador, Professor e Funcionário, com senha temporária e troca obrigatória no primeiro login. Não cria administradores, não consulta equipe de outro Centro e não muda de Centro pelo formulário. Criação de acesso de leitores continua disponível na tela Leitores. O coordenador também edita, ativa/inativa e redefine senhas da equipe do próprio Centro. O coordenador também atende a fila de recuperação do seu Centro, exceto pedidos de administradores.
 
-O perfil Funcionário tem os mesmos acessos de Professor, inclusive reservas pessoais e confirmação de retirada no próprio Centro. Não acessa Dashboard nem Usuários. O tipo Funcionário no cadastro de leitor não concede essas permissões; o perfil de acesso precisa ser cadastrado em Usuários.
+O perfil Outro (antes Funcionário) tem os mesmos acessos de Professor, inclusive Relatórios, reservas pessoais e confirmação de retirada no próprio Centro. Não acessa Dashboard nem Usuários. O tipo Funcionário no cadastro de leitor não concede essas permissões; o perfil de acesso precisa ser cadastrado em Usuários.
 
 A migração `011_perfil_funcionario.sql` adiciona o perfil e exige Centro vinculado, sem alterar as quatro vagas de administrador. `src/repositories/usuarios.js` aplica as restrições ao cadastro e à listagem do coordenador; `src/app.js` separa acesso ao cadastro de equipe das operações com escopo por Centro e do atendimento de recuperação exclusivo do administrador. `js/usuarios.js` ajusta os campos e ações conforme a sessão. O Dashboard recebe o ID e nome do Centro junto dos indicadores, evitando um rótulo genérico na tela.
 
@@ -154,3 +154,12 @@ As três rotas de alteração agora autorizam administrador e coordenador. Dentr
 Inativação e edição encerram sessões abertas; redefinição também exige troca da senha temporária no próximo login e não reativa conta inativa. O coordenador não pode inativar a própria conta. Ao editar a própria conta ou redefinir sua senha, precisa entrar novamente. A fila de solicitações de recuperação continua restrita ao administrador.
 
 Testes exercitam as três ações para os três perfis de equipe em cada Centro, além dos bloqueios de outro Centro, administrador, mudança de Centro/perfil e inativação da própria conta. Não foi necessária migração de banco.
+
+## Atualização de permissões — 15/11/2026
+
+- O perfil de acesso **Funcionário** passa a aparecer como **Outro**, adequado também a estagiários e outros integrantes da equipe. Novos cadastros e contas existentes usam esse nome.
+- Mantido o identificador interno `funcionario` para compatibilidade com contas, sessões e restrições do banco. Não é necessário migrar dados. O tipo **Funcionário** do cadastro de leitores é uma classificação separada e permanece disponível.
+- **Professor e Outro** possuem Biblioteca, Acervo, Leitores, Reservas, Empréstimos, Devoluções e Relatórios, sempre do próprio Centro. Não possuem Dashboard nem Usuários.
+- **Coordenador** pode abrir e concluir a fila em **Usuários → Solicitações de recuperação**, inclusive pedidos de leitores locais. Pode definir senha temporária após confirmar identidade ou encerrar sem alterar senha. Não atende administradores nem contas de outros Centros.
+- A lista, o contador e a conclusão aplicam o mesmo escopo. A conclusão verifica novamente perfil ativo do responsável e Centro da conta no banco, registra quem atendeu e invalida sessões ao redefinir senha.
+- Testes da API, DOM simulado e PostgreSQL verificam essas regras. A aparência no navegador precisa de conferência manual.

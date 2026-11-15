@@ -35,7 +35,7 @@ async function carregar() {
     for (const usuario of usuarios) {
         const linha = el('tabelaUsuarios').insertRow();
         for (const valor of [usuario.nome, usuario.email,
-            ({ admin:'Administrador', coordenador:'Coordenador', professor:'Professor', funcionario:'Funcionário', leitor:'Leitor' })[usuario.perfil],
+            ({ admin:'Administrador', coordenador:'Coordenador', professor:'Professor', funcionario:'Outro', leitor:'Leitor' })[usuario.perfil],
             usuario.centro || 'Todos os Centros', usuario.ativo ? 'Ativo' : 'Inativo']) linha.insertCell().textContent = valor;
         const acoes = linha.insertCell();
 
@@ -50,7 +50,7 @@ async function carregar() {
             botao.addEventListener('click',acao);acoes.append(botao);
         }
     }
-    el('limiteAdministradores').textContent = usuarioAtual?.perfil === 'coordenador' ? 'Equipe do seu Centro. Você pode cadastrar, editar, ativar/inativar e redefinir senhas da equipe deste Centro.' : `${usuarios.filter(u => u.perfil === 'admin').length}/4 contas de administrador. Coordenadores, professores, funcionários e leitores não têm limite de contas.`;
+    el('limiteAdministradores').textContent = usuarioAtual?.perfil === 'coordenador' ? 'Equipe do seu Centro. Você pode cadastrar, editar, ativar/inativar e redefinir senhas da equipe deste Centro.' : `${usuarios.filter(u => u.perfil === 'admin').length}/4 contas de administrador. Coordenadores, professores, outros e leitores não têm limite de contas.`;
     leitores = await api('/leitores');
     el('leitorUsuario').replaceChildren(new Option('Selecione um leitor sem acesso', ''));
     leitores.filter(l => !l.temAcesso && l.status === 'Ativo' && l.email).forEach(l => el('leitorUsuario').add(new Option(`${l.nome} · ${l.centro}`,l.id)));
@@ -84,11 +84,11 @@ async function iniciar() {
     try {
         usuarioAtual = await api('/auth/me');
         if (usuarioAtual.perfil === 'coordenador') {
-            el('perfilUsuario').replaceChildren(...['coordenador','professor','funcionario'].map(p => new Option(({coordenador:'Coordenador',professor:'Professor',funcionario:'Funcionário'})[p],p)));
+            el('perfilUsuario').replaceChildren(...['coordenador','professor','funcionario'].map(p => new Option(({coordenador:'Coordenador',professor:'Professor',funcionario:'Outro'})[p],p)));
         }
         for (const c of await api('/centros')) el('centroUsuario').add(new Option(c.nome,c.id));
         await carregar(); atualizarPerfil(); el('salvarUsuario').disabled = false;
-        if (usuarioAtual.perfil === 'admin') await carregarRecuperacoes();
+        await carregarRecuperacoes();
     } catch (erro) { el('avisoUsuarios').textContent = erro.message; }
 }
 iniciar();
@@ -163,7 +163,7 @@ async function carregarRecuperacoes() {
             : '';
         for(const pedido of pedidos) {
             const linha=el('tabelaRecuperacoes').insertRow();
-            for(const texto of [new Date(pedido.criadaEm).toLocaleString('pt-BR'),pedido.nome,pedido.email,pedido.perfil+' / '+(pedido.centro || 'Todos os Centros')])linha.insertCell().textContent=texto;
+            for(const texto of [new Date(pedido.criadaEm).toLocaleString('pt-BR'),pedido.nome,pedido.email,({admin:'Administrador',coordenador:'Coordenador',professor:'Professor',funcionario:'Outro',leitor:'Leitor'})[pedido.perfil]+' / '+(pedido.centro || 'Todos os Centros')])linha.insertCell().textContent=texto;
             const acoes=linha.insertCell();
             const atender=document.createElement('button');atender.type='button';atender.className='btn btn-warning btn-sm me-2';atender.textContent='Verificar e atender';atender.disabled=!pedido.ativo;
             atender.addEventListener('click',()=>abrirSenha({id:pedido.usuarioId,nome:pedido.nome},pedido));acoes.append(atender);

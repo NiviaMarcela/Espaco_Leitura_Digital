@@ -340,7 +340,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             const listagem=(await api('/api/usuarios',admin)).body;
             assert.ok(listagem.every(u=>u.senha_hash===undefined && u.senha===undefined));
         });
-        await t.test('recuperação assistida não revela contas e exige administrador e identidade confirmada', async () => {
+        await t.test('recuperação assistida não revela contas e exige responsável autorizado e identidade confirmada', async () => {
             const email='recuperar@teste.invalid';
             const novo=await api('/api/usuarios',admin,{nome:'Recuperação',email,senha:'Inicial123',perfil:'professor',centroId:1});assert.equal(novo.status,201);
             const cookie=await login(email,'Inicial123');
@@ -353,15 +353,26 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             assert.deepEqual((await solicitar()).body,primeira.body);
             assert.equal((await api('/api/auth/me',cookie)).status,200);
             let fila=(await api('/api/recuperacoes',admin)).body;assert.equal(fila.length,1);
+            // Pedidos de administrador nunca podem ser atendidos pelo coordenador.
+            await banco.query("INSERT INTO recuperacoes_acesso(usuario_id) SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
+            const pedidoAdmin=(await api('/api/recuperacoes',admin)).body.find(p=>p.perfil==='admin');
+            assert.ok(!(await api('/api/recuperacoes',coords[0])).body.some(p=>p.perfil==='admin'));
+            assert.equal((await api('/api/recuperacoes/'+pedidoAdmin.id+'/concluir',coords[0],{acao:'encerrar'})).status,404);
+            assert.equal((await api('/api/recuperacoes/'+pedidoAdmin.id+'/concluir',admin,{acao:'encerrar'})).status,200);
             const id=fila[0].id;assert.equal(fila[0].email,email);assert.equal(fila[0].senha_hash,undefined);
-            for(const ator of [coords[0],cookie,leitores[1].cookie]) {
+            for(const ator of [cookie,leitores[1].cookie]) {
                 assert.equal((await api('/api/recuperacoes',ator)).status,403);
                 assert.equal((await api('/api/recuperacoes/'+id+'/concluir',ator,{acao:'atender',senha:'NovaSenha123',identidadeConfirmada:true})).status,403);
             }
             assert.equal((await api('/api/recuperacoes/'+id+'/concluir',null,{acao:'encerrar'})).status,401);
             assert.equal((await api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'NovaSenha123'})).status,400);
             assert.equal((await api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'curta',identidadeConfirmada:true})).status,400);
-            const respostas=await Promise.all([1,2].map(()=>api('/api/recuperacoes/'+id+'/concluir',admin,{acao:'atender',senha:'NovaSenha123',identidadeConfirmada:true})));
+            assert.equal((await api('/api/recuperacoes',coords[0])).body[0].id,id);
+            assert.deepEqual((await api('/api/recuperacoes',coords[1])).body,[]);
+            assert.equal((await api('/api/recuperacoes/contagem',coords[1])).body.quantidade,0);
+            for (const acao of ['atender','encerrar']) assert.equal((await api('/api/recuperacoes/'+id+'/concluir',coords[1],{acao,senha:'NovaSenha123',identidadeConfirmada:true})).status,404);
+            assert.equal((await api('/api/recuperacoes/'+id+'/concluir',coords[0],{acao:'atender',senha:'NovaSenha123'})).status,400);
+            const respostas=await Promise.all([1,2].map(()=>api('/api/recuperacoes/'+id+'/concluir',coords[0],{acao:'atender',senha:'NovaSenha123',identidadeConfirmada:true})));
             assert.deepEqual(respostas.map(r=>r.status).sort(),[200,409]);
             assert.equal((await api('/api/auth/me',cookie)).status,401);
             assert.equal((await api('/api/auth/login',null,{email,senha:'Original123'})).status,401);
@@ -373,10 +384,18 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             assert.equal((await api('/api/usuarios/'+novo.body.id+'/status',admin,{ativo:false},'PATCH')).status,200);
             assert.deepEqual((await solicitar()).body,primeira.body);
             assert.equal((await api('/api/recuperacoes/'+pendente.id+'/concluir',admin,{acao:'atender',senha:'OutraSenha123',identidadeConfirmada:true})).status,409);
-            assert.equal((await api('/api/recuperacoes/'+pendente.id+'/concluir',admin,{acao:'encerrar'})).status,200);
+            assert.equal((await api('/api/recuperacoes/'+pendente.id+'/concluir',coords[0],{acao:'encerrar'})).status,200);
             assert.equal((await solicitar()).status,429);
             assert.equal((await banco.query('SELECT ativo FROM usuarios WHERE id=$1',[novo.body.id])).rows[0].ativo,false);
             assert.deepEqual((await api('/api/recuperacoes',admin)).body,[]);
+            // Leitor usa o Centro do cadastro, pois usuarios.centro_id é nulo.
+            await banco.query("INSERT INTO recuperacoes_acesso(usuario_id) SELECT id FROM usuarios WHERE perfil='leitor' AND leitor_id=$1",[leitores[0].id]);
+            const pedidoLeitor=(await api('/api/recuperacoes',coords[0])).body[0];
+            assert.equal(pedidoLeitor.perfil,'leitor');
+            assert.equal((await api('/api/recuperacoes/contagem',coords[0])).body.quantidade,1);
+            assert.deepEqual((await api('/api/recuperacoes',coords[2])).body,[]);
+            assert.equal((await api('/api/recuperacoes/'+pedidoLeitor.id+'/concluir',coords[2],{acao:'encerrar'})).status,404);
+            assert.equal((await api('/api/recuperacoes/'+pedidoLeitor.id+'/concluir',coords[0],{acao:'encerrar'})).status,200);
         });
         await t.test('senha temporária de professor e coordenador funciona após criação e redefinição',async()=>{
             for(const perfil of ['professor','coordenador']) {
@@ -424,7 +443,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                 const lista=(await api('/api/usuarios?centroId=99',coord)).body;
                 assert.ok(lista.length>=3);assert.ok(lista.every(u=>u.centroId===centroId && ['coordenador','professor','funcionario'].includes(u.perfil)));
 
-                assert.equal((await api('/api/recuperacoes',coord)).status,403);
+                assert.equal((await api('/api/recuperacoes',coord)).status,200);
             }
             assert.equal((await api('/api/dashboard',admin)).body.centroId,null);
         });
@@ -457,7 +476,7 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
                     const me=(await api('/api/auth/me',novaSessao)).body;
                     assert.equal(me.trocarSenha,true);assert.equal(me.perfil,perfil);assert.equal(me.centroId,centroId);
                 }
-                assert.equal((await api('/api/recuperacoes',coord)).status,403);
+                assert.equal((await api('/api/recuperacoes',coord)).status,200);
             }
             assert.equal((await api('/api/auth/me',admin)).status,200);
         });

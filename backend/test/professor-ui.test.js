@@ -26,7 +26,7 @@ for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' rec
     });
     vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
     await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(admin.hidden,true);assert.equal(dashboard.hidden,perfil!=='coordenador');assert.equal(usuarios.hidden,perfil!=='coordenador');assert.equal(gestao.hidden,false);assert.equal(relatorios.hidden,!['professor','coordenador'].includes(perfil));
+    assert.equal(admin.hidden,true);assert.equal(dashboard.hidden,perfil!=='coordenador');assert.equal(usuarios.hidden,perfil!=='coordenador');assert.equal(gestao.hidden,false);assert.equal(relatorios.hidden,!['professor','coordenador','funcionario'].includes(perfil));
     assert.equal(contador.hidden,false);assert.equal(contador.textContent,'2');assert.equal(linkReservas.attributes['aria-label'],'Reservas, 2 aguardando retirada');
     assert.equal(contadorDevolucoes.hidden,false);
     assert.equal(contadorDevolucoes.textContent,'2');
