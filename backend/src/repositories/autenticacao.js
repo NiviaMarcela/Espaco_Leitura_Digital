@@ -96,8 +96,8 @@ export function criarRepositorioAutenticacao(banco) {
             validarSenha(senha, 'Senha do administrador');
             const existente = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");
             if (existente.rowCount) return false;
-            const criado = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha, vaga_admin)
-                VALUES ($1,$2,'admin',false,1) ON CONFLICT DO NOTHING RETURNING id`,
+            const criado = await banco.query(`INSERT INTO usuarios(email, senha_hash, perfil, trocar_senha)
+                VALUES ($1,$2,'admin',false) ON CONFLICT DO NOTHING RETURNING id`,
             [emailNormalizado, await hashSenha(senha)]);
             if (criado.rowCount) return true;
             const administrador = await banco.query("SELECT id FROM usuarios WHERE perfil='admin' LIMIT 1");

@@ -4,7 +4,7 @@
 
 | Perfil | Acesso |
 | --- | --- |
-| Administrador (`admin`) | Todos os Centros, reservas pessoais nos três Centros e gestão de usuários. Até quatro contas, contando também contas inativas. |
+| Administrador (`admin`) | Todos os Centros, reservas pessoais nos três Centros e gestão de usuários. Sem limite de quantidade de contas. |
 | Coordenador (`coordenador`) | Dashboard, acervo, leitores, reservas, empréstimos e devoluções somente do Centro vinculado, incluindo suas reservas pessoais. Sem limite de contas. Pode cadastrar coordenadores, professores e funcionários do próprio Centro. |
 | Professor (`professor`) | Biblioteca, acervo, leitores, empréstimos e devoluções do próprio Centro. Sem Dashboard nem gestão de usuários. |
 | Outro (`funcionario`) | Mesmos acessos do Professor: Biblioteca, Acervo, Leitores, Reservas, Empréstimos, Devoluções e Relatórios do próprio Centro. |
@@ -61,7 +61,7 @@ node --env-file-if-exists=.env --test
 Remove-Item Env:RUN_POSTGRES_TESTS
 ```
 
-Os testes criam schemas temporários e os removem ao terminar; não usam os cadastros reais. `test/perfis-reservas.integration.test.js` cobre os três Centros, senha de 8 caracteres, quatro administradores concorrentes, bloqueios entre perfis/Centros, reservas, cancelamento, retirada, prazo de 30 dias, limite combinado e concorrência pela mesma cópia. Os testes antigos continuam cobrindo acervo, renovação, devolução, Dashboard e autenticação.
+Os testes criam schemas temporários e os removem ao terminar; não usam os cadastros reais. `test/perfis-reservas.integration.test.js` cobre os três Centros, senha de 8 caracteres, mais de quatro administradores concorrentes, bloqueios entre perfis/Centros, reservas, cancelamento, retirada, prazo de 30 dias, limite combinado e concorrência pela mesma cópia. Os testes antigos continuam cobrindo acervo, renovação, devolução, Dashboard e autenticação.
 
 Empréstimos existentes continuam sendo empréstimos: não são convertidos retroativamente em reservas. O novo fluxo se aplica às novas reservas.
 
@@ -99,7 +99,7 @@ Dashboard e Usuários não aparecem nos menus do professor e suas APIs são bloq
 
 **Professor como perfil de acesso** é diferente de **Professor como tipo de leitor**: selecionar o tipo no cadastro de leitores não concede permissões administrativas. O acesso de professor é criado pelo administrador ou pelo coordenador do próprio Centro na tela Usuários. O cadastro público continua restrito aos tipos Aluno e Comunidade.
 
-A migração `009_perfil_professor.sql` inclui o perfil e exige seu Centro no PostgreSQL, mantendo o limite de quatro administradores. As verificações estão em `src/app.js`, nos repositórios de autenticação, usuários, cadastro pessoal e reservas. Os menus e destinos de login foram atualizados em `js/auth-ui.js`, `js/login.js`, `js/alterarSenha.js` e nas páginas correspondentes.
+A migração `009_perfil_professor.sql` inclui o perfil e exige seu Centro no PostgreSQL, com o antigo limite de quatro administradores (removido pela migração 014). As verificações estão em `src/app.js`, nos repositórios de autenticação, usuários, cadastro pessoal e reservas. Os menus e destinos de login foram atualizados em `js/auth-ui.js`, `js/login.js`, `js/alterarSenha.js` e nas páginas correspondentes.
 
 Testes: o fluxo de professor é exercitado nos três Centros, incluindo login, troca de senha, cinco páginas permitidas, bloqueios de Dashboard/Usuários, cadastros, reserva pessoal, retirada, empréstimo direto e devolução. Testes com DOM simulado verificam os menus e o destino do login; não foi realizada inspeção visual em navegador.
 
@@ -163,3 +163,7 @@ Testes exercitam as três ações para os três perfis de equipe em cada Centro,
 - **Coordenador** pode abrir e concluir a fila em **Usuários → Solicitações de recuperação**, inclusive pedidos de leitores locais. Pode definir senha temporária após confirmar identidade ou encerrar sem alterar senha. Não atende administradores nem contas de outros Centros.
 - A lista, o contador e a conclusão aplicam o mesmo escopo. A conclusão verifica novamente perfil ativo do responsável e Centro da conta no banco, registra quem atendeu e invalida sessões ao redefinir senha.
 - Testes da API, DOM simulado e PostgreSQL verificam essas regras. A aparência no navegador precisa de conferência manual.
+
+## Administradores sem limite — 16/11/2026
+
+A migração `014_administradores_sem_limite.sql` remove o controle de vagas do banco, preservando todas as contas. Cadastro normal e criação inicial não usam mais vagas. A tela Usuários informa a quantidade cadastrada sem um teto. Somente administradores continuam podendo criar administradores; coordenadores permanecem limitados à equipe do próprio Centro. A proteção contra inativar a própria conta ou o último administrador ativo permanece. Aplicar com `npm run db:migrate` antes de iniciar a versão atual em outros ambientes.

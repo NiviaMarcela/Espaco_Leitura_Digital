@@ -74,7 +74,7 @@ test('PostgreSQL: empréstimos, renovações e devoluções atômicas', {
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         banco = new pg.Pool({ ...config, options: `-c search_path=${schema}` });
-        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql', '007_perfis_reservas.sql', '008_emprestimos_todos_perfis.sql', '009_perfil_professor.sql', '010_recuperacao_assistida.sql', '011_perfil_funcionario.sql', '012_aprovacao_emprestimos.sql']) {
+        for (const arquivo of ['001_acervo.sql', '002_leitores.sql', '003_baixa_exemplares.sql', '004_emprestimos.sql', '005_devolucoes.sql', '006_autenticacao.sql', '007_perfis_reservas.sql', '008_emprestimos_todos_perfis.sql', '009_perfil_professor.sql', '010_recuperacao_assistida.sql', '011_perfil_funcionario.sql', '012_aprovacao_emprestimos.sql', '014_administradores_sem_limite.sql']) {
             await banco.query(await readFile(new URL(`../database/${arquivo}`, import.meta.url), 'utf8'));
         }
         await criarRepositorioAutenticacao(banco).inicializarAdministrador('admin@example.org', 'admin-temporario-integration');

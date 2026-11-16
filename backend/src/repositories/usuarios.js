@@ -88,30 +88,22 @@ export function criarRepositorioUsuarios(banco, autor = null) {
             const c = await banco.connect();
             try {
                 await c.query('BEGIN');
-                let vaga = null;
-                if (dados.perfil === 'admin') {
-                    await c.query('SELECT pg_advisory_xact_lock(20261102)');
-                    const livre = await c.query(`SELECT n FROM generate_series(1,4) n
-                        WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE vaga_admin=n) ORDER BY n LIMIT 1`);
-                    if (!livre.rowCount) throw erroHttp(409, 'O sistema permite no máximo 4 administradores.');
-                    vaga = livre.rows[0].n;
-                }
                 if (dados.perfil === 'leitor') {
                     const leitor = (await c.query('SELECT email, status FROM leitores WHERE id=$1 FOR UPDATE', [dados.leitorId])).rows[0];
                     if (!leitor) throw erroHttp(404, 'Leitor não encontrado.');
                     if (leitor.status !== 'Ativo') throw erroHttp(409, 'Ative o leitor antes de criar o acesso.');
                     if (leitor.email?.toLowerCase() !== email) throw erroHttp(400, 'Use o e-mail do cadastro do leitor.');
                 }
-                const resultado = await c.query(`INSERT INTO usuarios(nome,email,senha_hash,perfil,centro_id,leitor_id,vaga_admin,trocar_senha)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,true) RETURNING id, nome, email, perfil`,
+                const resultado = await c.query(`INSERT INTO usuarios(nome,email,senha_hash,perfil,centro_id,leitor_id,trocar_senha)
+                    VALUES ($1,$2,$3,$4,$5,$6,true) RETURNING id, nome, email, perfil`,
                 [dados.nome.trim(), email, senhaHash, dados.perfil,
                     ['coordenador','professor','funcionario'].includes(dados.perfil) ? dados.centroId : null,
-                    dados.perfil === 'leitor' ? dados.leitorId : null, vaga]);
+                    dados.perfil === 'leitor' ? dados.leitorId : null]);
                 await c.query('COMMIT');
                 return resultado.rows[0];
             } catch (erro) {
                 await c.query('ROLLBACK').catch(() => {});
-                if (erro.code === '23505') throw erroHttp(409, 'Este e-mail ou leitor já possui uma conta, ou as vagas de administrador foram preenchidas.');
+                if (erro.code === '23505') throw erroHttp(409, 'Este e-mail ou leitor já possui uma conta.');
                 if (erro.code === '23503') throw erroHttp(400, 'Centro ou leitor não encontrado.');
                 throw erro;
             } finally { c.release(); }

@@ -44,7 +44,7 @@ O responsável técnico, com acesso autorizado ao computador/servidor e ao banco
 npm run admin:recuperar
 ```
 
-O programa pede o e-mail de um administrador ativo, a nova senha temporária e sua confirmação. A digitação da senha não é exibida nem passada como argumento do comando. Não cria contas, não promove usuários, não reativa contas e não altera o limite de administradores. Encerra as sessões anteriores e exige a troca da senha no login.
+O programa pede o e-mail de um administrador ativo, a nova senha temporária e sua confirmação. A digitação da senha não é exibida nem passada como argumento do comando. Não cria contas, não promove usuários, não reativa contas e não altera permissões de administradores. Encerra as sessões anteriores e exige a troca da senha no login.
 
 Esse procedimento é administrativo local, não é uma rota pública. Exige confiança no responsável e proteção das credenciais do banco. Não foi executado sobre uma conta real durante o desenvolvimento. Se não houver administrador ativo, é necessário corrigir a situação por suporte técnico autorizado; o script não contorna a inativação.
 

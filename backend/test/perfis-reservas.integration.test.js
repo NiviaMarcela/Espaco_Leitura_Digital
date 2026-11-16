@@ -72,11 +72,11 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
             // Mais de quatro coordenadores é permitido.
             for(let n=4;n<=6;n++) assert.equal((await api('/api/usuarios',admin,{nome:'Outro coordenador',email:`coord${n}@teste.invalid`,senha:'Senha123',perfil:'coordenador',centroId:1})).status,201);
         });
-        await t.test('limite de quatro administradores permanece válido com cadastros simultâneos', async () => {
+        await t.test('administradores não têm limite de quatro contas, inclusive em cadastros simultâneos', async () => {
             const resultados=await Promise.all(Array.from({length:5},(_,i)=>api('/api/usuarios',admin,{nome:'Admin teste',email:`admin${i}@teste.invalid`,senha:'Senha123',perfil:'admin'})));
-            assert.equal(resultados.filter(r=>r.status===201).length,3);
-            assert.equal(resultados.filter(r=>r.status===409).length,2);
-            assert.equal(Number((await banco.query("SELECT count(*) FROM usuarios WHERE perfil='admin'")).rows[0].count),4);
+            assert.equal(resultados.filter(r=>r.status===201).length,5);
+            assert.equal(resultados.filter(r=>r.status===409).length,0);
+            assert.equal(Number((await banco.query("SELECT count(*) FROM usuarios WHERE perfil='admin'")).rows[0].count),6);
         });
         await t.test('acervo, leitores, Centros, Dashboard e páginas respeitam o perfil e o Centro', async () => {
             for(let i=0;i<3;i++) {

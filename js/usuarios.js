@@ -50,7 +50,7 @@ async function carregar() {
             botao.addEventListener('click',acao);acoes.append(botao);
         }
     }
-    el('limiteAdministradores').textContent = usuarioAtual?.perfil === 'coordenador' ? 'Equipe do seu Centro. Você pode cadastrar, editar, ativar/inativar e redefinir senhas da equipe deste Centro.' : `${usuarios.filter(u => u.perfil === 'admin').length}/4 contas de administrador. Coordenadores, professores, outros e leitores não têm limite de contas.`;
+    el('limiteAdministradores').textContent = usuarioAtual?.perfil === 'coordenador' ? 'Equipe do seu Centro. Você pode cadastrar, editar, ativar/inativar e redefinir senhas da equipe deste Centro.' : `${usuarios.filter(u => u.perfil === 'admin').length} conta(s) de administrador. Todos os perfis podem ter contas sem limite de quantidade.`;
     leitores = await api('/leitores');
     el('leitorUsuario').replaceChildren(new Option('Selecione um leitor sem acesso', ''));
     leitores.filter(l => !l.temAcesso && l.status === 'Ativo' && l.email).forEach(l => el('leitorUsuario').add(new Option(`${l.nome} · ${l.centro}`,l.id)));
