@@ -23,6 +23,9 @@ const campoBusca =
 const filtroCategoria =
     document.getElementById("filtroCategoria");
 
+const categoriaLivro =
+    document.getElementById("categoriaLivro");
+
 
 const filtroStatus =
     document.getElementById("filtroStatus");
@@ -697,6 +700,12 @@ async function requisitarApi(caminho, metodo = "GET", dados) {
     return resultado;
 }
 
+function adicionarOpcaoCategoria(select, categoria) {
+    if (![...select.options].some(opcao => opcao.value === categoria)) {
+        select.add(new Option(categoria, categoria));
+    }
+}
+
 function atualizarObraNaTela(livro) {
     const indice = livros.findIndex(item => item.id === livro.id);
     if (indice === -1) livros.push(livro);
@@ -742,6 +751,12 @@ async function carregarAcervo() {
             if ([...select.options].some(o => o.value === anterior)) select.value = anterior;
         }
         livros = obras;
+        obras.forEach(livro => {
+            if (livro.categoria) {
+                adicionarOpcaoCategoria(categoriaLivro, livro.categoria);
+                adicionarOpcaoCategoria(filtroCategoria, livro.categoria);
+            }
+        });
         acervoCarregado = true;
         controles.forEach(c => { c.disabled = false; });
         aviso.textContent = "Acervo conectado. Os cadastros são salvos no banco de dados.";
@@ -773,8 +788,57 @@ const camposObra = {
     sinopse: "sinopseLivro"
 };
 
+const areaNovaCategoria = document.getElementById("areaNovaCategoria");
+const campoNovaCategoria = document.getElementById("novaCategoria");
+const erroNovaCategoria = document.getElementById("erroNovaCategoria");
+
+document.getElementById("abrirCriarCategoria").addEventListener("click", function () {
+    areaNovaCategoria.hidden = false;
+    campoNovaCategoria.focus();
+});
+
+function adicionarNovaCategoria() {
+    const nome = campoNovaCategoria.value.trim();
+    erroNovaCategoria.textContent = "";
+    if (!nome) {
+        erroNovaCategoria.textContent = "Informe o nome da categoria.";
+        campoNovaCategoria.focus();
+        return;
+    }
+    if (nome.length > 100) {
+        erroNovaCategoria.textContent = "A categoria deve ter no máximo 100 caracteres.";
+        campoNovaCategoria.focus();
+        return;
+    }
+
+    const existente = [...categoriaLivro.options].find(opcao =>
+        opcao.value.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR")
+    );
+    if (existente) {
+        erroNovaCategoria.textContent = "Essa categoria já existe. Selecione-a na lista.";
+        campoNovaCategoria.focus();
+        return;
+    }
+
+    adicionarOpcaoCategoria(categoriaLivro, nome);
+    adicionarOpcaoCategoria(filtroCategoria, nome);
+    categoriaLivro.value = nome;
+    campoNovaCategoria.value = "";
+    areaNovaCategoria.hidden = true;
+}
+
+document.getElementById("adicionarCategoria").addEventListener("click", adicionarNovaCategoria);
+campoNovaCategoria.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        adicionarNovaCategoria();
+    }
+});
+
 function prepararFormularioLivro(livro = null) {
     formLivro.reset();
+    areaNovaCategoria.hidden = true;
+    erroNovaCategoria.textContent = "";
     idLivroEmEdicao = livro ? livro.id : null;
     const editando = livro !== null;
     document.getElementById("erroFormularioLivro").textContent = "";

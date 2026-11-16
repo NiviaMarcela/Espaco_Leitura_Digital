@@ -747,6 +747,36 @@
 
                                 </select>
 
+                                <button
+                                    type="button"
+                                    class="btn btn-success btn-sm"
+                                    id="abrirCriarCategoria"
+                                >
+                                    Criar nova categoria
+                                </button>
+
+                                <div id="areaNovaCategoria" class="mt-2" hidden>
+                                    <label for="novaCategoria" class="form-label">Nome da nova categoria</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            id="novaCategoria"
+                                            maxlength="100"
+                                            autocomplete="off"
+                                        >
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary-custom"
+                                            id="adicionarCategoria"
+                                        >
+                                            Adicionar
+                                        </button>
+                                    </div>
+                                    <p id="erroNovaCategoria" class="text-danger mt-1 mb-0" role="alert"></p>
+                                    <small class="text-muted">A categoria será salva ao cadastrar ou editar um livro.</small>
+                                </div>
+
                             </div>
 
 
