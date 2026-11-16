@@ -19,6 +19,7 @@ async function carregarUsuario() {
     linksAnonimos.forEach(link => { link.hidden = true; });
     document.querySelectorAll('[data-gestao-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     document.querySelectorAll('[data-dashboard-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
+    document.querySelectorAll('[data-livro-vivo-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     document.querySelectorAll('[data-usuarios-only]').forEach(link => { link.hidden = !['admin','coordenador'].includes(usuario.perfil); });
     document.querySelectorAll('[data-relatorios-only]').forEach(link => { link.hidden = !['admin','coordenador','professor','funcionario'].includes(usuario.perfil); });
     if (['admin', 'coordenador', 'professor', 'funcionario'].includes(usuario.perfil)) {

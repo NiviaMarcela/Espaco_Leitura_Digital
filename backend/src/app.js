@@ -1,3 +1,4 @@
+import { criarRepositorioLivroVivo } from './repositories/livro-vivo.js';
 import { criarRepositorioRecuperacao, MENSAGEM_RECUPERACAO } from './repositories/recuperacao.js';
 import { setTimeout as aguardar } from 'node:timers/promises';
 import express from "express";
@@ -243,6 +244,10 @@ export function criarApp(banco, registrarErro = console.error) {
         res.status(204).end();
     });
 
+    app.get('/api/livro-vivo/disponiveis', exigirResponsavel, async(req,res)=>res.json(await criarRepositorioLivroVivo(banco,req.usuario).disponiveis()));
+    app.get('/api/livro-vivo', exigirResponsavel, async(req,res)=>res.json(await criarRepositorioLivroVivo(banco,req.usuario).listar()));
+    app.post('/api/livro-vivo', exigirResponsavel, async(req,res)=>res.status(201).json(await criarRepositorioLivroVivo(banco,req.usuario).transferir(req.body)));
+    app.post('/api/livro-vivo/:id/retorno', exigirResponsavel, async(req,res)=>res.json(await criarRepositorioLivroVivo(banco,req.usuario).retornar(Number(req.params.id),req.body)));
     app.get('/api/dashboard', exigirPerfil('admin', 'coordenador'), async (req, res) => res.json(await req.repos.dashboard.consultar()));
     app.get('/api/relatorios/emprestimos', exigirPerfil('admin', 'coordenador', 'professor', 'funcionario'), async (req, res) => {
         await expirarReservas(req.usuario);
@@ -327,6 +332,7 @@ export function criarApp(banco, registrarErro = console.error) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
     app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor', 'funcionario']), arquivoPagina('Relatorios'));
+    app.get('/livroVivo.html', paginaProtegida(['admin','coordenador']), arquivoPagina('livroVivo'));
     app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
     for (const pasta of ["css", "js", "assets"]) {

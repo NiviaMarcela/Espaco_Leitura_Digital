@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livro Vivo | Espaço de Leitura Digital</title>
+    <link rel="icon" type="image/svg+xml" sizes="any" href="/assets/favicon/favicon.svg?v=2">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        @media print {
+            @page { size: landscape; margin: 12mm; }
+            body { background: #fff !important; color: #000 !important; }
+            .sidebar, .sidebar-mobile, .topbar, .report-filters, .report-actions, .footer { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .page-header, .content-card { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+            .page-header { margin-bottom: 12px !important; }
+            .table-responsive { overflow: visible !important; }
+            .custom-table { width: 100% !important; font-size: 9pt !important; }
+            .custom-table th, .custom-table td { padding: 5px !important; }
+            .report-print-heading { display: block !important; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .report-print-heading { display: none; }
+    </style>
+</head>
+<body data-auth-role="admin,coordenador">
+    <aside class="sidebar d-none d-lg-flex">
+        <div class="brand">
+            <img src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg" alt="Instituto Janela para o Mundo" class="logo-instituto">
+            <div class="system-name"><strong>Espaço de Leitura Digital</strong><span>Gestão de acervo e empréstimos</span></div>
+        </div>
+        <nav class="menu" aria-label="Menu principal">
+<a class="menu-item active" aria-current="page" href="/livroVivo.html" data-livro-vivo-only hidden><i class="bi bi-gift" aria-hidden="true"></i>Livro Vivo</a>
+            <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
+            <a class="menu-item" href="dashboard.html" data-dashboard-only hidden><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard</a>
+            <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+            <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
+            <a class="menu-item" href="leitores.html"><i class="bi bi-people" aria-hidden="true"></i>Leitores</a>
+            <a class="menu-item" href="reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
+            <a class="menu-item" href="emprestimos.html"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Empréstimos</a>
+            <a class="menu-item" href="devolucoes.html"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>Devoluções<span class="menu-badge" data-devolucoes-count hidden></span></a>
+            <a class="menu-item" href="Relatorios.html" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>Relatórios</a>
+        </nav>
+        <div class="sidebar-footer"><span>Instituto Janela para o Mundo</span><small>Espaço de Leitura Digital</small></div>
+    </aside>
+
+    <div class="offcanvas offcanvas-start sidebar-mobile" tabindex="-1" id="menuMobile" aria-labelledby="menuMobileTitulo">
+        <div class="offcanvas-header">
+            <h2 class="offcanvas-title fs-6" id="menuMobileTitulo">Espaço de Leitura Digital</h2>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="menu" aria-label="Menu principal">
+<a class="menu-item active" aria-current="page" href="/livroVivo.html" data-livro-vivo-only hidden><i class="bi bi-gift" aria-hidden="true"></i>Livro Vivo</a>
+                <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
+                <a class="menu-item" href="dashboard.html" data-dashboard-only hidden><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>Dashboard</a>
+                <a class="menu-item" href="/biblioteca.html"><i class="bi bi-collection" aria-hidden="true"></i>Biblioteca</a>
+                <a class="menu-item" href="acervo.html"><i class="bi bi-book" aria-hidden="true"></i>Acervo</a>
+                <a class="menu-item" href="leitores.html"><i class="bi bi-people" aria-hidden="true"></i>Leitores</a>
+                <a class="menu-item" href="reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
+                <a class="menu-item" href="emprestimos.html"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>Empréstimos</a>
+                <a class="menu-item" href="devolucoes.html"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>Devoluções<span class="menu-badge" data-devolucoes-count hidden></span></a>
+                <a class="menu-item" href="Relatorios.html" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>Relatórios</a>
+            </nav>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-menu-mobile d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-label="Abrir menu"><i class="bi bi-list"></i></button>
+                <div><h1>Espaço de Leitura Digital</h1><p>Doações para escolas e comunidades.</p></div>
+            </div>
+            <div class="user-info" aria-live="polite">Conferindo sessão…</div>
+        </header>
+
+
+<section class="page-header"><div><span class="page-eyebrow">Instituto Janela para o Mundo</span><h2>Livro Vivo</h2><p>Leve histórias a novas estantes. Registre o destino e acompanhe cada exemplar.</p></div></section>
+<p id="avisoLivroVivo" role="status" aria-live="polite">Carregando…</p>
+<section class="content-card mb-4 report-filters"><h3>Nova transferência</h3>
+<p>Selecione as cópias disponíveis de um Centro. A quantidade será calculada automaticamente. A confirmação registra você como responsável pela autorização.</p>
+<form id="formLivroVivo"><fieldset id="camposLivroVivo" disabled>
+<div class="row g-3 mb-3">
+<div class="col-md-4"><label for="centroLivroVivo" class="form-label">Centro de origem</label><select id="centroLivroVivo" class="form-select" required></select></div>
+<div class="col-md-4"><label for="localidadeLivroVivo" class="form-label">Escola, comunidade ou localidade de destino</label><input id="localidadeLivroVivo" class="form-control" maxlength="200" required></div>
+<div class="col-md-4"><label for="modalidadeLivroVivo" class="form-label">Modalidade</label><select id="modalidadeLivroVivo" class="form-select" required><option value="">Selecione</option><option value="definitiva">Definitiva</option><option value="possivel_devolucao">Com possibilidade de devolução</option></select></div>
+</div>
+<p class="text-secondary">Ambas as modalidades retiram as cópias de circulação. Na modalidade com possibilidade de devolução, registre o retorno após receber e conferir o exemplar. Não há prazo automático de devolução.</p>
+<label for="buscaLivroVivo" class="form-label">Buscar título, autor ou código do exemplar</label><input type="search" id="buscaLivroVivo" class="form-control mb-3">
+<div class="table-responsive" style="max-height:420px;overflow:auto"><table class="table custom-table"><thead><tr><th>Selecionar</th><th>Livro / autor</th><th>Exemplar</th><th>Centro</th></tr></thead><tbody id="disponiveisLivroVivo"></tbody></table></div>
+<p id="quantidadeLivroVivo" aria-live="polite">0 exemplares selecionados.</p>
+<button type="submit" id="transferirLivroVivo" class="btn btn-success" disabled><i class="bi bi-gift me-2"></i>Transferir selecionados</button>
+</fieldset></form></section>
+<section class="content-card mb-4"><div class="card-heading"><h3>Histórico do Livro Vivo</h3><button type="button" id="atualizarLivroVivo" class="btn btn-outline-primary report-actions">Atualizar</button></div>
+<div class="row g-3 mb-3 report-filters">
+<div class="col-md-4"><label for="buscaHistoricoVivo" class="form-label">Destino, Centro, livro ou responsável</label><input type="search" id="buscaHistoricoVivo" class="form-control"></div>
+<div class="col-md-3"><label for="inicioHistoricoVivo" class="form-label">Transferências a partir de</label><input type="date" id="inicioHistoricoVivo" class="form-control"></div>
+<div class="col-md-3"><label for="fimHistoricoVivo" class="form-label">Até</label><input type="date" id="fimHistoricoVivo" class="form-control"></div>
+<div class="col-md-2"><label for="tipoHistoricoVivo" class="form-label">Modalidade</label><select id="tipoHistoricoVivo" class="form-select"><option value="">Todas</option><option value="definitiva">Definitiva</option><option value="possivel_devolucao">Possível devolução</option></select></div></div>
+<p id="resumoLivroVivo" aria-live="polite"></p>
+<button type="button" id="imprimirLivroVivo" class="btn btn-outline-secondary mb-3 report-actions" disabled>Imprimir / salvar PDF do histórico filtrado</button>
+<div class="table-responsive"><table class="table custom-table"><thead><tr><th>Data / Centro</th><th>Destino / modalidade</th><th>Quantidades</th><th>Autorizado por</th><th>Exemplares e retornos</th></tr></thead><tbody id="historicoLivroVivo"></tbody></table></div>
+</section>
+<footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer></main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/auth-ui.js"></script><script type="module" src="js/livro-vivo.js"></script></body></html>
