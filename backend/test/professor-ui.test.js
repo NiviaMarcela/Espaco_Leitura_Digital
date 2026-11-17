@@ -3,6 +3,68 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
+class AvatarElemento {
+    constructor(tagName='div',className='') {
+        this.tagName=tagName.toLowerCase();
+        this.className=className;
+        this.children=[];
+        this.attributes={};
+        this.textContent='';
+    }
+    setAttribute(nome,valor){this.attributes[nome]=valor;}
+    append(...elementos){this.children.push(...elementos);}
+    prepend(...elementos){this.children.unshift(...elementos);}
+    replaceChildren(...elementos){this.children=elementos;}
+    addEventListener(){}
+    querySelector(seletor){
+        for(const filho of this.children){
+            const corresponde=seletor.startsWith('.')
+                ? filho.className.split(/\s+/).includes(seletor.slice(1))
+                : filho.tagName===seletor;
+            if(corresponde)return filho;
+            const descendente=filho.querySelector(seletor);
+            if(descendente)return descendente;
+        }
+        return null;
+    }
+}
+
+for(const perfil of ['admin','coordenador','professor','funcionario','leitor']) test(`${perfil} vê o ícone de usuário no avatar`,async()=>{
+    const identificacao=new AvatarElemento('div','user-info');
+    if(perfil==='leitor'){
+        const detalhes=new AvatarElemento();
+        detalhes.append(new AvatarElemento('strong'),new AvatarElemento('span'));
+        identificacao.append(detalhes);
+    }
+    const contexto=vm.createContext({
+        document:{
+            body:{dataset:{authRole:'admin,coordenador,professor,funcionario,leitor'}},
+            hidden:false,
+            addEventListener(){},
+            querySelectorAll:()=>[],
+            querySelector:seletor=>seletor==='.user-info'?identificacao:null,
+            createElement:tagName=>new AvatarElemento(tagName)
+        },
+        window:{setInterval(){}},
+        location:{pathname:'/biblioteca.html',replace(){}},
+        fetch:async()=>({ok:true,json:async()=>({perfil,nome:'Usuário teste',trocarSenha:false})})
+    });
+    vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
+    await new Promise(resolve=>setImmediate(resolve));
+    const avatar=identificacao.querySelector('.user-avatar');
+    assert.ok(avatar);
+    assert.equal(avatar.querySelector('i').className,'bi bi-person-fill fs-4');
+    assert.equal(identificacao.querySelector('strong').textContent,'Usuário teste');
+});
+
+test('telas com identificação de usuário exibem o ícone desde o carregamento',()=>{
+    for(const arquivo of ['acervo.html','biblioteca.html','dashboard.html','devolucoes.html','emprestimos.html',
+        'leitores.html','livroVivo.html','meusEmprestimos.html','Relatorios.html','reservas.html','usuarios.html']){
+        const html=readFileSync(new URL(`../../${arquivo}`,import.meta.url),'utf8');
+        assert.match(html,/class="user-avatar"[^>]*>[\s\S]*?class="bi bi-person-fill fs-4"/,arquivo);
+    }
+});
+
 for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' recebe os menus permitidos',async()=>{
     const admin={hidden:false},dashboard={hidden:false},gestao={hidden:true},usuarios={hidden:true},relatorios={hidden:true};
     const linkReservas={attributes:{},setAttribute(nome,valor){this.attributes[nome]=valor;}};

@@ -40,13 +40,21 @@ async function carregarUsuario() {
     }
     const identificacao = document.querySelector('.user-info');
     if (identificacao) {
+        let avatar = identificacao.querySelector('.user-avatar');
+        if (!avatar) {
+            avatar = document.createElement('div');
+            avatar.className = 'user-avatar';
+            identificacao.prepend(avatar);
+        }
+        avatar.setAttribute('aria-hidden', 'true');
+        const iconeAvatar = document.createElement('i');
+        iconeAvatar.className = 'bi bi-person-fill fs-4';
+        iconeAvatar.setAttribute('aria-hidden', 'true');
+        avatar.replaceChildren(iconeAvatar);
+
         let nome = identificacao.querySelector('strong');
         let perfil = identificacao.querySelector('span');
         if (!nome || !perfil) {
-            const avatar = document.createElement('div');
-            avatar.className = 'user-avatar';
-            avatar.setAttribute('aria-hidden', 'true');
-            avatar.textContent = (usuario.nome || usuario.email).slice(0, 2).toLocaleUpperCase('pt-BR');
             const detalhes = document.createElement('div');
             detalhes.className = 'd-none d-md-block';
             nome = document.createElement('strong');
