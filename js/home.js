@@ -171,13 +171,6 @@ function criarImagemLista(livro) {
     return capa;
 }
 
-function adicionarDadoLivro(lista, rotulo, valor) {
-    if (!valor) return;
-    const item = criarNo('div');
-    item.append(criarNo('dt', rotulo), criarNo('dd', String(valor)));
-    lista.append(item);
-}
-
 function mostrarLivrosCategoria(grupoId) {
     grupoCategoriaAtual = grupoId;
     const grupo = gruposCategoria[grupoId];
@@ -218,14 +211,8 @@ function mostrarLivrosCategoria(grupoId) {
         const titulo = criarNo('button', livro.titulo || 'Livro sem título', 'home-category-book-title');
         titulo.type = 'button';
         titulo.addEventListener('click', () => abrirDetalhesLivro(livro));
-        const metadados = criarNo('dl', undefined, 'home-category-book-metadata');
-        adicionarDadoLivro(metadados, 'Autor', livro.autor);
-        adicionarDadoLivro(metadados, 'Categoria', livro.categoria);
-        adicionarDadoLivro(metadados, 'Editora', livro.editora);
-        adicionarDadoLivro(metadados, 'Ano', livro.ano);
-        adicionarDadoLivro(metadados, 'Faixa etária', livro.faixaEtaria);
-        adicionarDadoLivro(metadados, 'ISBN', livro.isbn);
-        informacoes.append(titulo, metadados, criarNo('p', livro.sinopse || 'Sinopse não informada.', 'home-category-book-synopsis'));
+        const autor = criarNo('p', livro.autor ? `Por ${livro.autor}` : 'Autor não informado', 'home-category-book-author');
+        informacoes.append(titulo, autor);
         artigo.append(botaoCapa, informacoes);
         listaLivrosCategoria.append(artigo);
     });
