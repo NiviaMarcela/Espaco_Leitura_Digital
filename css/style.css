@@ -1920,3 +1920,6 @@ body[data-user-role="coordenador"] [data-leitor-only] {
 .reserva-status-cancelada { color: #8b2630; background: #f8d7da; }
 .reserva-status-neutra { color: #41464b; background: #e2e3e5; }
 #tabelaReservas td { vertical-align: middle; }
+
+/* Submenu do Acervo, presente apenas em Acervo e Categorias. */
+.menu .menu-subitem { margin-left: 1.5rem; padding-left: 1rem; border-left: 2px solid #cbd5e1; font-size: .92rem; }

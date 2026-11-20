@@ -3,7 +3,7 @@ import { erroHttp } from "../validation.js";
 // O banco usa snake_case; a resposta mantém os nomes usados no frontend atual.
 export function criarRepositorioAcervo(banco, centroId = null) {
     const consultaLivros = `
-        SELECT l.id, l.titulo, l.autor, l.isbn, l.editora, l.ano, l.categoria,
+        SELECT l.id, l.titulo, l.autor, l.isbn, l.editora, l.ano, l.categoria, l.centro_id AS "centroId",
                l.faixa_etaria AS "faixaEtaria", l.capa_url AS "capaUrl", l.sinopse,
                COALESCE(
                    jsonb_agg(jsonb_build_object(
@@ -43,6 +43,13 @@ export function criarRepositorioAcervo(banco, centroId = null) {
             [livroId, dados.centroId, dados.localizacao, dados.quantidade]);
     }
 
+    async function categoria(conexao,nome,centro) {
+        if (centroId!==null && centro!==centroId) throw erroHttp(403,'Use o seu Centro.');
+        if (!centro) throw erroHttp(400,'Este livro não possui Centro. Adicione exemplares antes de editar.');
+        return (await conexao.query(`INSERT INTO categorias(nome,centro_id) VALUES($1,$2)
+            ON CONFLICT(centro_id,lower(btrim(nome))) DO UPDATE SET nome=categorias.nome RETURNING nome`,[nome.trim(),centro])).rows[0].nome;
+    }
+
     const valoresObra = d => [d.titulo, d.autor, d.isbn, d.editora, d.ano, d.categoria, d.faixaEtaria, d.capaUrl, d.sinopse];
 
     return {
@@ -63,9 +70,10 @@ export function criarRepositorioAcervo(banco, centroId = null) {
         },
         async criarLivro(dados, exemplares) {
             return transacao(async conexao => {
+                dados={...dados,categoria:await categoria(conexao,dados.categoria,exemplares.centroId)};
                 const resultado = await conexao.query(`INSERT INTO livros
-                    (titulo, autor, isbn, editora, ano, categoria, faixa_etaria, capa_url, sinopse)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`, valoresObra(dados));
+                    (titulo, autor, isbn, editora, ano, categoria, faixa_etaria, capa_url, sinopse,centro_id)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, [...valoresObra(dados),exemplares.centroId]);
                 const id = resultado.rows[0].id;
                 await inserirExemplares(conexao, id, exemplares);
                 return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);
@@ -73,19 +81,9 @@ export function criarRepositorioAcervo(banco, centroId = null) {
         },
         async editarLivro(id, dados) {
             return transacao(async conexao => {
-                if (centroId !== null) {
-                    await conexao.query('SELECT id FROM livros WHERE id=$1 FOR UPDATE', [id]);
-                    const copia = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id=$2 LIMIT 1', [id, centroId]);
-                    if (!copia.rowCount) throw erroHttp(404, 'Livro não encontrado no seu Centro.');
-                    const compartilhada = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id<>$2 LIMIT 1', [id, centroId]);
-                    if (compartilhada.rowCount) {
-                        // Se a obra é compartilhada, a edição cria uma descrição própria para este Centro.
-                        const nova = await conexao.query(`INSERT INTO livros(titulo,autor,isbn,editora,ano,categoria,faixa_etaria,capa_url,sinopse)
-                            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`, valoresObra(dados));
-                        await conexao.query('UPDATE exemplares SET livro_id=$3 WHERE livro_id=$1 AND centro_id=$2', [id, centroId, nova.rows[0].id]);
-                        return criarRepositorioAcervo(conexao, centroId).buscarLivro(nova.rows[0].id);
-                    }
-                }
+                const atual=(await conexao.query('SELECT centro_id FROM livros WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE',[id,centroId])).rows[0];
+                if(!atual)throw erroHttp(404,'Livro não encontrado no seu Centro.');
+                dados={...dados,categoria:await categoria(conexao,dados.categoria,atual.centro_id)};
                 const resultado = await conexao.query(`UPDATE livros SET
                     titulo=$1, autor=$2, isbn=$3, editora=$4, ano=$5, categoria=$6,
                     faixa_etaria=$7, capa_url=$8, sinopse=$9 WHERE id=$10 RETURNING id`,
@@ -96,11 +94,20 @@ export function criarRepositorioAcervo(banco, centroId = null) {
         },
         async adicionarExemplares(id, dados) {
             return transacao(async conexao => {
-                const livro = await conexao.query("SELECT id FROM livros WHERE id=$1 FOR UPDATE", [id]);
+                const livro = await conexao.query("SELECT * FROM livros WHERE id=$1 FOR UPDATE", [id]);
                 if (!livro.rowCount) throw erroHttp(404, "Livro não encontrado.");
                 if (centroId !== null) {
                     const pertence = await conexao.query('SELECT id FROM exemplares WHERE livro_id=$1 AND centro_id=$2 LIMIT 1', [id, centroId]);
                     if (!pertence.rowCount) throw erroHttp(404, 'Livro não encontrado no seu Centro.');
+                }
+                const original=livro.rows[0];
+                if(original.centro_id!==dados.centroId){
+                    const nome=await categoria(conexao,original.categoria,dados.centroId);
+                    if(original.centro_id===null){await conexao.query('UPDATE livros SET centro_id=$2,categoria=$3 WHERE id=$1',[id,dados.centroId,nome]);}
+                    else {
+                        id=(await conexao.query(`INSERT INTO livros(titulo,autor,isbn,editora,ano,categoria,faixa_etaria,capa_url,sinopse,centro_id)
+                            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,[original.titulo,original.autor,original.isbn,original.editora,original.ano,nome,original.faixa_etaria,original.capa_url,original.sinopse,dados.centroId])).rows[0].id;
+                    }
                 }
                 await inserirExemplares(conexao, id, dados);
                 return criarRepositorioAcervo(conexao, centroId).buscarLivro(id);

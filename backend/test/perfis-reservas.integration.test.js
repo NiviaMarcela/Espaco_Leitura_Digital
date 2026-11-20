@@ -183,9 +183,9 @@ test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reser
         await t.test('coordenador edita sua obra sem alterar a descrição de outro Centro', async () => {
             const obra=await api(`/api/livros/${obras[0].id}/exemplares`,admin,{centroId:2,quantidade:1});assert.equal(obra.status,201);
             const atualizada=await api(`/api/livros/${obras[0].id}`,coords[0],{titulo:'Título só Maranhão',autor:'Autora',categoria:'Literatura'},'PUT');
-            assert.equal(atualizada.status,200,JSON.stringify(atualizada.body));assert.notEqual(atualizada.body.id,obras[0].id);
+            assert.equal(atualizada.status,200,JSON.stringify(atualizada.body));assert.equal(atualizada.body.id,obras[0].id);
             assert.ok(atualizada.body.exemplares.every(e=>e.centroId===1));
-            assert.equal((await api(`/api/livros/${obras[0].id}`,coords[1])).body.titulo,'Obra do Centro 1');
+            assert.equal((await api(`/api/livros/${obra.body.id}`,coords[1])).body.titulo,'Obra do Centro 1');
         });
         const pessoal={nome:'Pessoa da equipe',tipo:'Funcionário',dataNascimento:'1990-01-01',telefone:'85999999999',centroId:1};
         let adminLeitor;

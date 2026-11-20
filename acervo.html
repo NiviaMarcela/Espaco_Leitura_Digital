@@ -83,6 +83,7 @@
                 <i class="bi bi-book"></i>
                 Acervo
             </a>
+<a class="menu-item menu-subitem" href="/categorias.html"><i class="bi bi-tags" aria-hidden="true"></i>Categorias</a>
 
 
 
@@ -183,6 +184,7 @@
                     <i class="bi bi-book"></i>
                     Acervo
                 </a>
+<a class="menu-item menu-subitem" href="/categorias.html"><i class="bi bi-tags" aria-hidden="true"></i>Categorias</a>
 
 
 
@@ -231,6 +233,7 @@
     ========================== -->
 
     <main class="main-content">
+
 
 
         <!-- TOPBAR -->
@@ -632,6 +635,41 @@
 
                         <div class="row g-3">
 
+                            <div class="col-12">
+
+                                <label
+                                    for="centroLivro"
+                                    class="form-label"
+                                >
+                                    Centro de Educação *
+                                </label>
+
+                                <select
+                                    class="form-select"
+                                    id="centroLivro"
+                                    required
+                                >
+
+                                    <option value="">
+                                        Selecione o Centro
+                                    </option>
+
+                                    <option value="CE Maranhão">
+                                        CE Maranhão
+                                    </option>
+
+                                    <option value="CE Piauí">
+                                        CE Piauí
+                                    </option>
+
+                                    <option value="CE Bahia">
+                                        CE Bahia
+                                    </option>
+
+                                </select>
+
+                            </div>
+
 
                             <div class="col-md-8">
 
@@ -724,58 +762,10 @@
                                     id="categoriaLivro"
                                     required
                                 >
+<option value="">Selecione primeiro o Centro</option>
+</select>
 
-                                    <option value="">
-                                        Selecione
-                                    </option>
 
-                                    <option value="Literatura">
-                                        Literatura
-                                    </option>
-
-                                    <option value="Infantojuvenil">
-                                        Infantojuvenil
-                                    </option>
-
-                                    <option value="Fantasia">
-                                        Fantasia
-                                    </option>
-
-                                    <option value="Aventura">
-                                        Aventura
-                                    </option>
-
-                                </select>
-
-                                <button
-                                    type="button"
-                                    class="btn btn-success btn-sm"
-                                    id="abrirCriarCategoria"
-                                >
-                                    Criar nova categoria
-                                </button>
-
-                                <div id="areaNovaCategoria" class="mt-2" hidden>
-                                    <label for="novaCategoria" class="form-label">Nome da nova categoria</label>
-                                    <div class="input-group">
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="novaCategoria"
-                                            maxlength="100"
-                                            autocomplete="off"
-                                        >
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary-custom"
-                                            id="adicionarCategoria"
-                                        >
-                                            Adicionar
-                                        </button>
-                                    </div>
-                                    <p id="erroNovaCategoria" class="text-danger mt-1 mb-0" role="alert"></p>
-                                    <small class="text-muted">A categoria será salva ao cadastrar ou editar um livro.</small>
-                                </div>
 
                             </div>
 
@@ -822,40 +812,7 @@
 
                             </div>
 
-                            <div class="col-md-4">
-
-                                <label
-                                    for="centroLivro"
-                                    class="form-label"
-                                >
-                                    Centro de Educação *
-                                </label>
-
-                                <select
-                                    class="form-select"
-                                    id="centroLivro"
-                                    required
-                                >
-
-                                    <option value="">
-                                        Selecione o Centro
-                                    </option>
-
-                                    <option value="CE Maranhão">
-                                        CE Maranhão
-                                    </option>
-
-                                    <option value="CE Piauí">
-                                        CE Piauí
-                                    </option>
-
-                                    <option value="CE Bahia">
-                                        CE Bahia
-                                    </option>
-
-                                </select>
-
-                            </div>
+                            
 
                             <div class="col-md-8">
 

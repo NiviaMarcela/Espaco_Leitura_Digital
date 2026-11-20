@@ -22,7 +22,7 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         await banco.query(await readFile(new URL("../database/002_leitores.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/003_baixa_exemplares.sql", import.meta.url), "utf8"));
         await banco.query(await readFile(new URL("../database/006_autenticacao.sql", import.meta.url), "utf8"));
-        for (const nome of ['004_emprestimos.sql', '005_devolucoes.sql', '007_perfis_reservas.sql', '012_aprovacao_emprestimos.sql', '014_administradores_sem_limite.sql']) {
+        for (const nome of ['004_emprestimos.sql', '005_devolucoes.sql', '007_perfis_reservas.sql', '012_aprovacao_emprestimos.sql', '014_administradores_sem_limite.sql', '015_categorias_por_centro.sql']) {
             await banco.query(await readFile(new URL('../database/' + nome, import.meta.url), 'utf8'));
         }
         const auth = criarRepositorioAutenticacao(banco);
@@ -81,12 +81,12 @@ test("acervo persiste obras e cópias atomicamente no PostgreSQL", {
         assert.equal(editada.body.id, id);
         assert.deepEqual(editada.body.exemplares, antes.exemplares);
         assert.equal((await enviar(`/api/livros/${id}`)).body.titulo, "Título editado");
-        const adicionada = await enviar(`/api/livros/${id}/exemplares`, "POST", { quantidade: 2, centroId: 2, localizacao: "Estante B" });
+        const adicionada = await enviar(`/api/livros/${id}/exemplares`, "POST", { quantidade: 2, centroId: 1, localizacao: "Estante B" });
         assert.equal(adicionada.status, 201);
         assert.equal(adicionada.body.exemplares.length, 4);
         assert.equal(new Set(adicionada.body.exemplares.map(e => e.codigo)).size, 4);
         assert.equal(adicionada.body.exemplares.filter(e => e.status === "Emprestado").length, 1);
-        const concorrentes = await Promise.all([1, 2].map(() => enviar(`/api/livros/${id}/exemplares`, "POST", { quantidade: 1, centroId: 3 })));
+        const concorrentes = await Promise.all([1, 2].map(() => enviar(`/api/livros/${id}/exemplares`, "POST", { quantidade: 1, centroId: 1 })));
         assert.ok(concorrentes.every(r => r.status === 201));
         const final = (await enviar(`/api/livros/${id}`)).body;
         assert.equal(final.exemplares.length, 6);

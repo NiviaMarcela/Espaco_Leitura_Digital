@@ -20,9 +20,10 @@ test('Livro Vivo: transferência, isolamento, concorrência e retorno auditado',
             await banco.query(`INSERT INTO usuarios(nome,email,senha_hash,perfil,centro_id) SELECT $1,$2,senha_hash,$3,$4 FROM usuarios WHERE perfil='admin'`,[perfil+' '+centro,perfil+centro+'@teste.invalid',perfil,centro]);
         }
         await banco.query("UPDATE usuarios SET trocar_senha=false");
-        await banco.query("INSERT INTO livros(titulo,autor,categoria) VALUES('Livro teste','Autora','Literatura')");
+        await banco.query("INSERT INTO categorias(nome,centro_id) SELECT 'Literatura',id FROM centros");
+        await banco.query("INSERT INTO livros(titulo,autor,categoria,centro_id) SELECT 'Livro teste','Autora','Literatura',id FROM centros ORDER BY id");
         await banco.query('INSERT INTO exemplares(livro_id,centro_id) SELECT 1,1 FROM generate_series(1,12)');
-        await banco.query('INSERT INTO exemplares(livro_id,centro_id) VALUES(1,2),(1,3)');
+        await banco.query('INSERT INTO exemplares(livro_id,centro_id) VALUES(2,2),(3,3)');
         servidor=criarApp(banco,(...args)=>erros.push(args)).listen(0,'127.0.0.1');await once(servidor,'listening');
         const base='http://127.0.0.1:'+servidor.address().port;
         async function api(path,cookie,dados){const r=await fetch(base+path,{redirect:'manual',method:dados?'POST':'GET',headers:{...(cookie?{Cookie:cookie}:{}),...(dados?{'Content-Type':'application/json'}:{})},body:dados?JSON.stringify(dados):undefined});return {status:r.status,headers:r.headers,body:r.headers.get('content-type')?.includes('json')?await r.json():await r.text()};}

@@ -465,3 +465,17 @@ test('timeout é identificado no terminal sem expor parâmetros ou credenciais',
     assert.match(logs[0][1],/BANCO_TIMEOUT/);assert.doesNotMatch(logs[0][1],/SEM_CODIGO/);
     assert.deepEqual(await resposta.json(),{erro:'Banco de dados indisponível.'});
 });
+
+ test('categorias seguem os perfis de gestão e o Centro da sessão',async t=>{
+    for(const perfil of ['admin','coordenador','professor','funcionario','leitor']){
+        let parametros;
+        const get=await iniciar(t,async(sql,valores)=>{if(sql.includes('FROM categorias c'))parametros=valores;return {rows:[]};},{id:1,nome:'Equipe',perfil,centroId:2});
+        const opcoes={headers:{Cookie:`espaco_sessao=${'a'.repeat(43)}`}};
+        const resposta=await get('/api/categorias',opcoes);
+        const pagina=await get('/categorias.html',opcoes);
+        assert.equal(pagina.status,perfil==='leitor'?302:200);
+        assert.equal(resposta.status,perfil==='leitor'?403:200);
+        if(perfil!=='leitor')assert.deepEqual(parametros,[perfil==='admin'?null:2]);
+        else for(const method of ['POST','PUT','DELETE'])assert.equal((await get('/api/categorias'+(method==='POST'?'':'/1'),{...opcoes,method,headers:{...opcoes.headers,"Content-Type":"application/json"},body:"{}"})).status,403);
+    }
+ });

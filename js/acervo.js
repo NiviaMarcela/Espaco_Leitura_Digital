@@ -730,6 +730,7 @@ function bloquearFormulario(form, bloqueado) {
     }
 }
 
+let categoriasCadastradas=[];
 async function carregarAcervo() {
     const aviso = document.getElementById("avisoAcervo");
     const repetir = document.getElementById("recarregarAcervo");
@@ -742,7 +743,8 @@ async function carregarAcervo() {
     tabela.innerHTML = '<tr><td colspan="7" class="text-center py-4">Carregando livros…</td></tr>';
     ["totalObras", "totalExemplares", "totalDisponiveis"].forEach(id => document.getElementById(id).textContent = "—");
     try {
-        const [obras, centros] = await Promise.all([requisitarApi("/livros"), requisitarApi("/centros")]);
+        const [obras, centros, categorias] = await Promise.all([requisitarApi("/livros"), requisitarApi("/centros"), requisitarApi("/categorias")]);
+        categoriasCadastradas=categorias;
         for (const id of ["centroLivro", "centroExemplares", "filtroCentro"]) {
             const select = document.getElementById(id);
             const anterior = select.value;
@@ -751,9 +753,11 @@ async function carregarAcervo() {
             if ([...select.options].some(o => o.value === anterior)) select.value = anterior;
         }
         livros = obras;
+        filtroCategoria.replaceChildren(new Option("Todas as categorias", ""));
+        atualizarCategoriasLivro();
         obras.forEach(livro => {
             if (livro.categoria) {
-                adicionarOpcaoCategoria(categoriaLivro, livro.categoria);
+
                 adicionarOpcaoCategoria(filtroCategoria, livro.categoria);
             }
         });
@@ -788,57 +792,8 @@ const camposObra = {
     sinopse: "sinopseLivro"
 };
 
-const areaNovaCategoria = document.getElementById("areaNovaCategoria");
-const campoNovaCategoria = document.getElementById("novaCategoria");
-const erroNovaCategoria = document.getElementById("erroNovaCategoria");
-
-document.getElementById("abrirCriarCategoria").addEventListener("click", function () {
-    areaNovaCategoria.hidden = false;
-    campoNovaCategoria.focus();
-});
-
-function adicionarNovaCategoria() {
-    const nome = campoNovaCategoria.value.trim();
-    erroNovaCategoria.textContent = "";
-    if (!nome) {
-        erroNovaCategoria.textContent = "Informe o nome da categoria.";
-        campoNovaCategoria.focus();
-        return;
-    }
-    if (nome.length > 100) {
-        erroNovaCategoria.textContent = "A categoria deve ter no máximo 100 caracteres.";
-        campoNovaCategoria.focus();
-        return;
-    }
-
-    const existente = [...categoriaLivro.options].find(opcao =>
-        opcao.value.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR")
-    );
-    if (existente) {
-        erroNovaCategoria.textContent = "Essa categoria já existe. Selecione-a na lista.";
-        campoNovaCategoria.focus();
-        return;
-    }
-
-    adicionarOpcaoCategoria(categoriaLivro, nome);
-    adicionarOpcaoCategoria(filtroCategoria, nome);
-    categoriaLivro.value = nome;
-    campoNovaCategoria.value = "";
-    areaNovaCategoria.hidden = true;
-}
-
-document.getElementById("adicionarCategoria").addEventListener("click", adicionarNovaCategoria);
-campoNovaCategoria.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        adicionarNovaCategoria();
-    }
-});
-
 function prepararFormularioLivro(livro = null) {
     formLivro.reset();
-    areaNovaCategoria.hidden = true;
-    erroNovaCategoria.textContent = "";
     idLivroEmEdicao = livro ? livro.id : null;
     const editando = livro !== null;
     document.getElementById("erroFormularioLivro").textContent = "";
@@ -1151,3 +1106,14 @@ for (const [modalId, form] of [["modalLivro", formLivro], ["modalDetalhesLivro",
     });
 }
 carregarAcervo();
+
+// Categorias persistidas e isoladas por Centro.
+
+function centroAtualCategoria(){return idLivroEmEdicao?livros.find(l=>l.id===idLivroEmEdicao)?.centroId:Number(document.getElementById('centroLivro').value);}
+function atualizarCategoriasLivro(){
+    const anterior=categoriaLivro.value,centro=centroAtualCategoria();
+    categoriaLivro.replaceChildren(new Option(centro?'Selecione a categoria':'Selecione primeiro o Centro',''));
+    categoriasCadastradas.filter(c=>c.centroId===centro).forEach(c=>categoriaLivro.add(new Option(c.nome,c.nome)));
+    if([...categoriaLivro.options].some(o=>o.value===anterior))categoriaLivro.value=anterior;
+}
+document.getElementById('centroLivro').addEventListener('change',atualizarCategoriasLivro);

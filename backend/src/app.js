@@ -1,3 +1,4 @@
+import { criarRepositorioCategorias } from './repositories/categorias.js';
 import { criarRepositorioLivroVivo } from './repositories/livro-vivo.js';
 import { criarRepositorioRecuperacao, MENSAGEM_RECUPERACAO } from './repositories/recuperacao.js';
 import { setTimeout as aguardar } from 'node:timers/promises';
@@ -94,6 +95,7 @@ export function criarApp(banco, registrarErro = console.error) {
                 // Escopo por requisição: nunca compartilhar repositórios de um Centro com outro.
                 req.repos = {
                     acervo: criarRepositorioAcervo(banco, centroId),
+                    categorias: criarRepositorioCategorias(banco, centroId),
                     leitores: criarRepositorioLeitores(banco, centroId),
                     emprestimos: criarRepositorioEmprestimos(banco, undefined, centroId),
                     dashboard: criarRepositorioDashboard(banco, undefined, centroId)
@@ -200,6 +202,10 @@ export function criarApp(banco, registrarErro = console.error) {
         await expirarReservas(req.usuario);
         res.json((await req.repos.acervo.listarLivros()).map(catalogoPublico));
     });
+    app.get('/api/categorias', exigirGestao, async(req,res)=>res.json(await req.repos.categorias.listar()));
+    app.post('/api/categorias', exigirGestao, async(req,res)=>res.status(201).json(await req.repos.categorias.criar(req.body)));
+    app.put('/api/categorias/:id', exigirGestao, async(req,res)=>res.json(await req.repos.categorias.editar(Number(req.params.id),req.body)));
+    app.delete('/api/categorias/:id', exigirGestao, async(req,res)=>res.json(await req.repos.categorias.excluir(Number(req.params.id))));
     app.get("/api/livros", exigirGestao, async (req, res) => {
         await expirarReservas(req.usuario);
         res.json(await req.repos.acervo.listarLivros());
@@ -328,7 +334,7 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get("/biblioteca.html", paginaProtegida(['admin', 'coordenador', 'professor','funcionario', 'leitor']), arquivoPagina("biblioteca"));
     app.get("/alterarSenha.html", paginaProtegida(null), arquivoPagina("alterarSenha"));
     app.get("/dashboard.html", paginaProtegida(['admin', 'coordenador']), arquivoPagina("dashboard"));
-    for (const pagina of ["leitores", "acervo", "reservas", "emprestimos", "devolucoes"]) {
+    for (const pagina of ["leitores", "acervo", "categorias", "reservas", "emprestimos", "devolucoes"]) {
         app.get(`/${pagina}.html`, paginaProtegida(['admin', 'coordenador', 'professor','funcionario']), arquivoPagina(pagina));
     }
     app.get('/Relatorios.html', paginaProtegida(['admin', 'coordenador', 'professor', 'funcionario']), arquivoPagina('Relatorios'));
