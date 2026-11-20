@@ -43,7 +43,7 @@ function renderizar() {
     const tabela = el('tabelaDevolucoes');
     tabela.replaceChildren();
     if (!lista.length) {
-        const celula = tabela.insertRow().insertCell(); celula.colSpan = 6;
+        const celula = tabela.insertRow().insertCell(); celula.colSpan = 5;
         celula.textContent = 'Nenhum empréstimo corresponde a esta busca e situação.';
     }
     for (const p of lista) {
@@ -51,7 +51,7 @@ function renderizar() {
         const linha = tabela.insertRow();
         if (!p.dataDevolucao && dias) linha.className = 'table-warning';
         for (const valor of [`${p.leitor}${p.matriculaCodigo ? ' · ' + p.matriculaCodigo : ''}`,
-            `${p.livro} · ${p.codigo} · ${p.centro}`, data(p.dataPrevistaDevolucao), data(p.dataDevolucao)]) {
+            `${p.livro} · ${p.codigo} · ${p.centro}`, data(p.dataPrevistaDevolucao)]) {
             linha.insertCell().textContent = valor;
         }
         const situacao = p.dataDevolucao ? 'Devolvido' : dias ? 'Atrasado' : 'No prazo';

@@ -63,14 +63,7 @@ function renderizar() {
         botao.addEventListener('click', () => abrirRenovacao(p.id));
         const acoes = linha.insertCell();
         acoes.append(botao);
-        if (!p.dataDevolucao) {
-            const devolver = document.createElement('a');
-            devolver.className = 'btn btn-outline-primary btn-sm mt-2';
-            devolver.href = `devolucoes.html?emprestimo=${p.id}`;
-            devolver.textContent = 'Devolver';
-            devolver.setAttribute('aria-label', `Devolver ${p.codigo} de ${p.leitor}`);
-            acoes.append(devolver);
-        }
+
     }
 }
 
