@@ -85,9 +85,9 @@
 <div class="row g-3 mb-3">
 <div class="col-md-4"><label for="centroLivroVivo" class="form-label">Centro de origem</label><select id="centroLivroVivo" class="form-select" required></select></div>
 <div class="col-md-4"><label for="localidadeLivroVivo" class="form-label">Escola, comunidade ou localidade de destino</label><input id="localidadeLivroVivo" class="form-control" maxlength="200" required></div>
-<div class="col-md-4"><label for="modalidadeLivroVivo" class="form-label">Modalidade</label><select id="modalidadeLivroVivo" class="form-select" required><option value="">Selecione</option><option value="definitiva">Definitiva</option><option value="possivel_devolucao">Com possibilidade de devolução</option></select></div>
+<div class="col-md-4 align-self-center"><span class="badge text-bg-info">Doação</span><p class="text-secondary mb-0 mt-2">Permite registrar o retorno à estante.</p></div>
 </div>
-<p class="text-secondary">Ambas as modalidades retiram as cópias de circulação. Na modalidade com possibilidade de devolução, registre o retorno após receber e conferir o exemplar. Não há prazo automático de devolução.</p>
+<p class="text-secondary">A doação retira as cópias de circulação. Registre o retorno à estante após receber e conferir cada exemplar. Não há prazo automático de devolução.</p>
 <label for="buscaLivroVivo" class="form-label">Buscar título, autor ou código do exemplar</label><input type="search" id="buscaLivroVivo" class="form-control mb-3">
 <div class="table-responsive" style="max-height:420px;overflow:auto"><table class="table custom-table"><thead><tr><th>Selecionar</th><th>Livro / autor</th><th>Exemplar</th><th>Centro</th></tr></thead><tbody id="disponiveisLivroVivo"></tbody></table></div>
 <p id="quantidadeLivroVivo" aria-live="polite">0 exemplares selecionados.</p>
@@ -95,13 +95,13 @@
 </fieldset></form></section>
 <section class="content-card mb-4"><div class="card-heading"><h3>Histórico do Livro Vivo</h3><button type="button" id="atualizarLivroVivo" class="btn btn-outline-primary report-actions">Atualizar</button></div>
 <div class="row g-3 mb-3 report-filters">
-<div class="col-md-4"><label for="buscaHistoricoVivo" class="form-label">Destino, Centro, livro ou responsável</label><input type="search" id="buscaHistoricoVivo" class="form-control"></div>
+<div class="col-md-6"><label for="buscaHistoricoVivo" class="form-label">Destino, Centro, livro ou responsável</label><input type="search" id="buscaHistoricoVivo" class="form-control"></div>
 <div class="col-md-3"><label for="inicioHistoricoVivo" class="form-label">Transferências a partir de</label><input type="date" id="inicioHistoricoVivo" class="form-control"></div>
 <div class="col-md-3"><label for="fimHistoricoVivo" class="form-label">Até</label><input type="date" id="fimHistoricoVivo" class="form-control"></div>
-<div class="col-md-2"><label for="tipoHistoricoVivo" class="form-label">Modalidade</label><select id="tipoHistoricoVivo" class="form-select"><option value="">Todas</option><option value="definitiva">Definitiva</option><option value="possivel_devolucao">Possível devolução</option></select></div></div>
+</div>
 <p id="resumoLivroVivo" aria-live="polite"></p>
 <button type="button" id="imprimirLivroVivo" class="btn btn-outline-secondary mb-3 report-actions" disabled>Imprimir / salvar PDF do histórico filtrado</button>
-<div class="table-responsive"><table class="table custom-table"><thead><tr><th>Data / Centro</th><th>Destino / modalidade</th><th>Quantidades</th><th>Autorizado por</th><th>Exemplares e retornos</th></tr></thead><tbody id="historicoLivroVivo"></tbody></table></div>
+<div class="table-responsive"><table class="table custom-table"><thead><tr><th>Data / Centro</th><th>Destino</th><th>Quantidades</th><th>Autorizado por</th><th>Exemplares e retornos</th></tr></thead><tbody id="historicoLivroVivo"></tbody></table></div>
 </section>
 <footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer></main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>

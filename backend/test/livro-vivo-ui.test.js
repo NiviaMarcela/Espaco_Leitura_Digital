@@ -17,8 +17,8 @@ async function preparar(){
     get('centroLivroVivo').value='1';
     const exemplares=[{id:1,codigo:'EX-1',titulo:'Histórias',autor:'Autora',centroId:1,centro:'Maranhão'},
         {id:2,codigo:'EX-2',titulo:'Contos',autor:'Autora',centroId:1,centro:'Maranhão'},{id:3,codigo:'EX-3',titulo:'Histórias',autor:'Autora',centroId:2,centro:'Piauí'}];
-    const historico=[{id:7,localidade:'Escola A',centro:'Maranhão',criadaEm:'2026-11-15T12:00:00Z',modalidade:'possivel_devolucao',autorizadorNome:'Coord',quantidade:1,retornados:0,itens:[{id:8,exemplarId:10,codigo:'EX-10',titulo:'Contos'}]},
-        {id:9,localidade:'Escola B',centro:'Maranhão',criadaEm:'2026-11-15T12:00:00Z',modalidade:'definitiva',autorizadorNome:'Admin',quantidade:1,retornados:0,itens:[{id:9,exemplarId:11,codigo:'EX-11',titulo:'Contos'}]}];
+    const historico=[{id:7,localidade:'Escola A',centro:'Maranhão',criadaEm:'2026-11-15T12:00:00Z',modalidade:'doacao',autorizadorNome:'Coord',quantidade:1,retornados:0,itens:[{id:8,exemplarId:10,codigo:'EX-10',titulo:'Contos'}]},
+        {id:9,localidade:'Escola B',centro:'Maranhão',criadaEm:'2026-11-15T12:00:00Z',modalidade:'doacao',autorizadorNome:'Admin',quantidade:1,retornados:0,itens:[{id:9,exemplarId:11,codigo:'EX-11',titulo:'Contos'}]}];
     const contexto=vm.createContext({document:{getElementById:get,createElement:()=>new Elemento(),createTextNode:texto=>new Elemento(texto)},Option:Elemento,AbortSignal,confirm:()=>true,window:{print(){}},
         fetch:async(url,opcoes={})=>{pedidos.push({url,...opcoes});let body=[];
             if(url==='/api/centros')body=[{id:1,nome:'Maranhão'},{id:2,nome:'Piauí'}];
@@ -33,15 +33,15 @@ test('seleção mantém cópias ocultas na busca, envia IDs e limpa ao mudar Cen
     const {get,pedidos}=await preparar();assert.equal(get('disponiveisLivroVivo').rows.length,2);
     const check=get('disponiveisLivroVivo').rows[0].children[0].children[0];check.checked=true;check.eventos.change();
     get('buscaLivroVivo').value='Contos';get('buscaLivroVivo').eventos.input();assert.match(get('quantidadeLivroVivo').textContent,/1 exemplar/);
-    get('localidadeLivroVivo').value='Escola teste';get('modalidadeLivroVivo').value='possivel_devolucao';
+    get('localidadeLivroVivo').value='Escola teste';
     await get('formLivroVivo').eventos.submit({preventDefault(){},target:get('formLivroVivo')});
-    const post=pedidos.find(p=>p.method==='POST');assert.deepEqual(JSON.parse(post.body),{localidade:'Escola teste',modalidade:'possivel_devolucao',exemplarIds:[1]});
+    const post=pedidos.find(p=>p.method==='POST');assert.deepEqual(JSON.parse(post.body),{localidade:'Escola teste',modalidade:'doacao',exemplarIds:[1]});
     get('centroLivroVivo').value='2';get('centroLivroVivo').eventos.change();assert.match(get('quantidadeLivroVivo').textContent,/0 exemplar/);
 });
-test('somente modalidade possível devolução oferece retorno, e filtro altera totais',async()=>{
+test('doações oferecem retorno e filtro altera totais',async()=>{
     const {get,pedidos}=await preparar();const linhas=get('historicoLivroVivo').rows;
     const parcial=linhas[0].children[4].children[0],definitiva=linhas[1].children[4].children[0];
-    assert.equal(parcial.children[0].textContent,'Registrar retorno');assert.equal(definitiva.children.length,0);
+    assert.equal(parcial.children[0].textContent,'Registrar retorno');assert.equal(definitiva.children[0].textContent,'Registrar retorno');
     await parcial.children[0].eventos.click();const post=pedidos.find(p=>p.method==='POST');
     assert.equal(post.url,'/api/livro-vivo/7/retorno');assert.deepEqual(JSON.parse(post.body),{exemplarIds:[10]});
     get('buscaHistoricoVivo').value='Escola B';get('buscaHistoricoVivo').eventos.input();assert.equal(get('historicoLivroVivo').rows.length,1);assert.match(get('resumoLivroVivo').textContent,/1 exemplares enviados/);

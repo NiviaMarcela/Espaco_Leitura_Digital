@@ -50,7 +50,7 @@ export function criarRepositorioLivroVivo(banco, usuario) {
         async transferir(dados) {
             const ids=validarIds(dados?.exemplarIds);
             if (typeof dados.localidade!=='string'||!dados.localidade.trim()||dados.localidade.trim().length>200) throw erroHttp(400,'Informe a localidade de destino (até 200 caracteres).');
-            if (!['definitiva','possivel_devolucao'].includes(dados.modalidade)) throw erroHttp(400,'Selecione a modalidade da transferência.');
+            if (dados.modalidade!==undefined && dados.modalidade!=='doacao') throw erroHttp(400,'A modalidade agora é Doação. Atualize a página.');
             return transacao(async(c,autor,centroAtual)=>{
                 const exemplares=(await c.query(`SELECT e.id,e.codigo,e.status,e.centro_id,l.titulo FROM exemplares e
                     JOIN livros l ON l.id=e.livro_id WHERE e.id=ANY($1::integer[]) AND ($2::integer IS NULL OR e.centro_id=$2)
@@ -62,7 +62,7 @@ export function criarRepositorioLivroVivo(banco, usuario) {
                     UNION ALL SELECT id FROM livro_vivo_itens WHERE exemplar_id=ANY($1::integer[]) AND retornado_em IS NULL`,[ids]);
                 if(exemplares.some(e=>e.status!=='Disponível')||ocupados.rowCount) throw erroHttp(409,'Um exemplar selecionado não está mais disponível. Atualize a lista. Nenhum exemplar foi transferido.');
                 const t=(await c.query(`INSERT INTO livro_vivo_transferencias(centro_id,localidade,modalidade,autorizado_por,autorizador_nome)
-                    VALUES($1,$2,$3,$4,$5) RETURNING id`,[exemplares[0].centro_id,dados.localidade.trim(),dados.modalidade,autor.id,autor.nome||'Administrador'])).rows[0];
+                    VALUES($1,$2,$3,$4,$5) RETURNING id`,[exemplares[0].centro_id,dados.localidade.trim(),'doacao',autor.id,autor.nome||'Administrador'])).rows[0];
                 for(const e of exemplares) await c.query('INSERT INTO livro_vivo_itens(transferencia_id,exemplar_id,titulo,codigo) VALUES($1,$2,$3,$4)',[t.id,e.id,e.titulo,e.codigo]);
                 await c.query(`UPDATE exemplares SET status='Baixado',baixa_motivo='doação livro vivo',baixa_em=now(),baixa_observacao=$2
                     WHERE id=ANY($1::integer[])`,[ids,`Livro Vivo #${t.id} · ${dados.localidade.trim()}`]);
@@ -75,7 +75,6 @@ export function criarRepositorioLivroVivo(banco, usuario) {
             return transacao(async(c,autor,centroAtual)=>{
                 const t=(await c.query('SELECT * FROM livro_vivo_transferencias WHERE id=$1 AND ($2::integer IS NULL OR centro_id=$2) FOR UPDATE',[id,centroAtual])).rows[0];
                 if(!t) throw erroHttp(404,'Transferência não encontrada no seu Centro.');
-                if(t.modalidade!=='possivel_devolucao') throw erroHttp(409,'Doação definitiva não permite retorno.');
                 const itens=(await c.query(`SELECT i.id,i.retornado_em,e.status,e.baixa_motivo FROM livro_vivo_itens i JOIN exemplares e ON e.id=i.exemplar_id
                     WHERE i.transferencia_id=$1 AND i.exemplar_id=ANY($2::integer[]) ORDER BY e.id FOR UPDATE OF e,i`,[id,ids])).rows;
                 if(itens.length!==ids.length) throw erroHttp(404,'Exemplar não pertence à transferência.');

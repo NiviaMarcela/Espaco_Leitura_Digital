@@ -29,7 +29,7 @@ test('Livro Vivo: transferência, isolamento, concorrência e retorno auditado',
         async function api(path,cookie,dados){const r=await fetch(base+path,{redirect:'manual',method:dados?'POST':'GET',headers:{...(cookie?{Cookie:cookie}:{}),...(dados?{'Content-Type':'application/json'}:{})},body:dados?JSON.stringify(dados):undefined});return {status:r.status,headers:r.headers,body:r.headers.get('content-type')?.includes('json')?await r.json():await r.text()};}
         async function login(email){const r=await api('/api/auth/login',null,{email,senha:'Senha123'});assert.equal(r.status,200);return r.headers.get('set-cookie').split(';')[0];}
         const admin=await login('admin@teste.invalid'),coord=await login('coordenador1@teste.invalid'),outroCentro=await login('coordenador2@teste.invalid');
-        const transferencia=(ids,modalidade='possivel_devolucao')=>({exemplarIds:ids,modalidade,localidade:'Escola Comunidade'});
+        const transferencia=(ids,modalidade='doacao')=>({exemplarIds:ids,modalidade,localidade:'Escola Comunidade'});
         let primeira;
         await t.test('rotas e menus permitidos somente a administrador/coordenador',async()=>{
             assert.equal((await api('/api/livro-vivo')).status,401);
@@ -72,14 +72,14 @@ test('Livro Vivo: transferência, isolamento, concorrência e retorno auditado',
             const h=(await api('/api/livro-vivo',coord)).body[0];assert.equal(h.quantidade,2);assert.equal(h.retornados,1);assert.equal(h.itens[0].recebedorNome,'coordenador 1');
             const e=(await banco.query('SELECT status,baixa_motivo,baixa_em FROM exemplares WHERE id=1')).rows[0];assert.deepEqual(e,{status:'Disponível',baixa_motivo:null,baixa_em:null});
             assert.equal((await api('/api/livro-vivo/'+primeira+'/retorno',coord,{exemplarIds:[1]})).status,409);
-            assert.equal((await api('/api/livro-vivo',coord,transferencia([1],'definitiva'))).status,201);
+            assert.equal((await api('/api/livro-vivo',coord,transferencia([1],'doacao'))).status,201);
         });
-        await t.test('doação definitiva não retorna; concorrência não duplica transferência',async()=>{
-            const respostas=await Promise.all([1,2].map(()=>api('/api/livro-vivo',coord,transferencia([3],'definitiva'))));
+        await t.test('doação permite retorno; concorrência não duplica transferência',async()=>{
+            const respostas=await Promise.all([1,2].map(()=>api('/api/livro-vivo',coord,transferencia([3],'doacao'))));
             assert.deepEqual(respostas.map(r=>r.status).sort(),[201,409]);
             const id=respostas.find(r=>r.status===201).body.id;
-            assert.equal((await api('/api/livro-vivo/'+id+'/retorno',admin,{exemplarIds:[3]})).status,409);
-            assert.equal((await api('/api/livro-vivo',admin,transferencia([13],'definitiva'))).status,201);
+            assert.equal((await api('/api/livro-vivo/'+id+'/retorno',admin,{exemplarIds:[3]})).status,200);
+            assert.equal((await api('/api/livro-vivo',admin,transferencia([13],'doacao'))).status,201);
             assert.equal((await api('/api/livro-vivo',outroCentro)).body.length,1);
         });
         await t.test('histórico preserva nome e título após edições e retorno concorrente só ocorre uma vez',async()=>{
@@ -96,3 +96,28 @@ test('Livro Vivo: transferência, isolamento, concorrência e retorno auditado',
         if(banco)await banco.end();if(criado)await conexao.query(`DROP SCHEMA "${schema}" CASCADE`);await conexao.end();
     }
 });
+
+ test('migração converte modalidades antigas e permite retorno sem apagar histórico', {skip:process.env.RUN_POSTGRES_TESTS!=='1'},async()=>{
+    const schema='teste_doacao_'+randomUUID().replaceAll('-','');
+    const config={...(process.env.DATABASE_URL?{connectionString:process.env.DATABASE_URL}:{}),connectionTimeoutMillis:5000};
+    const conexao=new pg.Pool(config);let banco,criado=false;
+    try{
+        await conexao.query(`CREATE SCHEMA "${schema}"`);criado=true;
+        banco=new pg.Pool({...config,options:`-c search_path=${schema}`});
+        for(const nome of (await readdir(new URL('../database/',import.meta.url))).filter(n=>n.endsWith('.sql')&&!n.startsWith('016')).sort())await banco.query(await readFile(new URL('../database/'+nome,import.meta.url),'utf8'));
+        await criarRepositorioAutenticacao(banco).inicializarAdministrador('admin@teste.invalid','Senha123');
+        await banco.query("INSERT INTO categorias(nome,centro_id) VALUES('Literatura',1)");
+        await banco.query("INSERT INTO livros(titulo,autor,categoria,centro_id) VALUES('Obra','Autora','Literatura',1)");
+        await banco.query("INSERT INTO exemplares(livro_id,centro_id,status,baixa_motivo,baixa_em) VALUES(1,1,'Baixado','doação livro vivo',now()),(1,1,'Baixado','doação livro vivo',now())");
+        await banco.query("INSERT INTO livro_vivo_transferencias(centro_id,localidade,modalidade,autorizado_por,autorizador_nome) VALUES(1,'Escola A','definitiva',1,'Admin'),(1,'Escola B','possivel_devolucao',1,'Admin')");
+        await banco.query("INSERT INTO livro_vivo_itens(transferencia_id,exemplar_id,titulo,codigo) SELECT id,id,'Obra',codigo FROM exemplares");
+        await banco.query(await readFile(new URL('../database/016_livro_vivo_doacao.sql',import.meta.url),'utf8'));
+        const registros=(await banco.query('SELECT modalidade,modalidade_anterior FROM livro_vivo_transferencias ORDER BY id')).rows;
+        assert.deepEqual(registros,[{modalidade:'doacao',modalidade_anterior:'definitiva'},{modalidade:'doacao',modalidade_anterior:'possivel_devolucao'}]);
+        assert.ok((await banco.query('SELECT status FROM exemplares')).rows.every(e=>e.status==='Baixado'));
+        const {criarRepositorioLivroVivo}=await import('../src/repositories/livro-vivo.js');
+        await criarRepositorioLivroVivo(banco,{id:1,perfil:'admin'}).retornar(1,{exemplarIds:[1]});
+        assert.equal((await banco.query('SELECT status FROM exemplares WHERE id=1')).rows[0].status,'Disponível');
+        assert.equal((await banco.query('SELECT count(*)::integer AS n FROM livro_vivo_itens')).rows[0].n,2);
+    }finally{if(banco)await banco.end();if(criado)await conexao.query(`DROP SCHEMA "${schema}" CASCADE`);await conexao.end();}
+ });
