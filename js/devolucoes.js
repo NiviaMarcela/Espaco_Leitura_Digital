@@ -51,9 +51,20 @@ function renderizar() {
         const linha = tabela.insertRow();
         if (!p.dataDevolucao && dias) linha.className = 'table-warning';
         for (const valor of [`${p.leitor}${p.matriculaCodigo ? ' · ' + p.matriculaCodigo : ''}`,
-            `${p.livro} · ${p.codigo} · ${p.centro}`, data(p.dataPrevistaDevolucao), data(p.dataDevolucao),
-            `${p.dataDevolucao ? 'Devolvido' : dias ? 'Atrasado' : 'No prazo'}${dias ? ` · ${dias} dia(s) de atraso` : ''}`]) {
+            `${p.livro} · ${p.codigo} · ${p.centro}`, data(p.dataPrevistaDevolucao), data(p.dataDevolucao)]) {
             linha.insertCell().textContent = valor;
+        }
+        const situacao = p.dataDevolucao ? 'Devolvido' : dias ? 'Atrasado' : 'No prazo';
+        const tag = document.createElement('span');
+        tag.className = 'badge rounded-pill ' + ({ Devolvido: 'bg-success-subtle text-success-emphasis', Atrasado: 'bg-danger-subtle text-danger-emphasis', 'No prazo': 'bg-primary-subtle text-primary-emphasis' }[situacao]);
+        tag.textContent = situacao;
+        const celulaSituacao = linha.insertCell();
+        celulaSituacao.append(tag);
+        if (dias) {
+            const detalhe = document.createElement('small');
+            detalhe.className = 'd-block text-danger mt-1';
+            detalhe.textContent = dias + ' dia(s) de atraso';
+            celulaSituacao.append(detalhe);
         }
         const botao = document.createElement('button'); botao.type = 'button';
         botao.className = 'btn btn-primary-custom btn-sm';

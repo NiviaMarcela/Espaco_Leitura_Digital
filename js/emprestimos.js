@@ -47,9 +47,14 @@ function renderizar() {
         const linha = tabela.insertRow();
         if (p.status === 'Atrasado') linha.className = 'table-warning';
         for (const valor of [`${p.leitor}${p.matriculaCodigo ? ' · ' + p.matriculaCodigo : ''}`,
-            `${p.livro} · ${p.codigo} · ${p.centro}`, formatarData(p.dataEmprestimo), formatarData(p.dataPrevistaDevolucao), p.status, p.renovacoes.length]) {
+            `${p.livro} · ${p.codigo} · ${p.centro}`, formatarData(p.dataEmprestimo), formatarData(p.dataPrevistaDevolucao)]) {
             linha.insertCell().textContent = valor;
         }
+        const tag = document.createElement('span');
+        tag.className = 'badge rounded-pill ' + ({ Emprestado: 'bg-primary-subtle text-primary-emphasis', Atrasado: 'bg-danger-subtle text-danger-emphasis', Devolvido: 'bg-success-subtle text-success-emphasis' }[p.status] || 'text-bg-secondary');
+        tag.textContent = p.status;
+        linha.insertCell().append(tag);
+        linha.insertCell().textContent = p.renovacoes.length;
         const botao = document.createElement('button');
         botao.className = 'btn btn-primary-custom btn-sm';
         botao.textContent = p.dataDevolucao ? 'Detalhes' : 'Detalhes / renovar';
