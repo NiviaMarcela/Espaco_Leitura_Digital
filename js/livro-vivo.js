@@ -21,7 +21,8 @@ function listarDisponiveis(){
 function listarHistorico(){
     const tabela=el('historicoLivroVivo');tabela.replaceChildren();
     const busca=normalizar(el('buscaHistoricoVivo').value),inicio=el('inicioHistoricoVivo').value,fim=el('fimHistoricoVivo').value;
-    if(inicio&&fim&&inicio>fim){el('resumoLivroVivo').textContent='Revise o intervalo de datas.';el('imprimirLivroVivo').disabled=true;return;}
+    if(inicio&&fim&&inicio>fim){el('resumoLivroVivo').textContent='Revise o intervalo de datas.';el('imprimirLivroVivo').disabled=true;el('totaisHistoricoVivo').hidden=true;return;}
+    el('totaisHistoricoVivo').hidden=false;
     const filtrados=historico.filter(t=>{
         const dia=new Date(t.criadaEm).toLocaleDateString('sv-SE');
         return (!inicio||dia>=inicio)&&(!fim||dia<=fim)&&normalizar(`${t.localidade} ${t.centro} ${t.autorizadorNome} ${t.itens.map(i=>i.titulo+' '+i.codigo).join(' ')}`).includes(busca);
@@ -29,9 +30,15 @@ function listarHistorico(){
     let total=0,retornados=0;
     for(const t of filtrados){
         total+=t.quantidade;retornados+=t.retornados;
-        const linha=tabela.insertRow();linha.insertCell().textContent=data(t.criadaEm)+' · '+t.centro;
-        const destino=linha.insertCell();destino.append(document.createTextNode(t.localidade+' '));const tag=document.createElement('span');tag.className='badge text-bg-info';tag.textContent='Doação';destino.append(tag);
-        linha.insertCell().textContent=`${t.quantidade} enviados · ${t.retornados} retornados · ${t.quantidade-t.retornados} no destino`;
+        const linha=tabela.insertRow();
+        const destino=linha.insertCell();
+        const localidade=document.createElement('strong');localidade.className='lv-localidade';localidade.textContent=t.localidade;destino.append(localidade);
+        const tag=document.createElement('span');tag.className='badge text-bg-info mt-2';tag.textContent='Doação';destino.append(tag);
+        const quantidade=linha.insertCell(),destaque=document.createElement('span');destaque.className='lv-quantidade';
+        const numero=document.createElement('strong');numero.textContent=t.quantidade;
+        const legenda=document.createElement('small');legenda.textContent='exemplar(es)';destaque.append(numero,legenda);quantidade.append(destaque);
+        const detalhe=document.createElement('small');detalhe.className='lv-detalhe';detalhe.textContent=`${t.retornados} retornados · ${t.quantidade-t.retornados} no destino`;quantidade.append(detalhe);
+        linha.insertCell().textContent=data(t.criadaEm)+' · '+t.centro;
         linha.insertCell().textContent=t.autorizadorNome;
         const itens=linha.insertCell();
         for(const i of t.itens){
@@ -43,6 +50,9 @@ function listarHistorico(){
             }itens.append(bloco);
         }
     }
+    el('totalDoadoVivo').textContent=total;
+    el('totalRetornadoVivo').textContent=retornados;
+    el('totalDestinoVivo').textContent=total-retornados;
     el('resumoLivroVivo').textContent=`${filtrados.length} transferência(s) · ${total} exemplares enviados · ${retornados} retornados · ${total-retornados} no destino. Totais do histórico filtrado; uma cópia pode participar de mais de uma transferência após retornar.`;
     el('imprimirLivroVivo').disabled=ocupado||!filtrados.length;
     if(!filtrados.length){const celula=tabela.insertRow().insertCell();celula.colSpan=5;celula.textContent='Nenhuma transferência encontrada.';}

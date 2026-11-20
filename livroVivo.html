@@ -9,6 +9,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        .lv-totais { display:grid; grid-template-columns:2fr 1fr 1fr; gap:1rem; margin:1.25rem 0; }
+        .lv-total { padding:1.1rem 1.3rem; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; }
+        .lv-total-principal { background:#edf7f2; border-color:#bbddcb; border-left:5px solid #23734d; }
+        .lv-total strong { display:block; font-size:2rem; line-height:1.2; color:#153b2c; font-variant-numeric:tabular-nums; }
+        .lv-total span { display:block; margin-top:.35rem; color:#42544d; font-size:.9rem; }
+        .lv-localidade { display:block; font-size:1.08rem; font-weight:750; color:#34305d; overflow-wrap:anywhere; }
+        .lv-quantidade { display:inline-block; min-width:4rem; padding:.45rem .8rem; background:#edf7f2; border:1px solid #bbddcb; border-radius:10px; color:#185c3d; }
+        .lv-quantidade strong { display:block; font-size:1.6rem; line-height:1.15; font-variant-numeric:tabular-nums; }
+        .lv-quantidade small { font-size:.75rem; }
+        .lv-detalhe { display:block; margin-top:.45rem; color:#52616b; font-size:.8rem; }
+        #historicoLivroVivo td { vertical-align:top; }
+        #historicoLivroVivo td:first-child { min-width:180px; border-left:3px solid #d9d4ef; }
+        @media(max-width:575px) { .lv-totais { grid-template-columns:1fr 1fr; } .lv-total-principal { grid-column:1 / -1; } }
+
         @media print {
             @page { size: landscape; margin: 12mm; }
             body { background: #fff !important; color: #000 !important; }
@@ -20,6 +34,11 @@
             .custom-table { width: 100% !important; font-size: 9pt !important; }
             .custom-table th, .custom-table td { padding: 5px !important; }
             .report-print-heading { display: block !important; }
+            .lv-totais { grid-template-columns:2fr 1fr 1fr; break-inside:avoid; }
+            .lv-total { padding:10px 14px; }
+            .lv-localidade { font-size:12pt; }
+            .lv-quantidade strong { font-size:17pt; }
+            #historicoLivroVivo tr { break-inside:avoid; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         .report-print-heading { display: none; }
@@ -99,9 +118,13 @@
 <div class="col-md-3"><label for="inicioHistoricoVivo" class="form-label">Transferências a partir de</label><input type="date" id="inicioHistoricoVivo" class="form-control"></div>
 <div class="col-md-3"><label for="fimHistoricoVivo" class="form-label">Até</label><input type="date" id="fimHistoricoVivo" class="form-control"></div>
 </div>
+<div class="lv-totais" id="totaisHistoricoVivo" aria-label="Totais do histórico filtrado">
+<div class="lv-total lv-total-principal"><strong id="totalDoadoVivo">0</strong><span>Exemplares doados</span></div>
+<div class="lv-total"><strong id="totalRetornadoVivo">0</strong><span>Retornaram à estante</span></div>
+<div class="lv-total"><strong id="totalDestinoVivo">0</strong><span>Permanecem no destino</span></div></div>
 <p id="resumoLivroVivo" aria-live="polite"></p>
 <button type="button" id="imprimirLivroVivo" class="btn btn-outline-secondary mb-3 report-actions" disabled>Imprimir / salvar PDF do histórico filtrado</button>
-<div class="table-responsive"><table class="table custom-table"><thead><tr><th>Data / Centro</th><th>Destino</th><th>Quantidades</th><th>Autorizado por</th><th>Exemplares e retornos</th></tr></thead><tbody id="historicoLivroVivo"></tbody></table></div>
+<div class="table-responsive"><table class="table custom-table"><thead><tr><th>Localidade beneficiada</th><th>Quantidade doada</th><th>Data / Centro</th><th>Autorizado por</th><th>Exemplares e retornos</th></tr></thead><tbody id="historicoLivroVivo"></tbody></table></div>
 </section>
 <footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer></main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>

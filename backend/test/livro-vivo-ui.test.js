@@ -40,11 +40,15 @@ test('seleção mantém cópias ocultas na busca, envia IDs e limpa ao mudar Cen
 });
 test('doações oferecem retorno e filtro altera totais',async()=>{
     const {get,pedidos}=await preparar();const linhas=get('historicoLivroVivo').rows;
+    assert.equal(linhas[0].children[0].children[0].textContent,'Escola A');
+    assert.equal(get('totalDoadoVivo').textContent,2);
     const parcial=linhas[0].children[4].children[0],definitiva=linhas[1].children[4].children[0];
     assert.equal(parcial.children[0].textContent,'Registrar retorno');assert.equal(definitiva.children[0].textContent,'Registrar retorno');
     await parcial.children[0].eventos.click();const post=pedidos.find(p=>p.method==='POST');
     assert.equal(post.url,'/api/livro-vivo/7/retorno');assert.deepEqual(JSON.parse(post.body),{exemplarIds:[10]});
     get('buscaHistoricoVivo').value='Escola B';get('buscaHistoricoVivo').eventos.input();assert.equal(get('historicoLivroVivo').rows.length,1);assert.match(get('resumoLivroVivo').textContent,/1 exemplares enviados/);
+    assert.equal(get('totalDoadoVivo').textContent,1);
+    assert.equal(get('totalDestinoVivo').textContent,1);
 });
 test('Livro Vivo tem link nas duas sidebars e página restrita',()=>{
     for(const nome of ['dashboard','acervo','leitores','reservas','emprestimos','devolucoes','usuarios','Relatorios','biblioteca','meusEmprestimos','livroVivo']){
