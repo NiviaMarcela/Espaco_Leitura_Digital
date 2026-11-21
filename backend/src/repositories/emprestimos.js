@@ -1,5 +1,5 @@
 import { erroHttp } from '../validation.js';
-import { hojeCivil, somarDias } from '../../../js/datas.mjs';
+import { hojeCivil, somarDias } from '../../../frontend/shared/js/datas.mjs';
 
 export const PRAZO_DIAS = 30;
 export const LIMITE_EXEMPLARES = 10;

@@ -1,5 +1,5 @@
 import { erroHttp } from '../validation.js';
-import { calcularIdade } from '../../../js/datas.mjs';
+import { calcularIdade } from '../../../frontend/shared/js/datas.mjs';
 import { hashSenha, validarSenha } from './autenticacao.js';
 
 const consulta = `SELECT l.id, l.nome, l.tipo, l.matricula_codigo AS "matriculaCodigo",

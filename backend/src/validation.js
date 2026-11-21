@@ -1,4 +1,4 @@
-import { dataCivilValida, hojeCivil } from '../../js/datas.mjs';
+import { dataCivilValida, hojeCivil } from '../../frontend/shared/js/datas.mjs';
 
 export function validarEmprestimo(body) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw erroHttp(400, 'Dados do empréstimo inválidos.');

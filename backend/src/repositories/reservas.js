@@ -1,5 +1,5 @@
 import { erroHttp } from '../validation.js';
-import { hojeCivil, somarDias } from '../../../js/datas.mjs';
+import { hojeCivil, somarDias } from '../../../frontend/shared/js/datas.mjs';
 import { LIMITE_EXEMPLARES, PRAZO_DIAS } from './emprestimos.js';
 
 export const PRAZO_RETIRADA_DIAS = 7;

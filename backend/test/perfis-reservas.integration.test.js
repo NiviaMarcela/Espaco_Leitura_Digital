@@ -6,7 +6,7 @@ import { once } from 'node:events';
 import pg from 'pg';
 import { criarApp } from '../src/app.js';
 import { criarRepositorioAutenticacao } from '../src/repositories/autenticacao.js';
-import { hojeCivil, somarDias } from '../../js/datas.mjs';
+import { hojeCivil, somarDias } from '../../frontend/shared/js/datas.mjs';
 
 test('PostgreSQL: perfis, isolamento dos três Centros e ciclo completo de reservas', {
     skip: process.env.RUN_POSTGRES_TESTS !== '1'

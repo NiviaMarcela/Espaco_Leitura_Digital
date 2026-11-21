@@ -316,6 +316,7 @@ export function criarApp(banco, registrarErro = console.error) {
 
     // Public pages are open; protected pages are authorized on the server as well as in the UI.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
+    const frontend = path.join(raiz, "frontend");
     const arquivoPagina = pagina => (req, res) => res.sendFile(path.join(raiz, `${pagina}.html`));
     const paginaProtegida = perfil => async (req, res, next) => {
         try {
@@ -341,9 +342,9 @@ export function criarApp(banco, registrarErro = console.error) {
     app.get('/livroVivo.html', paginaProtegida(['admin','coordenador']), arquivoPagina('livroVivo'));
     app.get('/usuarios.html', paginaProtegida(['admin','coordenador']), arquivoPagina('usuarios'));
     app.get('/meusEmprestimos.html', paginaProtegida(['admin','coordenador','professor','funcionario','leitor']), arquivoPagina('meusEmprestimos'));
-    for (const pasta of ["css", "js", "assets"]) {
-        app.use(`/${pasta}`, express.static(path.join(raiz, pasta), { dotfiles: "deny" }));
-    }
+    app.use("/css", express.static(path.join(frontend, "shared", "css"), { dotfiles: "deny" }));
+    app.use("/js", express.static(path.join(frontend, "shared", "js"), { dotfiles: "deny" }));
+    app.use("/assets", express.static(path.join(frontend, "assets"), { dotfiles: "deny" }));
 
     app.use((req, res) => res.status(404).json({ erro: "Rota não encontrada." }));
     app.use((erro, req, res, next) => {

@@ -49,7 +49,7 @@ for(const perfil of ['admin','coordenador','professor','funcionario','leitor']) 
         location:{pathname:'/biblioteca.html',replace(){}},
         fetch:async()=>({ok:true,json:async()=>({perfil,nome:'Usuário teste',trocarSenha:false})})
     });
-    vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/shared/js/auth-ui.js',import.meta.url),'utf8'),contexto);
     await new Promise(resolve=>setImmediate(resolve));
     const avatar=identificacao.querySelector('.user-avatar');
     assert.ok(avatar);
@@ -86,7 +86,7 @@ for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' rec
                 ]})
                 : ({ok:true,json:async()=>({perfil,nome:'Equipe teste',trocarSenha:false})})
     });
-    vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/shared/js/auth-ui.js',import.meta.url),'utf8'),contexto);
     await new Promise(resolve=>setImmediate(resolve));
     assert.equal(admin.hidden,true);assert.equal(dashboard.hidden,perfil!=='coordenador');assert.equal(usuarios.hidden,perfil!=='coordenador');assert.equal(gestao.hidden,false);assert.equal(relatorios.hidden,!['professor','coordenador','funcionario'].includes(perfil));
     assert.equal(contador.hidden,false);assert.equal(contador.textContent,'2');assert.equal(linkReservas.attributes['aria-label'],'Reservas, 2 aguardando retirada');
@@ -118,7 +118,7 @@ for (const perfil of ['admin', 'coordenador']) test(`${perfil} vê no menu Usuá
                 : url==='/api/recuperacoes/contagem' ? {quantidade:3} : []};
         }
     });
-    vm.runInContext(readFileSync(new URL('../../js/auth-ui.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/shared/js/auth-ui.js',import.meta.url),'utf8'),contexto);
     await new Promise(resolve=>setImmediate(resolve));
     assert.ok(urls.includes('/api/recuperacoes/contagem'));
     assert.deepEqual(contadores.map(contador=>contador.textContent),['3','3']);

@@ -1,4 +1,4 @@
-import { hojeCivil } from '../../../js/datas.mjs';
+import { hojeCivil } from '../../../frontend/shared/js/datas.mjs';
 
 export function criarRepositorioDashboard(banco, hoje = hojeCivil, centroId = null) {
     return {
