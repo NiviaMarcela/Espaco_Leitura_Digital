@@ -1,6 +1,6 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { erroHttp } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
 
 const scrypt = promisify(scryptCallback);
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;

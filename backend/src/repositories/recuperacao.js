@@ -1,4 +1,5 @@
-import { erroHttp, validarCredenciais } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
+import { validarCredenciais } from '../validacao/acesso.js';
 import { hashSenha, validarSenha } from './autenticacao.js';
 
 export const MENSAGEM_RECUPERACAO = 'Se houver uma conta ativa com este e-mail, a solicitação ficará disponível para a equipe responsável. Procure a equipe do seu Centro para confirmar sua identidade. Nenhum e-mail será enviado.';

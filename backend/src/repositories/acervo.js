@@ -1,4 +1,4 @@
-import { erroHttp } from "../validation.js";
+import { erroHttp } from "../validacao/erros.js";
 
 // O banco usa snake_case; a resposta mantém os nomes usados no frontend atual.
 export function criarRepositorioAcervo(banco, centroId = null) {

@@ -7,9 +7,11 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { criarRepositorioAcervo } from "./repositories/acervo.js";
 import { criarRepositorioAutenticacao, validarSenha } from "./repositories/autenticacao.js";
-import { validarObra, validarExemplares, validarLeitor, validarBaixa,
-    validarCredenciais, validarTrocaSenha, validarEmprestimo,
-    validarRenovacao, validarDevolucao, erroHttp } from "./validation.js";
+import { validarObra, validarExemplares, validarBaixa } from './validacao/acervo.js';
+import { validarLeitor } from './validacao/leitores.js';
+import { validarEmprestimo, validarRenovacao, validarDevolucao } from './validacao/emprestimos.js';
+import { validarCredenciais, validarTrocaSenha } from './validacao/acesso.js';
+import { erroHttp } from './validacao/erros.js';
 import { criarRepositorioLeitores } from './repositories/leitores.js';
 import { criarRepositorioEmprestimos } from './repositories/emprestimos.js';
 import { criarRepositorioDashboard } from './repositories/dashboard.js';

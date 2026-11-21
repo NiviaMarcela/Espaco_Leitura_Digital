@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
 
 // Vincula os dados de circulação à conta autenticada, sem criar outro login ou trocar o perfil.
 export async function completarCadastroPessoal(banco, usuario, dados) {

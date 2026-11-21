@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
 import { calcularIdade } from '../../../frontend/shared/js/datas.mjs';
 import { hashSenha, validarSenha } from './autenticacao.js';
 

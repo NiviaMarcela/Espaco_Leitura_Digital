@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
 function nomeValido(nome){
     if(typeof nome!=='string'||!nome.trim()||nome.trim().length>100)throw erroHttp(400,'Informe um nome de categoria de até 100 caracteres.');
     return nome.trim();

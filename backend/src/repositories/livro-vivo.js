@@ -1,4 +1,4 @@
-import { erroHttp } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
 
 function escopo(usuario) {
     if (usuario?.perfil === 'admin') return null;

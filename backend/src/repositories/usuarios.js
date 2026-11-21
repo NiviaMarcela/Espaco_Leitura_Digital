@@ -1,4 +1,5 @@
-import { erroHttp, validarCredenciais } from '../validation.js';
+import { erroHttp } from '../validacao/erros.js';
+import { validarCredenciais } from '../validacao/acesso.js';
 import { hashSenha, validarSenha } from './autenticacao.js';
 
 export function criarRepositorioUsuarios(banco, autor = null) {
