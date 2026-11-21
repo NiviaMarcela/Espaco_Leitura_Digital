@@ -1229,72 +1229,6 @@ body {
 ========================================================= */
 
 
-.mini-stat {
-
-    height: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 14px;
-
-    padding: 17px 19px;
-
-    background:
-        var(--surface);
-
-    border:
-        1px solid var(--border);
-
-    border-radius: 12px;
-
-}
-
-
-.mini-stat-icon {
-
-    width: 42px;
-
-    height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border-radius: 10px;
-
-}
-
-
-.mini-stat span {
-
-    display: block;
-
-    color:
-        var(--text-secondary);
-
-    font-size: 11px;
-
-}
-
-
-.mini-stat strong {
-
-    display: block;
-
-    margin-top: 2px;
-
-    color:
-        var(--ijm-blue);
-
-    font-size: 23px;
-
-}
 
 
 
@@ -1444,38 +1378,7 @@ body {
     border-radius: inherit;
 }
 
-/* Detalhes da obra: capa e dados lado a lado, empilhados no celular. */
-.detalhes-obra {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-}
 
-.detalhes-capa {
-    width: 130px;
-    height: 180px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    border-radius: 10px;
-    background: rgba(104, 96, 236, .10);
-    color: var(--ijm-purple);
-    text-align: center;
-    font-size: 12px;
-}
-
-.detalhes-capa i { font-size: 36px; }
-.detalhes-capa img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: inherit;
-}
-.detalhes-informacoes { flex: 1; min-width: 0; }
-.detalhes-autor { font-weight: 600; }
 .detalhes-dados {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1485,14 +1388,8 @@ body {
 .detalhes-dados dt { font-size: 12px; color: var(--text-secondary); }
 .detalhes-dados dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 .detalhes-sinopse { white-space: pre-wrap; overflow-wrap: anywhere; }
-.detalhes-tabela { font-size: 14px; }
-#tituloDetalhesLivro, .detalhes-autor { overflow-wrap: anywhere; }
+#tituloDetalhesLivro { overflow-wrap: anywhere; }
 
-@media (max-width: 575.98px) {
-    .detalhes-obra { flex-direction: column; gap: 16px; }
-    .detalhes-informacoes { width: 100%; }
-    .detalhes-tabela { min-width: 540px; }
-}
 
 .book-info strong {
 
