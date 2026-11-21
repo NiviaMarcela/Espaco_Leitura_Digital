@@ -51,12 +51,12 @@ Esse procedimento é administrativo local, não é uma rota pública. Exige conf
 ## Arquivos e funções
 
 - `login.html`: link de recuperação.
-- `recuperarSenha.html` e `js/recuperarSenha.js`: formulário público, envio do e-mail e orientação.
-- `src/repositories/recuperacao.js`: `solicitar` cria somente pedidos elegíveis; `listar` e `contarPendentes` aplicam o mesmo escopo por perfil/Centro; `concluir` atende ou encerra atomicamente.
-- `src/app.js`: `POST /api/auth/recuperacao`, `GET /api/recuperacoes`, `POST /api/recuperacoes/:id/concluir`, limitação de envios e autorização.
-- `usuarios.html` e `js/usuarios.js`: fila, verificação e uso do formulário de senha temporária.
-- `database/010_recuperacao_assistida.sql`: fila, unicidade de pedidos pendentes e registro dos atendimentos. Aplicar com `npm run db:migrate`.
-- `scripts/recuperar-admin.js`: recuperação local de emergência de administrador ativo.
+- `recuperarSenha.html` e `frontend/pages/recuperarSenha/recuperarSenha.js`: formulário público, envio do e-mail e orientação.
+- `backend/src/repositories/recuperacao.js`: `solicitar` cria somente pedidos elegíveis; `listar` e `contarPendentes` aplicam o mesmo escopo por perfil/Centro; `concluir` atende ou encerra atomicamente.
+- `backend/src/app.js`: `POST /api/auth/recuperacao`, `GET /api/recuperacoes`, `POST /api/recuperacoes/:id/concluir`, limitação de envios e autorização.
+- `usuarios.html` e `frontend/pages/usuarios/usuarios.js`: fila, verificação e uso do formulário de senha temporária.
+- `backend/database/010_recuperacao_assistida.sql`: fila, unicidade de pedidos pendentes e registro dos atendimentos. Aplicar com `npm run db:migrate`.
+- `backend/scripts/recuperar-admin.js`: recuperação local de emergência de administrador ativo.
 
 ## Validação
 

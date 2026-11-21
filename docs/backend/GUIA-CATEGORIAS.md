@@ -20,12 +20,12 @@ Adicionar exemplares em outro Centro como administrador cria uma descrição da 
 
 ## Arquivos e rotas
 
-- database/015_categorias_por_centro.sql: migração de categorias, livros e integridade de exemplares.
-- src/repositories/categorias.js: CRUD, validação, isolamento e mensagens de conflito.
-- src/repositories/acervo.js: criação e edição com categorias locais e livros por Centro.
+- backend/database/015_categorias_por_centro.sql: migração de categorias, livros e integridade de exemplares.
+- backend/src/repositories/categorias.js: CRUD, validação, isolamento e mensagens de conflito.
+- backend/src/repositories/acervo.js: criação e edição com categorias locais e livros por Centro.
 - GET/POST /api/categorias; PUT/DELETE /api/categorias/:id: rotas de gestão protegidas.
-- categorias.html e js/categorias.js: página de gerenciamento, busca e filtro por Centro.
-- acervo.html e js/acervo.js: seleção de categoria do livro por Centro.
+- categorias.html e frontend/pages/categorias/categorias.js: página de gerenciamento, busca e filtro por Centro.
+- acervo.html e frontend/pages/acervo/acervo.js: seleção de categoria do livro por Centro.
 - O submenu Categorias aparece abaixo de Acervo somente nas páginas Acervo e Categorias, em desktop e celular, preservando as permissões da gestão.
 
 Aplicar com npm run db:migrate no backend antes de iniciar esta versão em outros ambientes. Testes PostgreSQL usam schemas temporários para verificar migração de obra compartilhada, preservação dos exemplares, renomeação isolada, duplicidade, concorrência e exclusão protegida. A conferência visual no navegador permanece manual.

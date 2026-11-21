@@ -14,9 +14,9 @@ Os indicadores somam todos os centros. Obras e exemplares são unidades diferent
 
 ## Do banco à tela
 
-1. `js/dashboard.js` faz um GET para `/api/dashboard` ao abrir a página, clicar em Atualizar ou retornar à aba.
-2. `src/app.js` recebe o pedido e chama o repositório.
-3. `src/repositories/dashboard.js` executa uma única consulta SQL. `COUNT` calcula os totais; `WHERE` seleciona os registros que atendem a cada regra. A consulta única faz os indicadores e a lista refletirem a mesma fotografia do banco.
+1. `frontend/pages/dashboard/dashboard.js` faz um GET para `/api/dashboard` ao abrir a página, clicar em Atualizar ou retornar à aba.
+2. `backend/src/app.js` recebe o pedido e chama o repositório.
+3. `backend/src/repositories/dashboard.js` executa uma única consulta SQL. `COUNT` calcula os totais; `WHERE` seleciona os registros que atendem a cada regra. A consulta única faz os indicadores e a lista refletirem a mesma fotografia do banco.
 4. O PostgreSQL devolve os totais e as cinco retiradas mais recentes, ordenadas por data da retirada e ID decrescentes. A lista inclui registros devolvidos, mostrando sua situação atual; não é uma lista de eventos de renovação e devolução.
 5. O JavaScript preenche a página usando `textContent`, sem interpretar nomes ou títulos como HTML.
 

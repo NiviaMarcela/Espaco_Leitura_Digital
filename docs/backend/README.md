@@ -30,12 +30,12 @@ ISBN é opcional e não tem restrição de unicidade nesta etapa. Categorias e f
 Requisição HTTP → rota Express → consulta SQL → PostgreSQL → resposta JSON
 ```
 
-- `src/server.js`: inicia o processo na porta 3001 e fecha as conexões ao encerrar.
-- `src/app.js`: define os endereços da API, valida os IDs e produz respostas HTTP.
-- `src/database.js`: mantém um conjunto reutilizável de conexões, chamado pool.
-- `src/repositories/acervo.js`: reúne as consultas SQL e devolve livros com seu array de exemplares.
-- `database/001_acervo.sql`: define tabelas, relacionamentos e os três Centros iniciais.
-- `scripts/migrate.js`: aplica o SQL em uma transação e registra a aplicação em `schema_migrations`.
+- `backend/src/server.js`: inicia o processo na porta 3001 e fecha as conexões ao encerrar.
+- `backend/src/app.js`: define os endereços da API, valida os IDs e produz respostas HTTP.
+- `backend/src/database.js`: mantém um conjunto reutilizável de conexões, chamado pool.
+- `backend/src/repositories/acervo.js`: reúne as consultas SQL e devolve livros com seu array de exemplares.
+- `backend/database/001_acervo.sql`: define tabelas, relacionamentos e os três Centros iniciais.
+- `backend/scripts/migrate.js`: aplica o SQL em uma transação e registra a aplicação em `schema_migrations`.
 - `test/api.test.js`: testa o comportamento HTTP com um banco substituto controlado.
 
 `PRIMARY KEY` identifica um registro. `REFERENCES` exige que o livro e o Centro de um exemplar existam. `CHECK` rejeita valores inválidos. `ON DELETE RESTRICT` impede apagar uma obra ou Centro enquanto houver exemplares vinculados.
@@ -55,7 +55,7 @@ pnpm dev
 Também é possível iniciar sem o atalho do gerenciador, depois da instalação das dependências:
 
 ```powershell
-node --env-file-if-exists=.env src/server.js
+node --env-file-if-exists=.env backend/src/server.js
 ```
 
 Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas que a API está rodando. A API fica restrita ao próprio computador nesta etapa.

@@ -4,7 +4,7 @@
 
 A entidade LEITOR usa `data_nascimento DATE NOT NULL` no lugar de `faixa_etaria`.
 A imagem original do DER é uma referência histórica; esta descrição e a migração
-`database/002_leitores.sql` registram o modelo implementado.
+`backend/database/002_leitores.sql` registram o modelo implementado.
 
 ```mermaid
 erDiagram
@@ -39,18 +39,18 @@ entrar imediatamente com as credenciais escolhidas. A rota administrativa
 
 ## Como os blocos se conectam
 
-1. `../leitores.html` define os campos, filtros e tabela. A tela inicial `../index.html`
+1. `frontend/pages/leitores/leitores.html` define os campos, filtros e tabela. A tela inicial `frontend/pages/index/index.html`
    também permite a inscrição pública, incluindo e-mail e senha. O campo de nascimento
    usa `type="date"`; seu valor enviado é `AAAA-MM-DD`, independente da aparência do navegador.
-2. `../js/leitores.js` lê o formulário administrativo, envia JSON por `fetch`, aguarda
+2. `frontend/pages/leitores/leitores.js` lê o formulário administrativo, envia JSON por `fetch`, aguarda
    a resposta e só então atualiza a lista. O botão fica desabilitado durante o envio.
-3. `src/app.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
+3. `backend/src/app.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
    `/api/leitores/:id`. POST cadastra; PUT edita; GET consulta.
-4. `validarLeitor`, em `src/validation.js`, verifica os campos no servidor. A validação
+4. `validarLeitor`, em `backend/src/validation.js`, verifica os campos no servidor. A validação
    do navegador ajuda no preenchimento, mas não substitui a validação da API.
-5. `src/repositories/leitores.js` usa parâmetros `$1`, `$2` etc. para passar os valores
+5. `backend/src/repositories/leitores.js` usa parâmetros `$1`, `$2` etc. para passar os valores
    ao PostgreSQL. Nascimento é devolvido como texto de data, sem conversão de fuso.
-6. `../js/datas.mjs` é compartilhado pelo navegador e backend. `calcularIdade` subtrai
+6. `frontend/shared/js/datas.mjs` é compartilhado pelo navegador e backend. `calcularIdade` subtrai
    os anos e desconta um ano se o aniversário ainda não chegou. Usa a data civil
    de Fortaleza. Para nascidos em 29/02, em anos não bissextos a idade muda em 01/03.
 
@@ -80,6 +80,6 @@ node --env-file=.env --test
 Os testes de integração criam um schema temporário separado e o removem ao final.
 Há verificações de persistência, matrícula duplicada, edição, status, Centro inválido,
 datas futuras/inexistentes, aniversário e ano bissexto. A migração incremental pode
-ser reaplicada com `node --env-file=.env scripts/migrate.js`; arquivos já registrados
+ser reaplicada com `node --env-file=.env backend/scripts/migrate.js`; arquivos já registrados
 em `schema_migrations` são ignorados. A criação do acesso de login permanece restrita
 à equipe administradora e é feita separadamente do cadastro público.

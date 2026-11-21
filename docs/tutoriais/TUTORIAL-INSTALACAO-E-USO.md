@@ -30,7 +30,7 @@ Abra a pasta completa do projeto no VS Code e use **Terminal → Novo Terminal**
 
 ```powershell
 cd backend
-node --env-file=.env src/server.js
+node --env-file=.env backend/src/server.js
 ```
 
 Se o terminal já estiver dentro de `backend`, execute apenas a segunda linha.
@@ -166,7 +166,7 @@ Se houver `DATABASE_URL` configurada, ela tem prioridade sobre `PGHOST`, `PGUSER
 Ainda em `backend`, com o PostgreSQL ligado:
 
 ```powershell
-node --env-file=.env scripts/migrate.js
+node --env-file=.env backend/scripts/migrate.js
 ```
 
 Em um banco novo, a versão atual aplica cinco migrações, incluindo acervo, leitores, baixa de exemplares, empréstimos e devoluções. O script registra quais já foram executadas; repetir o comando não reaplica as mesmas migrações. Se tudo já estiver aplicado, mostra `Banco já atualizado.`
@@ -176,7 +176,7 @@ Esse comando cria as tabelas, mas não cria o banco `espaco_leitura` — por iss
 ### Passo 7 — Inicie e confira
 
 ```powershell
-node --env-file=.env src/server.js
+node --env-file=.env backend/src/server.js
 ```
 
 Deixe o terminal aberto, confira [a conexão com o banco](http://127.0.0.1:3001/api/health/db) e abra [o acervo](http://127.0.0.1:3001/acervo.html).

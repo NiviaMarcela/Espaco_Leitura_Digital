@@ -4,7 +4,7 @@ A Biblioteca consulta os livros que você cadastra no Acervo. As duas telas usam
 
 ## 1. HTML: a estrutura
 
-Em `biblioteca.html`, o menu, o cabeçalho, os cartões e a tabela usam as classes já existentes em `css/style.css`. Por exemplo, `content-card` aplica a aparência dos cartões e `btn-primary-custom` aplica o estilo do botão principal. Não foi necessário criar outro CSS.
+Em `biblioteca.html`, o menu, o cabeçalho, os cartões e a tabela usam as classes já existentes em `frontend/shared/css/style.css`. Por exemplo, `content-card` aplica a aparência dos cartões e `btn-primary-custom` aplica o estilo do botão principal. Não foi necessário criar outro CSS.
 
 O atributo `class` serve para aplicar estilos. Já o `id` identifica um elemento específico para o JavaScript encontrá-lo. Por exemplo, `id="tabelaBiblioteca"` identifica o corpo da tabela que receberá os livros.
 
@@ -16,7 +16,7 @@ Em `backend/src/app.js`, a lista de páginas permitidas agora inclui `biblioteca
 
 ## 3. JavaScript: buscar os dados
 
-Leia `js/biblioteca.js` começando por `carregarBiblioteca()`:
+Leia `frontend/pages/biblioteca/biblioteca.js` começando por `carregarBiblioteca()`:
 
 ```js
 const resposta = await fetch("/api/biblioteca", { signal: AbortSignal.timeout(15000) });

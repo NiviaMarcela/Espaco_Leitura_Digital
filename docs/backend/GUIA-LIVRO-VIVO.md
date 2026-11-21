@@ -22,6 +22,6 @@ A migração 016 converte as antigas modalidades para doacao e preserva a classi
 
 Aplicar npm run db:migrate no backend antes de executar esta versão em outros ambientes. A API aceita modalidade doacao (ou ausência do campo) e recusa valores antigos, orientando atualizar a página.
 
-Arquivos: database/016_livro_vivo_doacao.sql, src/repositories/livro-vivo.js, livroVivo.html e js/livro-vivo.js. As rotas continuam GET /api/livro-vivo, GET /api/livro-vivo/disponiveis, POST /api/livro-vivo e POST /api/livro-vivo/:id/retorno.
+Arquivos: backend/database/016_livro_vivo_doacao.sql, backend/src/repositories/livro-vivo.js, livroVivo.html e frontend/pages/livroVivo/livro-vivo.js. As rotas continuam GET /api/livro-vivo, GET /api/livro-vivo/disponiveis, POST /api/livro-vivo e POST /api/livro-vivo/:id/retorno.
 
 Testes cobrem transferência, isolamento, concorrência, retorno parcial, conservação do histórico e interface com DOM simulado. A aparência deve ser conferida no navegador.
