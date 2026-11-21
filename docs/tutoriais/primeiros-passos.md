@@ -1,26 +1,14 @@
 # Primeiros passos
 
-Este roteiro leva de máquina limpa ao sistema logado. Ele descreve a configuração em uso neste computador; o tutorial completo de instalação e uso está em [TUTORIAL-INSTALACAO-E-USO.md](TUTORIAL-INSTALACAO-E-USO.md).
+Este roteiro leva de máquina limpa ao sistema logado. O tutorial completo de instalação e uso está em [TUTORIAL-INSTALACAO-E-USO.md](TUTORIAL-INSTALACAO-E-USO.md).
 
-## 1. Banco PostgreSQL
+## 1. Banco PostgreSQL e credenciais
 
-O banco roda no Docker, no container `espaco-leitura-postgres` (imagem `postgres:18-alpine`), publicado na porta 5432 com o volume `backend_dados-postgres`. Se o container existir mas estiver parado, basta iniciá-lo:
-
-```bash
-docker start espaco-leitura-postgres
-```
-
-Conferir que respondeu:
-
-```bash
-docker ps --format '{{.Names}} | {{.Status}}'
-```
-
-O container atende o banco `espaco_leitura` com o usuário `biblioteca`. A senha dele está configurada no arquivo `backend/.env`, que fica fora do Git; nenhuma credencial deve ser enviada por chat ou colada em documentação.
+O sistema precisa de um PostgreSQL acessível em `localhost:5432` (ou no endereço que o seu ambiente usar), com um banco dedicado ao projeto e um usuário com permissão para criar tabelas nele. A forma de subir esse banco fica a seu critério: serviço instalado, container, provedor gerenciado. O que o sistema lê são as credenciais do arquivo `backend/.env`, que fica fora do Git; nenhuma credencial deve ser enviada por chat ou colada em documentação.
 
 ## 2. Conexão do backend
 
-Na raiz do projeto, dentro de `backend/`, o arquivo `.env` carrega os campos de conexão:
+Em `backend/`, copie `.env.example` para `.env` e preencha com as credenciais do seu banco:
 
 ```text
 PGHOST=localhost
@@ -30,7 +18,7 @@ PGUSER=biblioteca
 PGPASSWORD=<a senha do ambiente>
 ```
 
-Em máquina nova, copie `.env.example` para `.env` e preencha com os valores do ambiente local. O campo separado por variáveis dispensa codificar a senha na URL; `DATABASE_URL` também funciona e tem prioridade sobre os campos separados.
+Os nomes do banco e do usuário são os deste exemplo no ambiente em que o projeto nasceu; em outro ambiente, use os que você criou. Os campos separados dispensam codificar a senha na URL; `DATABASE_URL` também funciona e tem prioridade sobre os campos separados.
 
 ## 3. Dependências e migrações
 
@@ -74,7 +62,7 @@ Abra `http://127.0.0.1:3001/` no navegador. A página inicial é pública, com o
 
 ## Problemas comuns
 
-**`/api/health/db` responde "Banco de dados indisponível".** O container está parado ou a porta 5432 está ocupada por outro serviço. Veja `docker ps` e a seção 1.
+**`/api/health/db` responde "Banco de dados indisponível".** O PostgreSQL não está em execução no endereço configurado, a porta está ocupada por outro serviço ou as credenciais do `.env` não correspondem ao banco disponível. Confira os três pontos antes de subir o servidor de novo.
 
 **Login recusa e-mail válido.** A conta foi criada em outro banco. Confirme que o `PGDATABASE` do `.env` aponta para o banco onde o admin foi criado.
 
