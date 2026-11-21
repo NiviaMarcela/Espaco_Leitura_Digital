@@ -33,7 +33,6 @@ O que mais de uma tela usa fica em `frontend/shared/`:
 - `js/auth-ui.js` preenche a identidade do usuário no cabeçalho de todas as telas autenticadas.
 - `js/datas.mjs` tem os cálculos de data civil usados por quatro telas e pelo backend.
 - `js/reservas.js` atende Reservas e Meus empréstimos, que compartilham as mesmas listas.
-- `js/app.js` existe, mas nenhuma página o referencia; é candidato a remoção.
 
 Quando um estilo é exclusivo de uma tela, ele mora na pasta dela e o HTML carrega os dois arquivos, o compartilhado primeiro e o da página depois. A divisão foi medida seletor a seletor: um seletor só sai do `style.css` quando nenhuma outra tela o usa. Classes montadas por JavaScript com nome composto em tempo de execução, como `reserva-status-` + situação, permanecem no arquivo compartilhado porque o script que as cria atende duas telas.
 
