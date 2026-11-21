@@ -4,7 +4,6 @@ import { criarRepositorioRecuperacao, MENSAGEM_RECUPERACAO } from './repositorie
 import { setTimeout as aguardar } from 'node:timers/promises';
 import express from "express";
 import { fileURLToPath } from "node:url";
-import fs from "node:fs";
 import path from "node:path";
 import { criarRepositorioAcervo } from "./repositories/acervo.js";
 import { criarRepositorioAutenticacao, validarSenha } from "./repositories/autenticacao.js";
@@ -318,11 +317,7 @@ export function criarApp(banco, registrarErro = console.error) {
     // Public pages are open; protected pages are authorized on the server as well as in the UI.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
     const frontend = path.join(raiz, "frontend");
-    // Transitório: páginas movidas para frontend/pages são servidas de lá; o restante ainda vem da raiz.
-    const arquivoPagina = pagina => (req, res) => {
-        const movida = path.join(frontend, "pages", pagina, `${pagina}.html`);
-        return res.sendFile(fs.existsSync(movida) ? movida : path.join(raiz, `${pagina}.html`));
-    };
+    const arquivoPagina = pagina => (req, res) => res.sendFile(path.join(frontend, "pages", pagina, `${pagina}.html`));
     const paginaProtegida = perfil => async (req, res, next) => {
         try {
             const usuario = await carregarSessao(req);

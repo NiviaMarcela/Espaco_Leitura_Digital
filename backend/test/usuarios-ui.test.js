@@ -32,7 +32,7 @@ async function preparar(perfil='admin',solicitacoes=[]){
             return {ok:true,json:async()=>body};
         }
     });
-    vm.runInContext(readFileSync(new URL('../../js/usuarios.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/usuarios/usuarios.js',import.meta.url),'utf8'),contexto);
     await new Promise(r=>setImmediate(r));
     return {get,pedidos,usuario,executar:s=>vm.runInContext(s,contexto)};
 }

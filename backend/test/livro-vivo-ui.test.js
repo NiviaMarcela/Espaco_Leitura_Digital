@@ -27,7 +27,7 @@ async function preparar(){
             if(url==='/api/livro-vivo')body=opcoes.method==='POST'?{id:20,quantidade:JSON.parse(opcoes.body).exemplarIds.length}:historico;
             return {ok:true,json:async()=>body};}
     });
-    vm.runInContext(readFileSync(new URL('../../js/livro-vivo.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/livroVivo/livro-vivo.js',import.meta.url),'utf8'),contexto);
     await new Promise(r=>setImmediate(r));return {get,pedidos};
 }
 test('seleção mantém cópias ocultas na busca, envia IDs e limpa ao mudar Centro',async()=>{
