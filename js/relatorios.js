@@ -86,7 +86,16 @@ function renderizar() {
             item.aprovador || 'Não informado (registro anterior)',
             item.status === 'Atrasado' ? 'Inadimplente' : item.status === 'Devolvido' ? 'Devolvido' : 'Em aberto'
         ];
+        const situacao = valores.pop();
         valores.forEach(valor => { linha.insertCell().textContent = valor; });
+        const tag = document.createElement('span');
+        tag.className = 'badge rounded-pill ' + ({
+            Atrasado: 'bg-danger-subtle text-danger-emphasis',
+            Devolvido: 'bg-success-subtle text-success-emphasis',
+            Emprestado: 'bg-primary-subtle text-primary-emphasis'
+        }[item.status] || 'text-bg-secondary');
+        tag.textContent = situacao;
+        linha.insertCell().append(tag);
     }
 }
 
