@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import { lerPagina } from './ler-pagina.js';
 
 class AvatarElemento {
     constructor(tagName='div',className='') {
@@ -60,7 +61,7 @@ for(const perfil of ['admin','coordenador','professor','funcionario','leitor']) 
 test('telas com identificação de usuário exibem o ícone desde o carregamento',()=>{
     for(const arquivo of ['acervo.html','biblioteca.html','dashboard.html','devolucoes.html','emprestimos.html',
         'leitores.html','livroVivo.html','meusEmprestimos.html','Relatorios.html','reservas.html','usuarios.html']){
-        const html=readFileSync(new URL(`../../${arquivo}`,import.meta.url),'utf8');
+        const html=lerPagina(arquivo.replace(/\.html$/,''));
         assert.match(html,/class="user-avatar"[^>]*>[\s\S]*?class="bi bi-person-fill fs-4"/,arquivo);
     }
 });

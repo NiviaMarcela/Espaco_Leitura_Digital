@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import { lerPagina } from './ler-pagina.js';
 
 class Elemento {
     constructor(texto='',valor=''){this.textContent=texto;this.value=valor;this.children=[];this.eventos={};this.disabled=false;this.hidden=false;}
@@ -32,8 +33,8 @@ test('página de categorias cadastra, edita com Centro preservado e exclui com J
 });
 test('submenu Categorias aparece somente em Acervo e Categorias, nas duas sidebars',()=>{
  for(const nome of ['acervo','categorias','dashboard','biblioteca','livroVivo','leitores','reservas','emprestimos','devolucoes','usuarios','Relatorios','meusEmprestimos']){
-  const html=readFileSync(new URL('../../'+nome+'.html',import.meta.url),'utf8');
+  const html=lerPagina(nome);
   assert.equal((html.match(/href="\/categorias.html"/g)||[]).length,['acervo','categorias'].includes(nome)?2:0,nome);
  }
- const acervo=readFileSync(new URL('../../acervo.html',import.meta.url),'utf8');assert.ok(!acervo.includes('id="gerenciarCategorias"'));assert.ok(!acervo.includes('id="formCategoria"'));assert.ok(acervo.includes('id="categoriaLivro"'));
+ const acervo=lerPagina('acervo');assert.ok(!acervo.includes('id="gerenciarCategorias"'));assert.ok(!acervo.includes('id="formCategoria"'));assert.ok(acervo.includes('id="categoriaLivro"'));
 });

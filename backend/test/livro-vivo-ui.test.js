@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
+import { lerPagina } from './ler-pagina.js';
 class Elemento {
     constructor(texto='',valor=''){this.textContent=texto;this.value=valor;this.children=[];this.eventos={};this.disabled=false;}
     addEventListener(e,f){this.eventos[e]=f;}
@@ -52,9 +53,9 @@ test('doações oferecem retorno e filtro altera totais',async()=>{
 });
 test('Livro Vivo tem link nas duas sidebars e página restrita',()=>{
     for(const nome of ['dashboard','acervo','leitores','reservas','emprestimos','devolucoes','usuarios','Relatorios','biblioteca','meusEmprestimos','livroVivo']){
-        const html=readFileSync(new URL('../../'+nome+'.html',import.meta.url),'utf8');
+        const html=lerPagina(nome);
         assert.equal((html.match(/href="\/livroVivo.html"/g)||[]).length,2,nome);
         assert.equal((html.match(/data-livro-vivo-only/g)||[]).length,2,nome);
     }
-    assert.match(readFileSync(new URL('../../livroVivo.html',import.meta.url),'utf8'),/data-auth-role="admin,coordenador"/);
+    assert.match(lerPagina('livroVivo'),/data-auth-role="admin,coordenador"/);
 });

@@ -36,7 +36,7 @@ async function preparar(resposta, extras = {}) {
         Option: Elemento, AbortSignal,
         fetch: async () => resposta, ...extras
     });
-    vm.runInContext(readFileSync(new URL('../../js/biblioteca.js', import.meta.url), 'utf8'), contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/biblioteca/biblioteca.js', import.meta.url), 'utf8'), contexto);
     await new Promise(resolve => setImmediate(resolve));
     return { get, executar: codigo => vm.runInContext(codigo, contexto) };
 }
