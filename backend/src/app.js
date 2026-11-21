@@ -4,6 +4,7 @@ import { criarRepositorioRecuperacao, MENSAGEM_RECUPERACAO } from './repositorie
 import { setTimeout as aguardar } from 'node:timers/promises';
 import express from "express";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 import path from "node:path";
 import { criarRepositorioAcervo } from "./repositories/acervo.js";
 import { criarRepositorioAutenticacao, validarSenha } from "./repositories/autenticacao.js";
@@ -317,7 +318,11 @@ export function criarApp(banco, registrarErro = console.error) {
     // Public pages are open; protected pages are authorized on the server as well as in the UI.
     const raiz = fileURLToPath(new URL("../../", import.meta.url));
     const frontend = path.join(raiz, "frontend");
-    const arquivoPagina = pagina => (req, res) => res.sendFile(path.join(raiz, `${pagina}.html`));
+    // Transitório: páginas movidas para frontend/pages são servidas de lá; o restante ainda vem da raiz.
+    const arquivoPagina = pagina => (req, res) => {
+        const movida = path.join(frontend, "pages", pagina, `${pagina}.html`);
+        return res.sendFile(fs.existsSync(movida) ? movida : path.join(raiz, `${pagina}.html`));
+    };
     const paginaProtegida = perfil => async (req, res, next) => {
         try {
             const usuario = await carregarSessao(req);
@@ -345,6 +350,7 @@ export function criarApp(banco, registrarErro = console.error) {
     app.use("/css", express.static(path.join(frontend, "shared", "css"), { dotfiles: "deny" }));
     app.use("/js", express.static(path.join(frontend, "shared", "js"), { dotfiles: "deny" }));
     app.use("/assets", express.static(path.join(frontend, "assets"), { dotfiles: "deny" }));
+    app.use("/pages", express.static(path.join(frontend, "pages"), { dotfiles: "deny" }));
 
     app.use((req, res) => res.status(404).json({ erro: "Rota não encontrada." }));
     app.use((erro, req, res, next) => {

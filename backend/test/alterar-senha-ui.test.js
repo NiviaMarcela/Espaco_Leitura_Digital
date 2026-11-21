@@ -10,7 +10,7 @@ async function preparar(perfil, resposta) {
         if(url==='/api/auth/me')return {ok:true,json:async()=>({id:7,email:'teste@example.org',perfil})};
         pedidos.push({url,body:JSON.parse(opcoes.body)});return resposta();
     }});
-    vm.runInContext(readFileSync(new URL('../../js/alterarSenha.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/alterarSenha/alterarSenha.js',import.meta.url),'utf8'),contexto);
     await new Promise(r=>setImmediate(r));
     get('senhaAtual').value=' Temporaria123 ';get('novaSenha').value=get('confirmarSenha').value='NovaSenha123';
     return {get,pedidos,destinos,enviar:()=>get('formAlterarSenha').eventos.submit({preventDefault(){}})};

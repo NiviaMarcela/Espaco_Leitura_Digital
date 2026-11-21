@@ -31,7 +31,7 @@ test("login é público; Biblioteca e páginas de gestão exigem sessão", async
         const html = await resposta.text();
         assert.match(html, /Espaço de Leitura Digital \| Instituto Janela para o Mundo/);
         assert.match(html, /id="modalCadastroLeitor"/);
-        assert.match(html, /js\/home\.js/);
+        assert.match(html, /pages\/index\/home\.js/);
     }
     for (const pagina of ["biblioteca", "acervo", "dashboard", "leitores", "emprestimos", "devolucoes", "Relatorios", "meusEmprestimos"]) {
         const resposta = await get(`/${pagina}.html`);

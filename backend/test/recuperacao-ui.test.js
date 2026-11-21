@@ -9,7 +9,7 @@ test('formulário público envia somente o e-mail e mostra orientação, sem sim
     const contexto=vm.createContext({document:{getElementById:get},AbortSignal,fetch:async(url,opts)=>{
         pedido={url,body:JSON.parse(opts.body)};return {ok:true,json:async()=>({mensagem:'Procure a equipe. Nenhum e-mail será enviado.'})};
     }});
-    vm.runInContext(readFileSync(new URL('../../js/recuperarSenha.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/recuperarSenha/recuperarSenha.js',import.meta.url),'utf8'),contexto);
     get('emailRecuperacao').value=' pessoa@teste.invalid ';
     await get('formRecuperacao').eventos.submit({preventDefault(){}});
     assert.equal(pedido.url,'/api/auth/recuperacao');assert.deepEqual(pedido.body,{email:'pessoa@teste.invalid'});

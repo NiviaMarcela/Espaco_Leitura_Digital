@@ -98,7 +98,7 @@ for(const perfil of ['professor','funcionario','coordenador']) test(perfil+' rec
 
 test('login do professor tem Biblioteca como destino inicial',()=>{
     const contexto=vm.createContext({document:{getElementById:()=>({addEventListener(){}})},location:{search:''},URLSearchParams});
-    vm.runInContext(readFileSync(new URL('../../js/login.js',import.meta.url),'utf8'),contexto);
+    vm.runInContext(readFileSync(new URL('../../frontend/pages/login/login.js',import.meta.url),'utf8'),contexto);
     assert.equal(vm.runInContext("destino({perfil:'professor'})",contexto),'/biblioteca.html');
 });
 
