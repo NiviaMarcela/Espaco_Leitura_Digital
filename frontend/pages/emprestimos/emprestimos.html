@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Leitores | Espaço de Leitura Digital</title>
+    <title>Empréstimos | Espaço de Leitura Digital</title>
     <link rel="icon" type="image/svg+xml" sizes="any" href="/assets/favicon/favicon.svg?v=2">
 
     <!-- Bootstrap -->
@@ -27,7 +27,7 @@
     <!-- CSS -->
     <link
         rel="stylesheet"
-        href="css/style.css"
+        href="/css/style.css"
     >
 </head>
 
@@ -44,7 +44,7 @@
         <div class="brand">
 
             <img
-                src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
+                src="/assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
                 alt="Instituto Janela para o Mundo"
                 class="logo-instituto"
             >
@@ -89,7 +89,7 @@
 
             <a
                 href="leitores.html"
-                class="menu-item active"
+                class="menu-item"
             >
                 <i class="bi bi-people"></i>
                 Leitores
@@ -101,7 +101,7 @@
 
             <a
                 href="emprestimos.html"
-                class="menu-item"
+                class="menu-item active"
             >
                 <i class="bi bi-arrow-up-right-circle"></i>
                 Empréstimos
@@ -189,7 +189,7 @@
 
                 <a
                     href="leitores.html"
-                    class="menu-item active"
+                    class="menu-item"
                 >
                     <i class="bi bi-people"></i>
                     Leitores
@@ -201,7 +201,7 @@
 
                 <a
                     href="emprestimos.html"
-                    class="menu-item"
+                    class="menu-item active"
                 >
                     <i class="bi bi-arrow-up-right-circle"></i>
                     Empréstimos
@@ -256,7 +256,7 @@
                     </h1>
 
                     <p>
-                        Cadastro e acompanhamento dos leitores.
+                        Retiradas, prazos e renovações de exemplares.
                     </p>
 
                 </div>
@@ -276,75 +276,57 @@
         ========================== -->
 
         <section class="page-header">
-    <div><span class="page-eyebrow">Biblioteca</span><h2>Leitores</h2>
-        <p>Cadastre e acompanhe as pessoas que participam do espaço de leitura.</p></div>
-    <button id="novoLeitor" class="btn btn-primary-custom" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Novo leitor</button>
+    <div><span class="page-eyebrow">Biblioteca</span><h2>Empréstimos</h2><p>Acompanhe as retiradas, os prazos e as renovações dos leitores.</p></div>
+    <button id="novoEmprestimo" class="btn btn-primary-custom" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Novo empréstimo</button>
 </section>
-<p id="avisoLeitores" role="status">Carregando leitores…</p>
-<button id="recarregarLeitores" class="btn btn-secondary-custom mb-3" hidden>Tentar novamente</button>
-<section class="content-card mb-4" aria-label="Filtros de leitores">
-    <div class="row g-3">
-        <div class="col-lg-5"><label for="buscaLeitor" class="form-label">Buscar por nome, matrícula ou turma</label><input id="buscaLeitor" type="search" class="form-control" disabled></div>
-        <div class="col-lg-4"><label for="filtroCentroLeitor" class="form-label">Centro</label><select id="filtroCentroLeitor" class="form-select" disabled><option value="">Todos os Centros</option></select></div>
-        <div class="col-lg-3"><label for="filtroStatusLeitor" class="form-label">Status</label><select id="filtroStatusLeitor" class="form-select" disabled><option value="">Todos</option><option>Ativo</option><option>Inativo</option></select></div>
-    </div>
-</section>
+<p class="text-secondary">Empréstimo direto: 30 dias corridos. Até 10 exemplares por leitor, somando reservas e empréstimos · Renovações sem limite de quantidade, por 30 dias a partir do dia da renovação.</p>
+
+<p id="avisoEmprestimos" role="status">Carregando empréstimos…</p>
+<button id="atualizarEmprestimos" class="btn btn-secondary-custom mb-3">Atualizar lista</button>
+<section class="content-card mb-4" aria-label="Filtros de empréstimos"><div class="row g-3">
+    <div class="col-md-8"><label for="buscaEmprestimo" class="form-label">Buscar leitor, matrícula, livro ou código</label><input id="buscaEmprestimo" class="form-control" type="search" disabled></div>
+    <div class="col-md-4"><label for="statusEmprestimo" class="form-label">Situação</label><select id="statusEmprestimo" class="form-select" disabled><option value="">Todos</option><option value="Abertos">Em aberto</option><option>Emprestado</option><option>Atrasado</option><option>Devolvido</option></select></div>
+</div></section>
 <section class="content-card">
-    <div class="card-heading"><div><h3>Leitores cadastrados</h3><p id="totalLeitores">Aguardando conexão com o banco.</p></div></div>
+    <div class="card-heading"><div><h3>Empréstimos registrados</h3><p id="resumoEmprestimos">Aguardando conexão.</p></div></div>
     <div class="table-responsive"><table class="table custom-table align-middle">
-        <caption class="visually-hidden">Cadastro de leitores</caption>
-        <thead><tr><th scope="col">Nome</th><th scope="col">Tipo</th><th scope="col">Matrícula / turma</th><th scope="col">Idade atual</th><th scope="col">Centro</th><th scope="col">Status</th><th scope="col">Acesso</th><th scope="col">Ações</th></tr></thead>
-        <tbody id="tabelaLeitores"><tr><td colspan="8">Carregando…</td></tr></tbody>
+        <caption class="visually-hidden">Empréstimos e prazos de devolução</caption>
+        <thead><tr><th scope="col">Leitor</th><th scope="col">Livro / exemplar</th><th scope="col">Retirada</th><th scope="col">Devolver até</th><th scope="col">Situação</th><th scope="col">Renovações</th><th scope="col">Ações</th></tr></thead>
+        <tbody id="tabelaEmprestimos"><tr><td colspan="7">Carregando…</td></tr></tbody>
     </table></div>
 </section>
 <footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer>
 </main>
-<div class="modal fade" id="modalLeitor" tabindex="-1" aria-labelledby="tituloFormularioLeitor" aria-hidden="true">
-<div class="modal-dialog modal-lg"><div class="modal-content custom-modal">
-    <div class="modal-header"><h2 class="modal-title fs-5" id="tituloFormularioLeitor">Cadastrar leitor</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
-    <form id="formLeitor">
-        <div class="modal-body">
-            <p class="text-secondary">Os campos com * são obrigatórios.</p>
-            <div class="row g-3">
-                <div class="col-md-8"><label for="nomeLeitor" class="form-label">Nome completo *</label><input id="nomeLeitor" class="form-control" maxlength="200" required></div>
-                <div class="col-md-4"><label for="tipoLeitor" class="form-label">Tipo *</label><select id="tipoLeitor" class="form-select" required><option value="">Selecione</option><option>Aluno</option><option>Professor</option><option>Funcionário</option><option>Voluntário</option><option>Comunidade</option></select></div>
-                <div class="col-md-6"><label for="nascimentoLeitor" class="form-label">Data de nascimento *</label><input id="nascimentoLeitor" type="date" min="0001-01-01" class="form-control" required aria-describedby="idadeLeitor"><div id="idadeLeitor" class="form-text" role="status">A idade será calculada automaticamente.</div></div>
-                <div class="col-md-6"><label for="centroLeitor" class="form-label">Centro de Educação *</label><select id="centroLeitor" class="form-select" required><option value="">Selecione o Centro</option></select></div>
-                <div class="col-md-6"><label for="matriculaLeitor" class="form-label">Matrícula / código</label><input id="matriculaLeitor" class="form-control" maxlength="80"><div class="form-text">Opcional. Não pode se repetir no mesmo Centro.</div></div>
-                <div class="col-md-6"><label for="turmaLeitor" class="form-label">Turma</label><input id="turmaLeitor" class="form-control" maxlength="100"></div>
-                <div class="col-md-6"><label for="telefoneLeitor" class="form-label">Telefone *</label><input id="telefoneLeitor" type="tel" class="form-control" maxlength="30" required></div>
-                <div class="col-md-6"><label for="emailLeitor" class="form-label">E-mail *</label><input id="emailLeitor" type="email" class="form-control" maxlength="254" required></div>
-                <div class="col-md-6"><label for="statusLeitor" class="form-label">Status *</label><select id="statusLeitor" class="form-select" required><option>Ativo</option><option>Inativo</option></select><div class="form-text">Inativar mantém o cadastro para preservar o histórico.</div></div>
-            </div>
+<div class="modal fade" id="modalEmprestimo" tabindex="-1" aria-labelledby="tituloEmprestimo" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content custom-modal">
+    <div class="modal-header"><h2 class="modal-title fs-5" id="tituloEmprestimo">Novo empréstimo</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fechar cadastro"></button></div>
+    <form id="formEmprestimo"><div class="modal-body">
+        <p id="avisoOpcoes" role="status"></p>
+        <div class="row g-3">
+            <div class="col-md-6"><label for="buscaLeitorEmprestimo" class="form-label">Localizar leitor</label><input id="buscaLeitorEmprestimo" class="form-control" type="search" placeholder="Nome ou matrícula"></div>
+            <div class="col-md-6"><label for="buscaExemplarEmprestimo" class="form-label">Localizar livro ou exemplar</label><input id="buscaExemplarEmprestimo" class="form-control" type="search" placeholder="Título ou código"></div>
+            <div class="col-12"><label for="leitorEmprestimo" class="form-label">Leitor ativo *</label><select id="leitorEmprestimo" class="form-select" required><option value="">Selecione</option></select><div id="saldoLeitor" class="form-text">Até 10 exemplares entre reservas pendentes e empréstimos abertos.</div></div>
+            <div class="col-12"><label for="exemplarEmprestimo" class="form-label">Exemplar disponível *</label><select id="exemplarEmprestimo" class="form-select" required><option value="">Selecione</option></select><div class="form-text">Confira o código da cópia física antes de registrar a retirada.</div></div>
+            <div class="col-md-6"><label for="retiradaEmprestimo" class="form-label">Data da retirada</label><input id="retiradaEmprestimo" class="form-control" type="date" readonly></div>
+            <div class="col-md-6"><label for="prazoEmprestimo" class="form-label">Previsão de devolução</label><input id="prazoEmprestimo" class="form-control" type="date" readonly><div class="form-text">Prazo calculado automaticamente no momento do registro.</div></div>
+            <div class="col-12"><label for="observacaoEmprestimo" class="form-label">Observação</label><textarea id="observacaoEmprestimo" class="form-control" maxlength="2000" rows="2"></textarea></div>
         </div>
-        <div class="modal-footer flex-column align-items-stretch">
-            <div id="senhaCadastroLeitorGrupo" class="mt-3">
-                <label for="senhaCadastroLeitor" class="form-label">Senha inicial (opcional)</label>
-                <input id="senhaCadastroLeitor" class="form-control" type="password" minlength="8" maxlength="128" autocomplete="new-password" aria-describedby="dicaSenhaLeitor">
-                <div id="dicaSenhaLeitor" class="form-text">Preencha para criar o acesso junto com o cadastro. Use de 8 a 128 caracteres; o leitor deverá trocar a senha no primeiro login. Em branco, o cadastro ficará sem acesso.</div>
-                <label for="confirmarSenhaCadastroLeitor" class="form-label mt-2">Confirme a senha inicial</label>
-                <input id="confirmarSenhaCadastroLeitor" class="form-control" type="password" maxlength="128" autocomplete="new-password">
-            </div>
-            <p id="erroLeitor" class="text-danger mb-0" role="alert" tabindex="-1"></p>
-            <div class="d-flex justify-content-end gap-2"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button><button id="salvarLeitor" type="submit" class="btn btn-primary-custom">Cadastrar leitor</button></div>
-        </div>
-    </form>
+        <p id="erroEmprestimo" class="text-danger mt-3" role="alert" tabindex="-1"></p>
+    </div><div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button><button type="submit" id="salvarEmprestimo" class="btn btn-primary-custom">Registrar empréstimo</button></div></form>
 </div></div></div>
-<div class="modal fade" id="modalAcessoLeitor" tabindex="-1" aria-labelledby="tituloAcessoLeitor" aria-hidden="true">
-<div class="modal-dialog"><div class="modal-content custom-modal">
-    <div class="modal-header"><h2 class="modal-title fs-5" id="tituloAcessoLeitor">Configurar acesso</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
-    <form id="formAcessoLeitor">
-        <div class="modal-body">
-            <p id="emailAcessoLeitor"></p>
-            <label for="senhaInicialLeitor" class="form-label">Senha inicial temporária *</label>
-            <input id="senhaInicialLeitor" class="form-control" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
-            <div class="form-text">Use pelo menos 8 caracteres. Compartilhe a senha com o leitor por um canal seguro; ele deverá alterá-la no primeiro login.</div>
-            <p id="erroAcessoLeitor" class="text-danger mt-3 mb-0" role="alert" tabindex="-1"></p>
-        </div>
-        <div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button><button id="salvarAcessoLeitor" type="submit" class="btn btn-primary-custom">Criar acesso</button></div>
-    </form>
+<div class="modal fade" id="modalRenovacao" tabindex="-1" aria-labelledby="tituloRenovacao" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content custom-modal">
+    <div class="modal-header"><h2 id="tituloRenovacao" class="modal-title fs-5">Detalhes e renovação</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar detalhes"></button></div>
+    <form id="formRenovacao"><div class="modal-body">
+        <p id="identificacaoRenovacao" class="fw-semibold"></p>
+        <p id="aprovadorRenovacao"></p>
+        <p id="observacaoRenovacao"></p>
+        <p id="prazoRenovacao"></p><p id="novoPrazoRenovacao" class="fw-semibold"></p>
+        <p id="avisoRenovacao" role="status"></p>
+        <h3 class="fs-6">Histórico de renovações</h3><ul id="historicoRenovacoes"></ul>
+        <p id="erroRenovacao" class="text-danger" role="alert" tabindex="-1"></p>
+    </div><div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button><button type="submit" id="confirmarRenovacao" class="btn btn-primary-custom">Confirmar renovação</button></div></form>
 </div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module" src="js/leitores.js"></script>
-<script src="js/auth-ui.js"></script>
+<script type="module" src="/pages/emprestimos/emprestimos.js"></script>
+<script src="/js/auth-ui.js"></script>
+
 </body></html>

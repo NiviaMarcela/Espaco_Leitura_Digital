@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Devoluções | Espaço de Leitura Digital</title>
+    <title>Reservas | Espaço de Leitura Digital</title>
     <link rel="icon" type="image/svg+xml" sizes="any" href="/assets/favicon/favicon.svg?v=2">
 
     <!-- Bootstrap -->
@@ -27,12 +27,12 @@
     <!-- CSS -->
     <link
         rel="stylesheet"
-        href="css/style.css"
+        href="/css/style.css"
     >
 </head>
 
 
-<body data-auth-role="admin,coordenador,professor,funcionario">
+<body data-auth-role="admin,coordenador,professor,funcionario" data-reservas-gestao>
 
 
     <!-- =========================
@@ -44,7 +44,7 @@
         <div class="brand">
 
             <img
-                src="assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
+                src="/assets/img/AF_InstitutoJanela_Logo_RGB_VER_NEG1.jpg"
                 alt="Instituto Janela para o Mundo"
                 class="logo-instituto"
             >
@@ -96,7 +96,7 @@
             </a>
 
 
-            <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
+            <a class="menu-item active" href="/reservas.html" data-reservas-link aria-current="page"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
 
 
             <a
@@ -108,7 +108,7 @@
             </a>
             <a
                 href="devolucoes.html"
-                class="menu-item active"
+                class="menu-item"
             >
                 <i class="bi bi-arrow-down-left-circle"></i>
                 Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
@@ -196,7 +196,7 @@
                 </a>
 
 
-                <a class="menu-item" href="/reservas.html" data-reservas-link><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
+                <a class="menu-item active" href="/reservas.html" data-reservas-link aria-current="page"><i class="bi bi-bookmark-star" aria-hidden="true"></i>Reservas<span class="menu-badge" data-reservas-count hidden></span></a>
 
 
                 <a
@@ -208,7 +208,7 @@
                 </a>
             <a
                     href="devolucoes.html"
-                    class="menu-item active"
+                    class="menu-item"
                 >
                     <i class="bi bi-arrow-down-left-circle"></i>
                     Devoluções<span class="menu-badge" data-devolucoes-count hidden></span>
@@ -216,7 +216,7 @@
 
 
                 <a class="menu-item" href="usuarios.html" data-usuarios-only hidden><i class="bi bi-person-gear" aria-hidden="true"></i>Usuários<span class="menu-badge" data-solicitacoes-senha-count hidden></span></a>
-                <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
+                    <a href="Relatorios.html" class="menu-item" data-relatorios-only hidden><i class="bi bi-file-earmark-pdf"></i>Relatórios</a>
 
             </nav>
 
@@ -256,7 +256,7 @@
                     </h1>
 
                     <p>
-                        Recebimento de exemplares e histórico de devoluções.
+                        Reservas e confirmação de retirada de exemplares.
                     </p>
 
                 </div>
@@ -275,30 +275,16 @@
              TÍTULO
         ========================== -->
 
-        <section class="page-header"><div><span class="page-eyebrow">Biblioteca</span><h2>Devoluções</h2><p>Localize o empréstimo e confira o exemplar antes de registrar o recebimento.</p></div></section>
-<p id="avisoDevolucoes" role="status">Carregando empréstimos…</p>
-        <div id="avisoVencimentos" class="alert alert-warning" role="status" aria-live="polite" hidden></div>
-        <button id="atualizarDevolucoes" class="btn btn-secondary-custom mb-3">Atualizar lista</button>
-<section class="content-card mb-4" aria-label="Filtros de devoluções"><div class="row g-3">
-<div class="col-md-8"><label for="buscaDevolucao" class="form-label">Buscar código do exemplar, livro, leitor ou matrícula</label><input id="buscaDevolucao" class="form-control" type="search" disabled></div>
-<div class="col-md-4"><label for="filtroDevolucao" class="form-label">Exibir</label><select id="filtroDevolucao" class="form-select" disabled><option value="pendentes">Aguardando devolução</option><option value="atrasados">Atrasados</option><option value="devolvidos">Histórico de devoluções</option><option value="todos">Todos</option></select></div>
-</div></section>
-<section class="content-card"><div class="card-heading"><div><h3>Controle de devoluções</h3><p id="resumoDevolucoes">Aguardando conexão.</p></div></div>
-<div class="table-responsive"><table class="table custom-table align-middle"><caption class="visually-hidden">Empréstimos pendentes e devoluções registradas</caption>
-<thead><tr><th scope="col">Leitor</th><th scope="col">Livro / exemplar</th><th scope="col">Prazo</th><th scope="col">Situação / atraso</th><th scope="col">Ações</th></tr></thead><tbody id="tabelaDevolucoes"><tr><td colspan="5">Carregando…</td></tr></tbody></table></div></section>
-<footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer></main>
-<div class="modal fade" id="modalDevolucao" tabindex="-1" aria-labelledby="tituloDevolucao" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content custom-modal">
-<div class="modal-header"><h2 id="tituloDevolucao" class="modal-title fs-5">Registrar devolução</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar devolução"></button></div>
-<form id="formDevolucao"><div class="modal-body">
-<p id="identificacaoDevolucao" class="fw-semibold"></p><p id="datasDevolucao"></p><p id="situacaoDevolucao" role="status"></p>
-<div id="camposDevolucao">
-<p>Confirme o recebimento da cópia física. A data será registrada automaticamente.</p>
-<label for="condicaoDevolucao" class="form-label">Condição do exemplar *</label><select id="condicaoDevolucao" class="form-select mb-3" required><option value="">Selecione após conferir o exemplar</option><option value="Disponível">Em boas condições — disponível para novo empréstimo</option><option value="Danificado">Danificado — manter indisponível</option></select>
-<label for="observacaoDevolucao" class="form-label">Observação (obrigatória para exemplar danificado)</label><textarea id="observacaoDevolucao" class="form-control" rows="3" maxlength="2000"></textarea>
-<p id="efeitoDevolucao" class="form-text">A devolução libera uma vaga no limite de 5 exemplares do leitor.</p>
-</div>
-<div id="historicoDevolucao" hidden><h3 class="fs-6">Registro do recebimento</h3><p id="condicaoRegistrada"></p><p id="observacaoRegistrada"></p><p id="momentoRegistrado"></p></div>
-<p id="erroDevolucao" class="text-danger mt-3" role="alert" tabindex="-1"></p>
-</div><div class="modal-footer"><button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button><button id="confirmarDevolucao" type="submit" class="btn btn-primary-custom">Confirmar devolução</button></div></form>
-</div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script><script type="module" src="js/devolucoes.js"></script><script src="js/auth-ui.js"></script></body></html>
+        <section class="page-header"><div><span class="page-eyebrow">Biblioteca</span><h2>Reservas</h2><p>Confirme as retiradas e acompanhe as reservas pendentes do seu Centro.</p></div></section>
+<section class="content-card reservas-painel mb-4" aria-labelledby="tituloReservas">
+    <div class="card-heading"><h3 id="tituloReservas"><i class="bi bi-bookmark-star me-2" aria-hidden="true"></i>Reservas aguardando retirada</h3><button id="atualizarReservas" class="btn btn-outline-primary" type="button"><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Atualizar reservas</button></div>
+    <p class="text-secondary">Reservas não retiradas no prazo de 7 dias são canceladas e liberam o exemplar. A data limite de devolução é calculada a partir da reserva.</p>
+    <p id="avisoReservas" role="status" aria-live="polite">Carregando reservas…</p>
+    <div class="table-responsive"><table class="table custom-table"><thead><tr><th>Leitor</th><th>Livro / exemplar</th><th>Reservado em</th><th>Retirar até</th><th>Devolver até</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tabelaReservas"></tbody></table></div>
+</section>
+<footer class="footer"><p>© 2026 Instituto Janela para o Mundo · Espaço de Leitura Digital</p></footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/auth-ui.js"></script>
+<script type="module" src="/js/reservas.js"></script>
+</body></html>

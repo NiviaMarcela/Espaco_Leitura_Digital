@@ -1,4 +1,4 @@
-import { calcularIdade, hojeCivil } from './datas.mjs';
+import { calcularIdade, hojeCivil } from '/js/datas.mjs';
 
 const elemento = id => document.getElementById(id);
 const form = elemento('formLeitor');

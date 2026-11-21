@@ -1,4 +1,4 @@
-import { hojeCivil, somarDias } from './datas.mjs';
+import { hojeCivil, somarDias } from '/js/datas.mjs';
 
 const el = id => document.getElementById(id);
 const normalizar = texto => String(texto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

@@ -19,7 +19,7 @@ async function preparar(){
  const elementos=new Map(),pedidos=[];const get=id=>{if(!elementos.has(id))elementos.set(id,new Elemento());return elementos.get(id);};
  const contexto=vm.createContext({document:{getElementById:get,createElement:()=>new Elemento()},Option:Elemento,AbortSignal,confirm:()=>true,
  fetch:async(url,opcoes)=>{pedidos.push({url,...opcoes});return {ok:true,json:async()=>url==='/api/centros'?[{id:1,nome:'Maranhão'}]:opcoes.method==='GET'?[{id:8,nome:'Literatura',centroId:1,centro:'Maranhão',livros:2}]:{sucesso:true}};}});
- vm.runInContext(readFileSync(new URL('../../js/categorias.js',import.meta.url),'utf8'),contexto);await new Promise(r=>setImmediate(r));
+ vm.runInContext(readFileSync(new URL('../../frontend/pages/categorias/categorias.js',import.meta.url),'utf8'),contexto);await new Promise(r=>setImmediate(r));
  return {get,pedidos};
 }
 test('página de categorias cadastra, edita com Centro preservado e exclui com JSON',async()=>{

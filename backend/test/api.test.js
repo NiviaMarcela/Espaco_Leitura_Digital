@@ -443,14 +443,14 @@ test('Reservas tem rota de gestão e menus próprios; Empréstimos não carrega 
     for(const perfil of ['admin','coordenador','professor','funcionario']) {
         const api=await iniciar(t,async()=>({rows:[]}),{id:8,perfil,centroId:1});
         const resposta=await api('/reservas.html',opcoes);assert.equal(resposta.status,200);
-        const html=await resposta.text();assert.match(html,/id="tabelaReservas"/);assert.match(html,/src="js\/reservas.js"/);
+        const html=await resposta.text();assert.match(html,/id="tabelaReservas"/);assert.match(html,/src="\/js\/reservas.js"/);
         assert.doesNotMatch(html,/id="novoEmprestimo"|src="js\/emprestimos.js"/);
         for(const pagina of ['acervo','leitores','emprestimos','devolucoes','biblioteca','reservas']) {
             const conteudo=await (await api('/'+pagina+'.html',opcoes)).text();
             const menus=[...conteudo.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)];
             assert.equal(menus.length,2);
             for(const menu of menus)assert.equal((menu[1].match(/href="\/reservas.html"/g)||[]).length,1);
-            if(pagina==='emprestimos')assert.doesNotMatch(conteudo,/data-reservas-gestao|id="tabelaReservas"|src="js\/reservas.js"/);
+            if(pagina==='emprestimos')assert.doesNotMatch(conteudo,/data-reservas-gestao|id="tabelaReservas"|src="\/js\/reservas.js"/);
         }
     }
     const api=await iniciar(t,async()=>({rows:[]}),{id:9,perfil:'leitor',centroId:1,leitorId:7});
