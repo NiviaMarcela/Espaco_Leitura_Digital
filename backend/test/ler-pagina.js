@@ -1,9 +1,6 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
-// Durante a reorganização do frontend, cada página vive em frontend/pages/<nome>/;
-// enquanto a movimentação não termina, páginas antigas ainda ficam na raiz do projeto.
+// Cada página vive em frontend/pages/<nome>/ com o html de mesmo nome.
 export function lerPagina(nome) {
-    const movida = new URL(`../../frontend/pages/${nome}/${nome}.html`, import.meta.url);
-    const naRaiz = new URL(`../../${nome}.html`, import.meta.url);
-    return readFileSync(existsSync(movida) ? movida : naRaiz, 'utf8');
+    return readFileSync(new URL(`../../frontend/pages/${nome}/${nome}.html`, import.meta.url), 'utf8');
 }
