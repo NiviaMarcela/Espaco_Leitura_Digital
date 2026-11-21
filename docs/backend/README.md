@@ -44,12 +44,12 @@ Uma transação permite criar todas as tabelas juntas ou desfazer a tentativa se
 
 ## Executar a API localmente
 
-Use Node.js 22.9 ou superior e pnpm. Os comandos abaixo são executados dentro da pasta `backend`:
+Use Node.js 22.9 ou superior e npm. Os comandos abaixo são executados dentro da pasta `backend`:
 
 ```powershell
-pnpm install
-pnpm test
-pnpm dev
+npm install
+npm test
+npm run dev
 ```
 
 Também é possível iniciar sem o atalho do gerenciador, depois da instalação das dependências:
@@ -65,9 +65,9 @@ Abra `http://127.0.0.1:3001/api/health`. A resposta `status: ok` confirma apenas
 1. Instale o PostgreSQL e crie um banco dedicado chamado `espaco_leitura` e um usuário do projeto com permissão para criar tabelas nesse banco. O PostgreSQL 18 já foi instalado neste computador, e o banco `espaco_leitura` foi criado pelo usuário; a conexão já foi autenticada e a migração inicial foi aplicada.
 2. Copie `.env.example` para `.env` dentro de `backend`.
 3. Preencha `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` e `PGPASSWORD` no `.env`. Os campos separados permitem usar a senha sem codificação de URL. Mantenha a senha entre aspas para preservar caracteres como `#`; se ela contiver aspas duplas, use aspas simples externas (ou vice-versa). Não envie credenciais pelo chat. O arquivo local foi preparado com `postgres` para esta configuração inicial; para uso da aplicação, prepare depois um usuário dedicado com permissões limitadas. Alternativamente, use `DATABASE_URL`, que tem prioridade sobre os campos separados. Em serviços hospedados, use a conexão e os certificados indicados pelo provedor, sem desativar a verificação TLS.
-4. Execute `pnpm db:migrate`.
-5. Execute `pnpm admin:criar` para cadastrar o primeiro administrador. Informe o e-mail e digite uma senha forte com pelo menos 8 caracteres; ela não aparece no terminal.
-6. Inicie a API com `pnpm dev` e abra `/api/health/db`.
+4. Execute `npm run db:migrate`.
+5. Execute `npm run admin:criar` para cadastrar o primeiro administrador. Informe o e-mail e digite uma senha forte com pelo menos 8 caracteres; ela não aparece no terminal.
+6. Inicie a API com `npm run dev` e abra `/api/health/db`.
 
 O arquivo `.env` está ignorado no Git. Não crie tabelas com dados reais antes de configurar os acessos necessários. A migração inicial insere apenas CE Maranhão, CE Piauí e CE Bahia; a consulta de livros retornará `[]` até haver obras no banco.
 
@@ -103,7 +103,7 @@ O cadastro público cria uma conta de leitor com senha de 8 a 128 caracteres. Ad
 
 Reservar marca a cópia como Reservado e cria uma reserva Pendente, sem iniciar prazo. Em Reservas → Reservas aguardando retirada, o coordenador do Centro (ou administrador) confirma a entrega; só então nasce o empréstimo de 30 dias. O leitor acompanha e cancela reservas pendentes em Minhas reservas e empréstimos. Cancelar libera a cópia e uma vaga do limite de 10. Consulte GUIA-PERFIS-RESERVAS.md.
 
-Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `pnpm db:migrate` e depois `pnpm admin:criar`. O comando solicita o e-mail e a senha sem exibi-la e não permite criar outro administrador inicial. Os administradores adicionais são cadastrados em Usuários, até o total de quatro. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
+Para criar o primeiro administrador, copie `backend/.env.example` para `backend/.env`, configure a conexão PostgreSQL, execute `npm run db:migrate` e depois `npm run admin:criar`. O comando solicita o e-mail e a senha sem exibi-la e não permite criar outro administrador inicial. Os administradores adicionais são cadastrados em Usuários, até o total de quatro. Mantenha `.env` local e fora do Git. O servidor continua restrito a `127.0.0.1`; para hospedagem, configure HTTPS e a variável `NODE_ENV=production` para ativar o atributo Secure do cookie.
 
 Express serve apenas páginas autorizadas e as pastas css, js e assets. A raiz do projeto, o backend e o .env não são servidos. A interface usa a mesma origem da API; pedidos de gravação vindos de outra origem são rejeitados. O login de administrador protege também as rotas que alteram o acervo, leitores, empréstimos e devoluções.
 
@@ -144,7 +144,7 @@ node --env-file=.env --test
 Remove-Item Env:RUN_POSTGRES_TESTS
 ```
 
-O teste cria e remove somente um schema aleatório com prefixo `teste_acervo_`; o usuário do banco precisa ter permissão para isso. Os testes normais com `pnpm test` ignoram essa integração quando a variável não está habilitada.
+O teste cria e remove somente um schema aleatório com prefixo `teste_acervo_`; o usuário do banco precisa ter permissão para isso. Os testes normais com `npm test` ignoram essa integração quando a variável não está habilitada.
 
 ### Diagnóstico: SEM_CODIGO e PostgreSQL sem resposta (12/11/2026)
 

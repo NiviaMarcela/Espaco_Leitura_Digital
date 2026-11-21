@@ -98,17 +98,11 @@ Daqui em diante, execute os comandos do projeto dentro de `backend`, onde está 
 
 ### Passo 3 — Instale as dependências
 
-O projeto possui `pnpm-lock.yaml`. Para manter as versões registradas nele, use pnpm:
-
 ```powershell
-npm.cmd install --global pnpm@11
-pnpm.cmd --version
-pnpm.cmd install --frozen-lockfile
+npm install
 ```
 
-A primeira linha instala o gerenciador; a última instala as bibliotecas do projeto. É necessário acesso à internet. A opção `--frozen-lockfile` evita alterar as versões registradas; se houver erro de incompatibilidade do lockfile, confira se recebeu `package.json` e `pnpm-lock.yaml` da mesma versão do projeto.
-
-O sufixo `.cmd` evita o bloqueio comum dos atalhos PowerShell `.ps1`, sem alterar a política de execução do Windows. Consulte a [documentação oficial do pnpm](https://github.com/pnpm/pnpm/blob/main/pnpm/docs/installation.md) e a [documentação de instalação de dependências](https://github.com/pnpm/pnpm/blob/main/pnpm/docs/cli/install.md).
+O comando lê o `package.json` e o `package-lock.json` e instala as bibliotecas do projeto nas versões registradas. É necessário acesso à internet. Se aparecer erro de incompatibilidade do lockfile, confira se recebeu `package.json` e `package-lock.json` da mesma versão do projeto.
 
 ### Passo 4 — Crie o banco
 
@@ -185,9 +179,9 @@ Cada colega terá inicialmente seu próprio banco sem seus livros, leitores e em
 
 ## 4. Como compartilhar o projeto
 
-Envie o código completo e este tutorial, incluindo `backend/.env.example`, `backend/package.json`, `backend/pnpm-lock.yaml` e os arquivos SQL em `backend/database`.
+Envie o código completo e este tutorial, incluindo `backend/.env.example`, `backend/package.json`, `backend/package-lock.json` e os arquivos SQL em `backend/database`.
 
-Não inclua seu `.env`, senhas, pastas `node_modules`, `.pnpm-store`, logs ou cópias do banco com dados pessoais. Ao preparar um ZIP, exclua esses itens da cópia que será compactada; mantenha seu `.env` original na sua máquina. O `.gitignore` não filtra arquivos de um ZIP feito pelo Explorador do Windows.
+Não inclua seu `.env`, senhas, pastas `node_modules`, logs ou cópias do banco com dados pessoais. Ao preparar um ZIP, exclua esses itens da cópia que será compactada; mantenha seu `.env` original na sua máquina. O `.gitignore` não filtra arquivos de um ZIP feito pelo Explorador do Windows.
 
 Os endereços `localhost` e `127.0.0.1` apontam para o computador de quem os abre. O servidor atual atende somente a própria máquina. Este tutorial permite que cada colega execute sua cópia; não transforma seu computador em um servidor acessível aos demais. Compartilhar a mesma base será uma etapa de hospedagem e autenticação.
 
@@ -204,7 +198,7 @@ Os endereços `localhost` e `127.0.0.1` apontam para o computador de quem os abr
 | `EADDRINUSE` | A porta do backend já está ocupada; confira se ele já está aberto em outro terminal. Pare apenas o processo conhecido ou escolha outra `PORT` e ajuste os links |
 | `.env` não encontrado / `package.json` não encontrado | Execute dentro da pasta `backend`; confira o nome do arquivo |
 | Módulo não encontrado | Instale as dependências e confira se recebeu a pasta completa do projeto |
-| `npm.ps1` ou `pnpm.ps1` bloqueado | Use `npm.cmd` ou `pnpm.cmd`, como neste tutorial |
+| `npm.ps1` bloqueado | Use `npm.cmd`, como neste tutorial |
 | Página sem estilos ou ícones | Confira acesso à internet: Bootstrap e ícones são carregados por CDN |
 
 As mensagens na interface podem ser genéricas; o terminal pode mostrar o código do erro. Ao pedir ajuda, envie o texto do erro e o comando executado, sem enviar o `.env` nem senhas.
