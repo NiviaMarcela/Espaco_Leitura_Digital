@@ -34,7 +34,7 @@ retirado um exemplar depois que o formulário foi aberto.
 
 ### 2. Rotas e validação
 
-`backend/src/app.js` define os endereços:
+As rotas de empréstimos ficam em `backend/src/routes/emprestimos.js`:
 
 | Método e rota | Função |
 | --- | --- |
@@ -44,7 +44,7 @@ retirado um exemplar depois que o formulário foi aberto.
 | POST /api/emprestimos | Registra a retirada |
 | POST /api/emprestimos/:id/renovacoes | Renova o prazo |
 
-`validarEmprestimo` em `backend/src/validation.js` aceita IDs inteiros e observação de até
+`validarEmprestimo` em `backend/src/validacao/emprestimos.js` aceita IDs inteiros e observação de até
 2000 caracteres. Não aceita datas escolhidas pelo navegador. A renovação recebe
 a versão vista na tela para detectar uma alteração feita por outra sessão.
 

@@ -47,9 +47,11 @@ Quando um estilo é exclusivo de uma tela, ele mora na pasta dela e o HTML carre
 ## Backend: camadas curtas
 
 - `src/server.js` sobe o processo na porta configurada e agenda a expiração de reservas vencidas a cada minuto.
-- `src/app.js` concentra as rotas, os middlewares de perfil e o tratamento de erros. Cada rota valida a entrada, chama o repositório e devolve JSON com status coerente (400 para dado inválido, 404 para inexistente, 503 para banco fora).
+- `src/app.js` monta a aplicação: middlewares gerais da API, registro das rotas por domínio, páginas e estáticos, e o tratamento de erros.
+- `src/routes/<domínio>.js` concentra as rotas daquele domínio. Cada rota valida a entrada, chama o repositório e devolve JSON com status coerente (400 para dado inválido, 404 para inexistente, 503 para banco fora).
+- `src/middlewares/sessao.js` carrega a sessão pelo cookie e fornece os guardas de perfil (`exigirPerfil` e variantes), que também criam os repositórios com escopo de Centro da requisição.
 - `src/repositories/<domínio>.js` guarda todo o SQL daquele domínio e recebe o Centro como escopo quando aplicável.
-- `src/validation.js` valida os corpos das requisições antes de qualquer consulta.
+- `src/validacao/<domínio>.js` valida os corpos das requisições antes de qualquer consulta; `erros.js` guarda `erroHttp` e o helper de texto usados pelo backend inteiro.
 - `database/` guarda as migrações; `scripts/migrate.js` as aplica em transação.
 - `test/` roda com `npm test`; suítes de interface leem os arquivos das páginas por caminho, então movimentações de arquivo vão junto com o ajuste de caminho nos testes.
 
@@ -59,8 +61,9 @@ Quando um estilo é exclusivo de uma tela, ele mora na pasta dela e o HTML carre
 | --- | --- |
 | Mudar algo visual de uma tela | `frontend/pages/<página>/` (CSS exclusivo) ou `frontend/shared/css/style.css` (design system) |
 | Mudar o comportamento de uma tela | o `<página>.js` dela |
-| Criar ou alterar rota da API | `backend/src/app.js` + repositório do domínio |
+| Criar ou alterar rota da API | `backend/src/routes/<domínio>.js`; a montagem fica em `backend/src/app.js` |
+| Validar um campo ou corpo novo | `backend/src/validacao/<domínio>.js` |
 | Mudar regra de negócio com SQL | `backend/src/repositories/<domínio>.js` |
 | Mudar estrutura do banco | migração nova em `backend/database/` |
-| Adicionar tela nova | pasta em `frontend/pages/`, rota em `backend/src/app.js` e, se a página for restrita, no `paginaProtegida` |
+| Adicionar tela nova | pasta em `frontend/pages/`, rota no módulo de domínio em `backend/src/routes/` e, se a página for restrita, no `paginaProtegida` |
 | Documentar regra nova | guia correspondente em `docs/backend/` |

@@ -41,7 +41,7 @@ Ao confirmar, o navegador envia:
 ```
 
 para `POST /api/emprestimos/:id/devolucao`. A API valida esses campos em
-`validarDevolucao`, no arquivo `backend/src/validation.js`. O cliente não escolhe data,
+`validarDevolucao`, no arquivo `backend/src/validacao/emprestimos.js`. O cliente não escolhe data,
 dias de atraso, leitor nem exemplar: essas informações vêm do registro no banco.
 
 O método `devolver`, em `backend/src/repositories/emprestimos.js`, abre uma transação:

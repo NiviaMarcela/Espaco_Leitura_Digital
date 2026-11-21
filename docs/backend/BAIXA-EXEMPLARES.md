@@ -13,8 +13,8 @@ A data/hora é gerada pelo banco e exibida no horário de Fortaleza.
 
 - `acervo.html`: formulário e coluna de baixa dentro do modal de detalhes.
 - `frontend/pages/acervo/acervo.js`: lê motivo/observação, envia à API e atualiza a obra com a resposta.
-- `POST /api/exemplares/:id/baixa`: recebe e valida os dados em `backend/src/app.js`.
-- `validarBaixa` em `backend/src/validation.js`: limita observação a 2000 caracteres e
+- `POST /api/exemplares/:id/baixa`: recebe os dados em `backend/src/routes/acervo.js`.
+- `validarBaixa` em `backend/src/validacao/acervo.js`: limita observação a 2000 caracteres e
   rejeita motivos inválidos e Outro sem explicação.
 - `baixarExemplar` em `backend/src/repositories/acervo.js`: usa uma transação e bloqueia
   a linha durante a operação. Duas tentativas simultâneas não sobrescrevem o registro.

@@ -31,7 +31,10 @@ Requisição HTTP → rota Express → consulta SQL → PostgreSQL → resposta 
 ```
 
 - `backend/src/server.js`: inicia o processo na porta 3001 e fecha as conexões ao encerrar.
-- `backend/src/app.js`: define os endereços da API, valida os IDs e produz respostas HTTP.
+- `backend/src/app.js`: monta a aplicação, valida os IDs e produz respostas HTTP.
+- `backend/src/routes/`: endereços da API divididos por domínio (autenticação, acervo, leitores, empréstimos, reservas, livro vivo, usuários, recuperação).
+- `backend/src/middlewares/sessao.js`: sessão por cookie e guardas de perfil que aplicam o escopo por Centro.
+- `backend/src/validacao/`: validação dos corpos das requisições, dividida por domínio.
 - `backend/src/database.js`: mantém um conjunto reutilizável de conexões, chamado pool.
 - `backend/src/repositories/acervo.js`: reúne as consultas SQL e devolve livros com seu array de exemplares.
 - `backend/database/001_acervo.sql`: define tabelas, relacionamentos e os três Centros iniciais.

@@ -44,9 +44,9 @@ entrar imediatamente com as credenciais escolhidas. A rota administrativa
    usa `type="date"`; seu valor enviado é `AAAA-MM-DD`, independente da aparência do navegador.
 2. `frontend/pages/leitores/leitores.js` lê o formulário administrativo, envia JSON por `fetch`, aguarda
    a resposta e só então atualiza a lista. O botão fica desabilitado durante o envio.
-3. `backend/src/app.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
+3. `backend/src/routes/leitores.js` recebe a requisição nas rotas GET/POST `/api/leitores` e GET/PUT
    `/api/leitores/:id`. POST cadastra; PUT edita; GET consulta.
-4. `validarLeitor`, em `backend/src/validation.js`, verifica os campos no servidor. A validação
+4. `validarLeitor`, em `backend/src/validacao/leitores.js`, verifica os campos no servidor. A validação
    do navegador ajuda no preenchimento, mas não substitui a validação da API.
 5. `backend/src/repositories/leitores.js` usa parâmetros `$1`, `$2` etc. para passar os valores
    ao PostgreSQL. Nascimento é devolvido como texto de data, sem conversão de fuso.
