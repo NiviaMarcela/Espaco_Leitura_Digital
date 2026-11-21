@@ -1,0 +1,5 @@
+/* CSS da página reservas: extraído de frontend/shared/css/style.css.
+   Seletores usados somente por esta página; o design system permanece compartilhado. */
+
+/* Reservas: ações e situações com cores, texto e ícones complementares. */
+.reservas-painel { border-left: 4px solid #d99b14; }

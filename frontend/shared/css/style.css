@@ -590,51 +590,6 @@ body {
 
 
 
-/* =========================================================
-   CARDS DE INDICADORES
-========================================================= */
-
-
-.stat-card {
-
-    min-height: 145px;
-
-    display: flex;
-
-    align-items: flex-start;
-
-    gap: 17px;
-
-    padding: 22px;
-
-    border:
-        1px solid var(--border);
-
-    border-radius: 14px;
-
-    background-color:
-        var(--surface);
-
-    transition:
-        transform .2s,
-        box-shadow .2s;
-
-}
-
-
-
-.stat-card:hover {
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 8px 25px rgba(27, 54, 93, .07);
-
-}
-
-
-
 .stat-icon {
 
     width: 45px;
@@ -688,97 +643,6 @@ body {
 
     background-color:
         rgba(104, 96, 236, .11);
-
-}
-
-
-
-.icon-pink {
-
-    color:
-        var(--ijm-pink);
-
-    background-color:
-        rgba(239, 74, 129, .11);
-
-}
-
-
-
-.icon-yellow {
-
-    color:
-        #997900;
-
-    background-color:
-        rgba(255, 201, 0, .16);
-
-}
-
-
-
-.stat-content {
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-
-.stat-label {
-
-    color:
-        var(--text-secondary);
-
-    font-size: 12px;
-
-}
-
-
-
-.stat-number {
-
-    margin-top: 5px;
-
-    color:
-        var(--ijm-blue);
-
-    font-size: 30px;
-
-    line-height: 1.2;
-
-}
-
-
-
-.stat-content small {
-
-    margin-top: 6px;
-
-    color:
-        var(--text-secondary);
-
-    font-size: 11px;
-
-}
-
-
-
-.color-green {
-
-    color:
-        var(--ijm-green);
-
-}
-
-
-
-.color-purple {
-
-    color:
-        var(--ijm-purple);
 
 }
 
@@ -856,30 +720,6 @@ body {
         var(--text-secondary);
 
     font-size: 12px;
-
-}
-
-
-
-.link-custom {
-
-    color:
-        var(--ijm-purple);
-
-    font-size: 12px;
-
-    font-weight: 600;
-
-    text-decoration: none;
-
-}
-
-
-
-.link-custom:hover {
-
-    color:
-        var(--ijm-blue);
 
 }
 
@@ -1033,127 +873,6 @@ body {
 
     background:
         rgba(0, 179, 152, .11);
-
-}
-
-
-
-/* =========================================================
-   AÇÕES RÁPIDAS
-========================================================= */
-
-
-.quick-actions {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 10px;
-
-}
-
-
-
-.quick-action {
-
-    position: relative;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 13px;
-
-    padding: 13px;
-
-    border:
-        1px solid var(--border);
-
-    border-radius: 11px;
-
-    color:
-        var(--text-primary);
-
-    text-decoration: none;
-
-    transition:
-        border-color .2s,
-        transform .2s,
-        background .2s;
-
-}
-
-
-
-.quick-action:hover {
-
-    transform:
-        translateX(2px);
-
-    border-color:
-        rgba(0, 179, 152, .45);
-
-    background-color:
-        #FBFDFC;
-
-}
-
-
-
-.quick-icon {
-
-    width: 39px;
-
-    height: 39px;
-
-    flex-shrink: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 9px;
-
-}
-
-
-
-.quick-action strong {
-
-    display: block;
-
-    font-size: 12px;
-
-}
-
-
-
-.quick-action span {
-
-    display: block;
-
-    margin-top: 2px;
-
-    color:
-        var(--text-secondary);
-
-    font-size: 10px;
-
-}
-
-
-
-.quick-arrow {
-
-    margin-left: auto;
-
-    color:
-        #A4ACB8;
-
-    font-size: 12px;
 
 }
 
@@ -1388,7 +1107,6 @@ body {
 .detalhes-dados dt { font-size: 12px; color: var(--text-secondary); }
 .detalhes-dados dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 .detalhes-sinopse { white-space: pre-wrap; overflow-wrap: anywhere; }
-#tituloDetalhesLivro { overflow-wrap: anywhere; }
 
 
 .book-info strong {
@@ -1433,51 +1151,6 @@ body {
         #596579;
 
     font-size: 10px;
-
-}
-
-
-
-/* =========================================================
-   AÇÕES DA TABELA
-========================================================= */
-
-
-.table-action {
-
-    width: 32px;
-
-    height: 32px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border:
-        1px solid var(--border);
-
-    border-radius: 8px;
-
-    background:
-        white;
-
-    color:
-        var(--text-secondary);
-
-    transition: .2s;
-
-}
-
-
-.table-action:hover {
-
-    border-color:
-        var(--ijm-purple);
-
-    color:
-        var(--ijm-purple);
 
 }
 
@@ -1802,9 +1475,6 @@ body[data-user-role="coordenador"] [data-leitor-only] {
 
 /* O atributo hidden deve prevalecer sobre display:flex dos menus. */
 [hidden] { display: none !important; }
-
-/* Reservas: ações e situações com cores, texto e ícones complementares. */
-.reservas-painel { border-left: 4px solid #d99b14; }
 .reserva-acoes { display: flex; flex-wrap: wrap; gap: .5rem; }
 .reserva-acoes .btn { white-space: nowrap; min-height: 38px; }
 .reserva-status {

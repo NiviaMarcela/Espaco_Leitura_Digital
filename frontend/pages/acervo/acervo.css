@@ -1,3 +1,6 @@
+/* CSS da página acervo: extraído de frontend/shared/css/style.css.
+   Seletores usados somente por esta página; o design system permanece compartilhado. */
+
 /* CSS da página Acervo: extraído de frontend/shared/css/style.css.
    Seletores usados somente por esta página; o restante do design system permanece compartilhado. */
 
@@ -108,4 +111,62 @@
     .detalhes-obra { flex-direction: column; gap: 16px; }
     .detalhes-informacoes { width: 100%; }
     .detalhes-tabela { min-width: 540px; }
+}
+
+.color-green {
+
+    color:
+        var(--ijm-green);
+
+}
+
+.color-purple {
+
+    color:
+        var(--ijm-purple);
+
+}
+
+#tituloDetalhesLivro { overflow-wrap: anywhere; }
+
+/* =========================================================
+   AÇÕES DA TABELA
+========================================================= */
+
+
+.table-action {
+
+    width: 32px;
+
+    height: 32px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    background:
+        white;
+
+    color:
+        var(--text-secondary);
+
+    transition: .2s;
+
+}
+
+.table-action:hover {
+
+    border-color:
+        var(--ijm-purple);
+
+    color:
+        var(--ijm-purple);
+
 }
