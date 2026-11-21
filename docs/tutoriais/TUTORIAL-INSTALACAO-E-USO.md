@@ -86,7 +86,7 @@ Ambos devem mostrar números de versão. Se aparecer “não reconhecido”, con
 
 Extraia o projeto, por exemplo, em `C:\Projetos\EspacoDeLeituraDigital`, e abra essa pasta no VS Code. Esse caminho é apenas um exemplo: use a pasta escolhida na sua máquina.
 
-É necessário receber os HTMLs e as pastas `backend`, `js`, `css` e `assets`, além dos arquivos de configuração do projeto. Não copie somente `backend`, pois o servidor também usa arquivos fora dessa pasta.
+É necessário receber as pastas `backend` e `frontend`, além dos arquivos de configuração do projeto. Não copie somente `backend`, pois o servidor também entrega os arquivos de `frontend`.
 
 No terminal aberto na raiz:
 

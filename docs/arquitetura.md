@@ -15,10 +15,10 @@ O Express também publica os arquivos estáticos: cada URL de página (`/acervo.
 ## Fluxo de uma requisição
 
 ```text
-página (fetch) → rota Express → exigirPerfil → repositório (SQL parametrizado) → PostgreSQL → JSON → tela atualiza
+página (fetch) → rota em src/routes/<domínio>.js → exigirPerfil (src/middlewares/sessao.js) → repositório (SQL parametrizado) → PostgreSQL → JSON → tela atualiza
 ```
 
-O passo `exigirPerfil` merece atenção. Ele carrega a sessão pelo cookie, recusa quem não tem o perfil exigido e, antes de chamar a rota, monta os repositórios daquela requisição já filtrados pelo Centro do usuário. Coordenadores, professores e funcionários só enxergam o próprio Centro porque esse filtro nasce aqui, no servidor, e não em um parâmetro que a interface envia.
+O passo `exigirPerfil`, definido em `src/middlewares/sessao.js`, merece atenção. Ele carrega a sessão pelo cookie, recusa quem não tem o perfil exigido e, antes de chamar a rota, monta os repositórios daquela requisição já filtrados pelo Centro do usuário. Coordenadores, professores e funcionários só enxergam o próprio Centro porque esse filtro nasce aqui, no servidor, e não em um parâmetro que a interface envia.
 
 A tela só atualiza o estado depois de confirmar a resposta da API. Não existe reenvio automático quando a rede falha: se a gravação não confirmar, a pessoa confere o acervo e tenta de novo.
 

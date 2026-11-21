@@ -15,8 +15,14 @@ Espaco_Leitura_Digital/
 │  │  └─ js/                scripts compartilhados
 │  └─ pages/                uma pasta por tela, com o HTML, o JS e o CSS da página
 └─ backend/                 API e banco
-   ├─ src/                  server, app (rotas), validation, database
-   ├─ src/repositories/     consultas SQL, um arquivo por domínio
+   ├─ src/
+   │  ├─ routes/            rotas da API, um módulo por domínio
+   │  ├─ middlewares/       sessão por cookie e guardas de perfil
+   │  ├─ validacao/         validação dos corpos, um módulo por domínio
+   │  ├─ repositories/      consultas SQL, um arquivo por domínio
+   │  ├─ app.js             montagem da aplicação, páginas e tratamento de erros
+   │  ├─ server.js          entrada do processo
+   │  └─ database.js        pool de conexões
    ├─ database/             migrações SQL incrementais
    ├─ scripts/              migrate, criar-admin, recuperar-admin
    ├─ test/                 suítes do node --test
