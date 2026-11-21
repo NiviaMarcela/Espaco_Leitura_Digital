@@ -207,7 +207,7 @@ As mensagens na interface podem ser genéricas; o terminal pode mostrar o códig
 
 - `backend/.env`: configuração local, inclusive senha.
 - `backend/src/database.js`: cria o pool de conexões com PostgreSQL.
-- `backend/src/app.js`: define `/api/health` e `/api/health/db`; o segundo executa `SELECT 1` para testar o banco.
+- `backend/src/routes/publico.js`: define `/api/health` e `/api/health/db`; o segundo executa `SELECT 1` para testar o banco.
 - `backend/src/server.js`: inicia o servidor HTTP.
 - `backend/scripts/migrate.js`: aplica e registra as migrações SQL.
 

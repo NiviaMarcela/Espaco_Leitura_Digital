@@ -26,7 +26,7 @@ O limite de 10 soma reservas pendentes e empréstimos ainda não devolvidos, inc
 ## Como o código funciona
 
 - `backend/database/007_perfis_reservas.sql`: acrescenta os campos de perfil e Centro, substitui a regra de administrador único por quatro vagas únicas e cria a tabela `reservas`. Não apaga os registros anteriores.
-- `backend/src/app.js`: verifica o perfil e constrói repositórios limitados ao Centro da requisição. Usuários permite cadastro de equipe pelo coordenador do próprio Centro; edição, situação e senha também são permitidas ao coordenador para a equipe do próprio Centro. Contas sem Centro válido são recusadas.
+- `backend/src/middlewares/sessao.js`: verifica o perfil e constrói repositórios limitados ao Centro da requisição. Usuários permite cadastro de equipe pelo coordenador do próprio Centro; edição, situação e senha também são permitidas ao coordenador para a equipe do próprio Centro. Contas sem Centro válido são recusadas.
 - `backend/src/repositories/usuarios.js`: cadastra acessos e escolhe uma vaga de administrador dentro de uma transação. A restrição única no PostgreSQL impede ultrapassar quatro mesmo sob concorrência.
 - `backend/src/repositories/reservas.js`: cria, lista, cancela e confirma reservas. Bloqueia primeiro o leitor, depois o exemplar e a reserva; a transação impede cópias duplicadas e ultrapassagem do limite em pedidos simultâneos.
 - `backend/src/repositories/emprestimos.js`: conta também as reservas pendentes antes da retirada direta. Usa o calendário de Fortaleza e soma 30 dias à data efetiva da retirada.
@@ -99,7 +99,7 @@ Dashboard e Usuários não aparecem nos menus do professor e suas APIs são bloq
 
 **Professor como perfil de acesso** é diferente de **Professor como tipo de leitor**: selecionar o tipo no cadastro de leitores não concede permissões administrativas. O acesso de professor é criado pelo administrador ou pelo coordenador do próprio Centro na tela Usuários. O cadastro público continua restrito aos tipos Aluno e Comunidade.
 
-A migração `009_perfil_professor.sql` inclui o perfil e exige seu Centro no PostgreSQL, com o antigo limite de quatro administradores (removido pela migração 014). As verificações estão em `backend/src/app.js`, nos repositórios de autenticação, usuários, cadastro pessoal e reservas. Os menus e destinos de login foram atualizados em `frontend/shared/js/auth-ui.js`, `frontend/pages/login/login.js`, `frontend/pages/alterarSenha/alterarSenha.js` e nas páginas correspondentes.
+A migração `009_perfil_professor.sql` inclui o perfil e exige seu Centro no PostgreSQL, com o antigo limite de quatro administradores (removido pela migração 014). As verificações estão em `backend/src/middlewares/sessao.js`, nos repositórios de autenticação, usuários, cadastro pessoal e reservas. Os menus e destinos de login foram atualizados em `frontend/shared/js/auth-ui.js`, `frontend/pages/login/login.js`, `frontend/pages/alterarSenha/alterarSenha.js` e nas páginas correspondentes.
 
 Testes: o fluxo de professor é exercitado nos três Centros, incluindo login, troca de senha, cinco páginas permitidas, bloqueios de Dashboard/Usuários, cadastros, reserva pessoal, retirada, empréstimo direto e devolução. Testes com DOM simulado verificam os menus e o destino do login; não foi realizada inspeção visual em navegador.
 
@@ -141,7 +141,7 @@ O coordenador agora acessa **Usuários** para listar e cadastrar a equipe do pr�
 
 O perfil Outro (antes Funcionário) tem os mesmos acessos de Professor, inclusive Relatórios, reservas pessoais e confirmação de retirada no próprio Centro. Não acessa Dashboard nem Usuários. O tipo Funcionário no cadastro de leitor não concede essas permissões; o perfil de acesso precisa ser cadastrado em Usuários.
 
-A migração `011_perfil_funcionario.sql` adiciona o perfil e exige Centro vinculado, sem alterar as quatro vagas de administrador. `backend/src/repositories/usuarios.js` aplica as restrições ao cadastro e à listagem do coordenador; `backend/src/app.js` separa acesso ao cadastro de equipe das operações com escopo por Centro e do atendimento de recuperação exclusivo do administrador. `frontend/pages/usuarios/usuarios.js` ajusta os campos e ações conforme a sessão. O Dashboard recebe o ID e nome do Centro junto dos indicadores, evitando um rótulo genérico na tela.
+A migração `011_perfil_funcionario.sql` adiciona o perfil e exige Centro vinculado, sem alterar as quatro vagas de administrador. `backend/src/repositories/usuarios.js` aplica as restrições ao cadastro e à listagem do coordenador; `backend/src/routes/usuarios.js` separa acesso ao cadastro de equipe das operações com escopo por Centro e do atendimento de recuperação exclusivo do administrador. `frontend/pages/usuarios/usuarios.js` ajusta os campos e ações conforme a sessão. O Dashboard recebe o ID e nome do Centro junto dos indicadores, evitando um rótulo genérico na tela.
 
 Testes PostgreSQL verificam valores distintos por Centro, acesso global do administrador, tentativas de cadastro em outro Centro, bloqueio de promoção para administrador, listagem local e ciclo de reserva/retirada/devolução do funcionário. Testes com DOM simulado verificam os menus e o formulário do coordenador; não substituem conferência visual no navegador.
 
