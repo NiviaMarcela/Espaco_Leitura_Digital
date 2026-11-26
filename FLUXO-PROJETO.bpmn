@@ -29,7 +29,7 @@
         <bpmn:flowNodeRef>End_Equipe</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>End_Responsavel</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_ interface" name="Interface web">
+      <bpmn:lane id="Lane_Interface" name="Interface web">
         <bpmn:flowNodeRef>Task_MostrarPortal</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_Intencao</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_CadastroConcluido</bpmn:flowNodeRef>
@@ -194,6 +194,7 @@
     <bpmn:endEvent id="End_Leitor" name="Acompanhar conta ou sair">
       <bpmn:incoming>Flow_28</bpmn:incoming>
       <bpmn:incoming>Flow_32</bpmn:incoming>
+      <bpmn:incoming>Flow_36</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:task id="Task_ValidarReserva" name="Validar cópia, leitor e limite; marcar reserva pendente">
       <bpmn:incoming>Flow_27</bpmn:incoming>
@@ -240,8 +241,6 @@
     </bpmn:task>
     <bpmn:endEvent id="End_Equipe" name="Encerrar sessão da equipe">
       <bpmn:incoming>Flow_39</bpmn:incoming>
-      <bpmn:incoming>Flow_40</bpmn:incoming>
-      <bpmn:incoming>Flow_36</bpmn:incoming>
     </bpmn:endEvent>
 
     <bpmn:sequenceFlow id="Flow_01" sourceRef="Start_Acesso" targetRef="Task_AbrirPortal"/>
@@ -285,7 +284,7 @@
     <bpmn:sequenceFlow id="Flow_33" name="Retirada confirmada" sourceRef="Gateway_Retirada" targetRef="Task_ConfirmarRetirada"/>
     <bpmn:sequenceFlow id="Flow_34" sourceRef="Task_ConfirmarRetirada" targetRef="Task_CriarEmprestimo"/>
     <bpmn:sequenceFlow id="Flow_35" sourceRef="Task_CriarEmprestimo" targetRef="Task_GravarEmprestimo"/>
-    <bpmn:sequenceFlow id="Flow_36" sourceRef="Task_GravarEmprestimo" targetRef="End_Equipe"/>
+    <bpmn:sequenceFlow id="Flow_36" sourceRef="Task_GravarEmprestimo" targetRef="End_Leitor"/>
     <bpmn:sequenceFlow id="Flow_37" sourceRef="Task_OperarModulos" targetRef="Gateway_Responsavel"/>
     <bpmn:sequenceFlow id="Flow_38" name="Sim" sourceRef="Gateway_Responsavel" targetRef="Task_OperacoesRestritas"/>
     <bpmn:sequenceFlow id="Flow_39" name="Não" sourceRef="Gateway_Responsavel" targetRef="End_Equipe"/>
@@ -298,19 +297,19 @@
   <bpmndi:BPMNDiagram id="Diagram_EspacoLeitura">
     <bpmndi:BPMNPlane id="Plane_EspacoLeitura" bpmnElement="Collaboration_EspacoLeitura">
       <bpmndi:BPMNShape id="Shape_Participant" bpmnElement="Participant_EspacoLeitura" isHorizontal="true">
-        <dc:Bounds x="20" y="20" width="3700" height="800"/>
+        <dc:Bounds x="20" y="20" width="4970" height="800"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Lane_Pessoa" bpmnElement="Lane_Pessoa" isHorizontal="true">
-        <dc:Bounds x="50" y="20" width="3670" height="190"/>
+        <dc:Bounds x="50" y="20" width="4940" height="190"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Lane_Interface" bpmnElement="Lane_ interface" isHorizontal="true">
-        <dc:Bounds x="50" y="210" width="3670" height="190"/>
+      <bpmndi:BPMNShape id="Shape_Lane_Interface" bpmnElement="Lane_Interface" isHorizontal="true">
+        <dc:Bounds x="50" y="210" width="4940" height="190"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Lane_API" bpmnElement="Lane_API" isHorizontal="true">
-        <dc:Bounds x="50" y="400" width="3670" height="200"/>
+        <dc:Bounds x="50" y="400" width="4940" height="200"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Lane_Banco" bpmnElement="Lane_Banco" isHorizontal="true">
-        <dc:Bounds x="50" y="600" width="3670" height="200"/>
+        <dc:Bounds x="50" y="600" width="4940" height="200"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Shape_Start_Acesso" bpmnElement="Start_Acesso"><dc:Bounds x="90" y="90" width="36" height="36"/></bpmndi:BPMNShape>
